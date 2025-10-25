@@ -11,9 +11,32 @@ config_version=5
 [application]
 
 config/name="ProjMan"
-config/features=PackedStringArray("4.4", "Forward Plus")
+run/main_scene="uid://bxyyd8yyxvm4r"
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
 [dotnet]
 
 project/assembly_name="ProjMan"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/inspector_tabs/plugin.cfg")
+
+[file_customization]
+
+folder_colors={
+"res://addons/": "gray",
+"res://build/": "gray",
+"res://project/": "gray",
+"res://project/Assets/": "red",
+"res://project/Components/": "purple",
+"res://project/Objects/": "teal",
+"res://project/Resources/": "pink",
+"res://project/Scenes/": "orange",
+"res://project/Scenes/ProjectManager/Components/": "purple",
+"res://project/Scenes/ProjectManager/Components/TemplateMenu/Resources/": "pink",
+"res://project/Scenes/ProjectManager/Components/TemplateMenu/Scripts/": "blue",
+"res://project/Singeltons/": "yellow",
+"res://project/Singletons/": "yellow"
+}

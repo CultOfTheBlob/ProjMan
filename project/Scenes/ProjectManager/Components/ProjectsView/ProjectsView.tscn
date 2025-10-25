@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://cd5eh3xa671gs"]
+
+[node name="Projects" type="CanvasLayer"]
+layer = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="TopBar" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="NewProjectButton" type="Button" parent="PanelContainer/VBoxContainer/TopBar"]
+layout_mode = 2
+text = "New Project"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ProjectsGrid" type="FlowContainer" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="PanelContainer/VBoxContainer/HBoxContainer/ProjectsGrid"]
+layout_mode = 2
+text = "Project1"
+
+[node name="ActionsContainer" type="VBoxContainer" parent="PanelContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="RenameButton" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer/ActionsContainer"]
+layout_mode = 2
+text = "Rename"
+
+[node name="EditButton" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer/ActionsContainer"]
+layout_mode = 2
+text = "Edit"
+
+[node name="MoveButton" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer/ActionsContainer"]
+layout_mode = 2
+text = "Move"
+
+[node name="DeleteButton" type="Button" parent="PanelContainer/VBoxContainer/HBoxContainer/ActionsContainer"]
+layout_mode = 2
+text = "Delete"

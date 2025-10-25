@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://bxyyd8yyxvm4r"]
+
+[ext_resource type="PackedScene" uid="uid://cd5eh3xa671gs" path="res://project/Scenes/ProjectManager/Components/ProjectsView/ProjectsView.tscn" id="1_r8ac5"]
+
+[node name="Root" type="Node"]
+
+[node name="UserInterface" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ProjectsView" parent="UserInterface" instance=ExtResource("1_r8ac5")]
