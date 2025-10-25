@@ -12,8 +12,14 @@ config_version=5
 
 config/name="ProjMan"
 run/main_scene="uid://bxyyd8yyxvm4r"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="projman"
 config/features=PackedStringArray("4.5", "C#", "Forward Plus")
 config/icon="res://icon.svg"
+
+[debug]
+
+file_logging/enable_file_logging.pc=false
 
 [dotnet]
 
@@ -40,3 +46,7 @@ folder_colors={
 "res://project/Singeltons/": "yellow",
 "res://project/Singletons/": "yellow"
 }
+
+[rendering]
+
+shader_compiler/shader_cache/enabled=false

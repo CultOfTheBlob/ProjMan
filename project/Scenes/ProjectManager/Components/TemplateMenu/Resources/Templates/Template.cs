@@ -6,7 +6,7 @@ public partial class Template : Resource
     [ExportGroup("BaseProperties")]
 
     [Export]
-    public string Name { get; private set; }
+    public string Name { get; set; }
 
 
     public Template() : this(null) { }
