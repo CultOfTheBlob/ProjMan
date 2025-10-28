@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dahepgxjbyprk"]
 
-[ext_resource type="Script" uid="uid://50q4bbjhsill" path="res://project/Scenes/ProjectManager/Components/TemplateMenu/Scripts/TemplateList.cs" id="1_bk21f"]
+[ext_resource type="Script" uid="uid://ddh656njixrd" path="res://project/Scenes/ProjectManager/Components/TemplateMenu/Scripts/TemplateList.cs" id="1_bk21f"]
 
 [node name="TemplateMenu" type="CanvasLayer"]
 
@@ -18,43 +18,51 @@ theme_override_constants/margin_bottom = 50
 [node name="PanelContainer" type="PanelContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="VSplitContainer" type="VSplitContainer" parent="MarginContainer/PanelContainer"]
+[node name="HSplitContainer" type="HSplitContainer" parent="MarginContainer/PanelContainer"]
 layout_mode = 2
+
+[node name="VSplitContainer" type="VSplitContainer" parent="MarginContainer/PanelContainer/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 dragging_enabled = false
 
-[node name="TemplateList" type="ItemList" parent="MarginContainer/PanelContainer/VSplitContainer"]
+[node name="TemplateList" type="ItemList" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer" node_paths=PackedStringArray("DescriptionLabel")]
 layout_mode = 2
 size_flags_vertical = 3
-item_count = 3
-item_0/text = "Template1"
-item_1/text = "Template2"
-item_2/text = "Template3"
 script = ExtResource("1_bk21f")
+DescriptionLabel = NodePath("../../DescriptionLabel")
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/PanelContainer/VSplitContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer"]
 layout_mode = 2
 theme_override_constants/margin_bottom = 10
 
-[node name="BottmRibbon" type="HBoxContainer" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer"]
+[node name="BottmRibbon" type="HBoxContainer" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="LeftMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer/BottmRibbon"]
+[node name="LeftMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer/BottmRibbon"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CancleButton" type="Button" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer/BottmRibbon"]
+[node name="CancleButton" type="Button" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer/BottmRibbon"]
 layout_mode = 2
 text = "Cancle"
 
-[node name="MiddleMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer/BottmRibbon"]
+[node name="MiddleMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer/BottmRibbon"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NextButton" type="Button" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer/BottmRibbon"]
+[node name="NextButton" type="Button" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer/BottmRibbon"]
 layout_mode = 2
 text = "Next"
 
-[node name="RightMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/VSplitContainer/MarginContainer/BottmRibbon"]
+[node name="RightMargin" type="MarginContainer" parent="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/MarginContainer/BottmRibbon"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="DescriptionLabel" type="Label" parent="MarginContainer/PanelContainer/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+
+[connection signal="item_selected" from="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/TemplateList" to="MarginContainer/PanelContainer/HSplitContainer/VSplitContainer/TemplateList" method="OnItemSelected"]
