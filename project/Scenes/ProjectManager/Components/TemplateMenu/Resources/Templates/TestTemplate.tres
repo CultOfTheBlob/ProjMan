@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="Template" load_steps=2 format=3 uid="uid://beemfyiyp32eo"]
-
-[ext_resource type="Script" uid="uid://jydhg15388gc" path="res://project/Scenes/ProjectManager/Components/TemplateMenu/Resources/Templates/Template.cs" id="1_rdks6"]
-
-[resource]
-script = ExtResource("1_rdks6")
-Name = "John"
-metadata/_custom_type_script = "uid://jydhg15388gc"
