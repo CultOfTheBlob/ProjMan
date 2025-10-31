@@ -3,9 +3,6 @@ using Godot;
 [GlobalClass]
 public partial class Template : BaseTemplate
 {
-    private string flake = @"";
-
-
     public override StringName Name { get; } = "Template";
 
     public override string Description { get; } =
@@ -20,21 +17,13 @@ public partial class Template : BaseTemplate
     [ExportGroup("BaseProperties")]
 
     [Export]
-    public override string Flake
-    {
-        get => flake;
-        set
-        {
-            flake = value;
-            Config.SaveTemplate(this, Name);
-        }
-    }
+    public override string Flake { get; set; }
 
 
     public Template() : this(null) { }
 
     public Template(string flake)
     {
-        this.flake = flake;
+        Flake = flake;
     }
 }
