@@ -1,1 +1,62 @@
-fn main() {}
+#![allow(clippy::single_match)]
+
+use std::io;
+
+use ratatui::{
+    Terminal,
+    backend::{Backend, CrosstermBackend},
+    crossterm::{
+        event::{DisableMouseCapture, EnableMouseCapture},
+        execute,
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    },
+};
+
+mod app;
+mod input_handler;
+mod ui;
+
+use crate::{app::App, ui::projects::ui};
+
+fn main() -> color_eyre::Result<()>
+{
+    enable_raw_mode()?;
+
+    let mut stderr: io::Stderr = io::stderr();
+    execute!(stderr, EnterAlternateScreen, EnableMouseCapture)?;
+
+    let backend: CrosstermBackend<io::Stderr> = CrosstermBackend::new(stderr);
+    let mut terminal: Terminal<CrosstermBackend<io::Stderr>> = Terminal::new(backend)?;
+
+    let mut app: App = App::new();
+    run_app(&mut terminal, &mut app)?;
+
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+
+    Ok(())
+}
+
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()>
+where
+    std::io::Error: From<<B as Backend>::Error>,
+{
+    loop
+    {
+        terminal.draw(|f| ui(f, app))?;
+
+        if input_handler::handle_input(app)?
+        {
+            continue;
+        }
+        else
+        {
+            return Ok(());
+        }
+    }
+}
