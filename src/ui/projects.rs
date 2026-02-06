@@ -3,7 +3,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
 };
 
 use crate::app::{App, CurrentScreen};
@@ -28,26 +28,29 @@ pub fn ui(frame: &mut Frame, app: &App)
 
     frame.render_widget(title, chunks[0]);
 
-    let view_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[1]);
-
     let list_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default());
 
-    let list = Paragraph::new(Text::styled("", Style::default().fg(Color::Blue))).block(list_block);
+    let mut list_items: Vec<ListItem> = Vec::<ListItem>::new();
 
-    frame.render_widget(list, view_chunks[0]);
+    for project_name in app.project_list.keys()
+    {
+        let item: String = format!(
+            "{: <20} : {:?}",
+            project_name,
+            app.project_list.get(project_name).unwrap().project_type
+        );
 
-    let opts_block = Block::default()
-        .borders(Borders::ALL)
-        .style(Style::default());
+        list_items.push(ListItem::new(Line::from(Span::styled(
+            item,
+            Style::default().fg(Color::White),
+        ))));
+    }
 
-    let opts = Paragraph::new(Text::styled("", Style::default().fg(Color::Blue))).block(opts_block);
+    let list = List::new(list_items).block(list_block);
 
-    frame.render_widget(opts, view_chunks[1]);
+    frame.render_widget(list, chunks[1]);
 
     let current_keys_hint = {
         match app.current_screen
