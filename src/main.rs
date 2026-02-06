@@ -29,7 +29,7 @@ fn main() -> color_eyre::Result<()>
     let mut terminal: Terminal<CrosstermBackend<io::Stderr>> = Terminal::new(backend)?;
 
     let mut app: App = App::new();
-    run_app(&mut terminal, &mut app)?;
+    let res: io::Result<()> = run_app(&mut terminal, &mut app);
 
     disable_raw_mode()?;
     execute!(
@@ -38,6 +38,14 @@ fn main() -> color_eyre::Result<()>
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
+
+    if let Ok(()) = res
+    {
+    }
+    else if let Err(err) = res
+    {
+        println!("{err:?}");
+    }
 
     Ok(())
 }
