@@ -4,13 +4,20 @@ use ratatui::crossterm::event::{self, Event, KeyCode};
 
 use crate::app::{App, CurrentScreen};
 
-pub fn handle_input(app: &mut App) -> io::Result<bool>
+#[derive(Debug)]
+pub enum Loop
+{
+    Continue,
+    Break,
+}
+
+pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
 {
     if let Event::Key(key) = event::read()?
     {
         if key.kind == event::KeyEventKind::Release
         {
-            return Ok(true);
+            return Ok(Some(Loop::Continue));
         }
 
         match app.current_screen
@@ -19,7 +26,7 @@ pub fn handle_input(app: &mut App) -> io::Result<bool>
             {
                 KeyCode::Char('q') =>
                 {
-                    return Ok(false);
+                    return Ok(Some(Loop::Break));
                 }
 
                 _ => (),
@@ -27,5 +34,5 @@ pub fn handle_input(app: &mut App) -> io::Result<bool>
         }
     }
 
-    Ok(false)
+    Ok(None)
 }

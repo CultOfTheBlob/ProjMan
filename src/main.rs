@@ -58,13 +58,11 @@ where
     {
         terminal.draw(|f| ui(f, app))?;
 
-        if input_handler::handle_input(app)?
+        match handle_input(app)?
         {
-            continue;
-        }
-        else
-        {
-            return Ok(());
+            Some(Loop::Continue) => continue,
+            Some(Loop::Break) => break Ok(()),
+            None => (),
         }
     }
 }
