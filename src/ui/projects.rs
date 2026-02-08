@@ -34,17 +34,13 @@ pub fn ui(frame: &mut Frame, app: &App)
 
     let mut list_items: Vec<ListItem> = Vec::<ListItem>::new();
 
-    for project_name in app.project_list.keys()
+    for project in &app.project_list
     {
-        let item: String = format!(
-            "{: <20} : {:?}",
-            project_name,
-            app.project_list.get(project_name).unwrap().project_type
-        );
+        let item: String = format!("{: <20} : {:?}", project.name, project.project_type);
 
         list_items.push(ListItem::new(Line::from(Span::styled(
             item,
-            Style::default().fg(Color::White),
+            Style::default(),
         ))));
     }
 

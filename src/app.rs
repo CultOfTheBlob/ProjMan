@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum CurrentScreen
@@ -15,6 +15,7 @@ pub enum ProjectType
 #[derive(Debug)]
 pub struct Project
 {
+    pub name: String,
     pub path: PathBuf,
     pub project_type: ProjectType,
 }
@@ -23,7 +24,7 @@ pub struct Project
 pub struct App
 {
     pub current_screen: CurrentScreen,
-    pub project_list: HashMap<String, Project>,
+    pub project_list: Vec<Project>,
 }
 
 impl App
@@ -32,19 +33,13 @@ impl App
     {
         App {
             current_screen: CurrentScreen::Main,
-            project_list: HashMap::new(),
+            project_list: Vec::new(),
         }
     }
 
-    /**
-    Returns App identical to self but with a filled out project_list field.
-
-    The project_list field includes every item in the project_list input that
-    has a valid directory containing a .projman file.
-    */
-    pub fn projects(self, mut project_list: HashMap<String, Project>) -> App
+    pub fn projects(self, mut project_list: Vec<Project>) -> App
     {
-        project_list.retain(|_, project| -> bool {
+        project_list.retain(|project| -> bool {
             let path: PathBuf = PathBuf::from(&project.path);
             path.exists() && path.is_dir() && path.join(".projman").is_file()
         });
