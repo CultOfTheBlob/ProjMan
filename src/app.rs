@@ -1,23 +1,9 @@
-use std::path::PathBuf;
+use std::{io, path::PathBuf, process};
 
 #[derive(Debug)]
 pub enum CurrentScreen
 {
     Main,
-}
-
-#[derive(Debug)]
-pub enum ProjectType
-{
-    Test,
-}
-
-#[derive(Debug)]
-pub struct Project
-{
-    pub name: String,
-    pub path: PathBuf,
-    pub project_type: ProjectType,
 }
 
 #[derive(Debug)]
@@ -83,5 +69,46 @@ impl App
         {
             self.current_project_index -= 1
         }
+    }
+}
+
+#[derive(Debug)]
+pub enum ProjectType
+{
+    Test,
+}
+
+impl ProjectType
+{
+    fn run(&self, project: &Project) -> io::Result<()>
+    {
+        match self
+        {
+            ProjectType::Test =>
+            {
+                process::Command::new("kitty")
+                    .arg("--detach")
+                    .current_dir(&project.path)
+                    .spawn()?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct Project
+{
+    pub name: String,
+    pub path: PathBuf,
+    pub project_type: ProjectType,
+}
+
+impl Project
+{
+    pub fn run(&self) -> io::Result<()>
+    {
+        self.project_type.run(self)
     }
 }
