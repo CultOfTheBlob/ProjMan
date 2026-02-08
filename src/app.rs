@@ -25,6 +25,7 @@ pub struct App
 {
     pub current_screen: CurrentScreen,
     pub project_list: Vec<Project>,
+    current_project_index: usize,
 }
 
 impl App
@@ -34,6 +35,7 @@ impl App
         App {
             current_screen: CurrentScreen::Main,
             project_list: Vec::new(),
+            current_project_index: 0,
         }
     }
 
@@ -47,6 +49,39 @@ impl App
         App {
             project_list,
             ..self
+        }
+    }
+
+    pub fn get_current_project_index(&self) -> &usize
+    {
+        &self.current_project_index
+    }
+
+    pub fn increment_current_project(&mut self)
+    {
+        let project_list_len: usize = self.project_list.len();
+
+        if self.current_project_index >= project_list_len - 1
+        {
+            self.current_project_index = 0;
+        }
+        else
+        {
+            self.current_project_index += 1
+        }
+    }
+
+    pub fn decrement_current_project(&mut self)
+    {
+        let project_list_len: usize = self.project_list.len();
+
+        if self.current_project_index == 0
+        {
+            self.current_project_index = project_list_len - 1;
+        }
+        else
+        {
+            self.current_project_index -= 1
         }
     }
 }

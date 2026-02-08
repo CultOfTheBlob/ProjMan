@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Style, Styled},
     text::{Line, Span, Text},
     widgets::{Block, Borders, List, ListItem, Paragraph},
 };
@@ -44,6 +44,10 @@ pub fn ui(frame: &mut Frame, app: &App)
         ))));
     }
 
+    list_items[*app.get_current_project_index()] = list_items[*app.get_current_project_index()]
+        .clone()
+        .set_style(Style::default().bg(Color::White).fg(Color::Black));
+
     let list = List::new(list_items).block(list_block);
 
     frame.render_widget(list, chunks[1]);
@@ -51,7 +55,10 @@ pub fn ui(frame: &mut Frame, app: &App)
     let current_keys_hint = {
         match app.current_screen
         {
-            CurrentScreen::Main => Span::styled("(q) to quit", Style::default().fg(Color::Green)),
+            CurrentScreen::Main => Span::styled(
+                "(q) to quit / (Enter) to open",
+                Style::default().fg(Color::Green),
+            ),
         }
     };
 

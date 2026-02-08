@@ -2,7 +2,7 @@ use std::io;
 
 use ratatui::crossterm::event::{self, Event, KeyCode};
 
-use crate::app::{App, CurrentScreen};
+use crate::app::{App, CurrentScreen, ProjectType};
 
 #[derive(Debug)]
 pub enum Loop
@@ -24,9 +24,14 @@ pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
         {
             CurrentScreen::Main => match key.code
             {
-                KeyCode::Char('q') =>
+                KeyCode::Char('q') => return Ok(Some(Loop::Break)),
+
+                KeyCode::Up => app.decrement_current_project(),
+                KeyCode::Char('k') => app.decrement_current_project(),
+
+                KeyCode::Down => app.increment_current_project(),
+                KeyCode::Char('j') => app.increment_current_project(),
                 {
-                    return Ok(Some(Loop::Break));
                 }
 
                 _ => (),
