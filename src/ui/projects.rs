@@ -49,6 +49,7 @@ pub fn ui(frame: &mut Frame, app: &App)
         ))));
     }
 
+    if !app.project_list.is_empty()
     {
         let current_project: &Project = &app.project_list[*app.get_current_project_index()];
 
