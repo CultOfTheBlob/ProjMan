@@ -1,7 +1,11 @@
-#![allow(clippy::single_match)]
+use std::{
+    collections::HashMap,
+    fs::{File, create_dir_all, read_to_string},
+    io::{self, Write},
+    path::PathBuf,
+};
 
-use std::io;
-
+use directories::ProjectDirs;
 use ratatui::{
     Terminal,
     backend::{Backend, CrosstermBackend},
@@ -16,10 +20,37 @@ mod app;
 mod input_handler;
 mod ui;
 
-use crate::{app::App, ui::projects::ui};
+use crate::{
+    app::{App, Project, ProjectType},
+    input_handler::{Loop, handle_input},
+    ui::projects::ui,
+};
 
 fn main() -> color_eyre::Result<()>
 {
+    color_eyre::install()?;
+
+    let config: HashMap<String, String> = read_config_file()?;
+    for option in config.keys()
+    {
+        match option.as_str()
+        {
+            "projects_dir" =>
+            {
+                if config.get(option).unwrap().is_empty()
+                {
+                    println!(
+                        "Error: Failed to run projman please fill out projects_dir in .config/projman/config.toml"
+                    );
+
+                    return Ok(());
+                }
+            }
+
+            _ => println!("Warning: {option} is not a valid config option"),
+        }
+    }
+
     enable_raw_mode()?;
 
     let mut stderr: io::Stderr = io::stderr();
@@ -28,7 +59,36 @@ fn main() -> color_eyre::Result<()>
     let backend: CrosstermBackend<io::Stderr> = CrosstermBackend::new(stderr);
     let mut terminal: Terminal<CrosstermBackend<io::Stderr>> = Terminal::new(backend)?;
 
-    let mut app: App = App::new();
+    //---TMP
+    let project_list: Vec<Project> = vec![
+        Project {
+            name: String::from("TestProject1"),
+            path: std::path::PathBuf::from(format!(
+                "{}TestProject1/",
+                config.get("projects_dir").unwrap()
+            )),
+            project_type: ProjectType::Test,
+        },
+        Project {
+            name: String::from("TestProject2"),
+            path: std::path::PathBuf::from(format!(
+                "{}TestProject2/",
+                config.get("projects_dir").unwrap()
+            )),
+            project_type: ProjectType::Test,
+        },
+        Project {
+            name: String::from("TestProject3"),
+            path: std::path::PathBuf::from(format!(
+                "{}TestProject3/",
+                config.get("projects_dir").unwrap()
+            )),
+            project_type: ProjectType::Test,
+        },
+    ];
+    //---TMP
+
+    let mut app: App = App::new().projects(project_list);
     let res: io::Result<()> = run_app(&mut terminal, &mut app);
 
     disable_raw_mode()?;
@@ -65,4 +125,35 @@ where
             None => (),
         }
     }
+}
+
+fn read_config_file() -> io::Result<HashMap<String, String>>
+{
+    if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+    {
+        create_dir_all(proj_dirs.config_dir())?;
+
+        let config_path: PathBuf = proj_dirs.config_dir().join("config.toml");
+
+        if config_path.is_file()
+        {
+            let config: HashMap<String, String> =
+                toml::from_str(&read_to_string(config_path)?).map_err(io::Error::other)?;
+
+            return Ok(config);
+        }
+
+        let mut config_file: File = File::create(config_path)?;
+
+        let mut config: HashMap<String, String> = HashMap::new();
+        config.insert(String::from("projects_dir"), String::from(""));
+
+        let config_toml = toml::to_string_pretty(&config).map_err(io::Error::other)?;
+
+        config_file.write_all(config_toml.as_bytes())?;
+
+        return Ok(config);
+    }
+
+    Ok(HashMap::new())
 }
