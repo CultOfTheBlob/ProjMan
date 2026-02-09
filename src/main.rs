@@ -5,6 +5,7 @@ use std::{
     path::PathBuf,
 };
 
+use crossterm::style::Stylize;
 use directories::ProjectDirs;
 use ratatui::{
     Terminal,
@@ -33,21 +34,32 @@ fn main() -> color_eyre::Result<()>
     let config: HashMap<String, String> = read_config_file()?;
     for option in config.keys()
     {
-        match option.as_str()
+        match &option.as_str()
         {
-            "projects_dir" =>
+            &"projects_dir" =>
             {
-                if config.get(option).unwrap().is_empty()
+                let projects_dir: String = String::from(config.get(option).unwrap());
+
+                if projects_dir.is_empty()
+                    || !PathBuf::from(&projects_dir).is_dir()
+                    || !projects_dir.ends_with('/')
                 {
                     println!(
-                        "Error: Failed to run projman please fill out projects_dir in .config/projman/config.toml"
+                        "{}",
+                        "Error: Failed to run projman please make sure projects_dir \
+                        in .config/projman/config.toml is a valid directory \
+                        (Dont forget the trailing slash!!)"
+                            .red()
                     );
 
                     return Ok(());
                 }
             }
 
-            _ => println!("Warning: {option} is not a valid config option"),
+            _ => println!(
+                "{}",
+                format!("Warning: {option} is not a valid config option").yellow()
+            ),
         }
     }
 
