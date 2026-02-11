@@ -1,5 +1,7 @@
 use std::{io, path::PathBuf, process};
 
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug)]
 pub enum CurrentScreen
 {
@@ -82,7 +84,7 @@ impl App
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ProjectType
 {
     Test,
@@ -107,7 +109,7 @@ impl ProjectType
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Project
 {
     pub name: String,

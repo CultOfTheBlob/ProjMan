@@ -1,9 +1,11 @@
 use std::{
+    fs::{File, create_dir_all, read_to_string},
     io::{self},
     path::PathBuf,
 };
 
 use color_eyre::owo_colors::OwoColorize;
+use directories::ProjectDirs;
 use ratatui::{
     Terminal,
     backend::{Backend, CrosstermBackend},
@@ -20,7 +22,7 @@ mod input_handler;
 mod ui;
 
 use crate::{
-    app::{App, Project, ProjectType},
+    app::{App, Project},
     config::Config,
     input_handler::{Loop, handle_input},
     ui::projects::ui,
@@ -46,6 +48,30 @@ fn main() -> color_eyre::Result<()>
         return Ok(());
     }
 
+    let project_list: Vec<Project> = match ProjectDirs::from("", "", "projman")
+    {
+        Some(proj_dirs) =>
+        {
+            create_dir_all(proj_dirs.data_dir())?;
+
+            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+
+            if data_path.is_file()
+            {
+                let proj: Vec<Project> = serde_json::from_str(&read_to_string(&data_path)?)?;
+
+                proj
+            }
+            else
+            {
+                File::create(&data_path)?;
+
+                Vec::<Project>::new()
+            }
+        }
+        _ => Vec::<Project>::new(),
+    };
+
     enable_raw_mode()?;
 
     let mut stderr: io::Stderr = io::stderr();
@@ -53,26 +79,6 @@ fn main() -> color_eyre::Result<()>
 
     let backend: CrosstermBackend<io::Stderr> = CrosstermBackend::new(stderr);
     let mut terminal: Terminal<CrosstermBackend<io::Stderr>> = Terminal::new(backend)?;
-
-    //---TMP
-    let project_list: Vec<Project> = vec![
-        Project {
-            name: String::from("TestProject1"),
-            path: PathBuf::from(&config.general.projects_dir).join("TestProject1/"),
-            project_type: ProjectType::Test,
-        },
-        Project {
-            name: String::from("TestProject2"),
-            path: PathBuf::from(&config.general.projects_dir).join("TestProject2/"),
-            project_type: ProjectType::Test,
-        },
-        Project {
-            name: String::from("TestProject3"),
-            path: PathBuf::from(&config.general.projects_dir).join("TestProject3/"),
-            project_type: ProjectType::Test,
-        },
-    ];
-    //---TMP
 
     let mut app: App = App::new().projects(project_list);
     let res: io::Result<()> = run_app(&mut terminal, &mut app);
