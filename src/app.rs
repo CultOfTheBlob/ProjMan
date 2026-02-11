@@ -45,6 +45,11 @@ impl App
 
     pub fn increment_current_project(&mut self)
     {
+        if self.project_list.is_empty()
+        {
+            return;
+        }
+
         let project_list_len: usize = self.project_list.len();
 
         if self.current_project_index >= project_list_len - 1
@@ -53,12 +58,17 @@ impl App
         }
         else
         {
-            self.current_project_index += 1
+            self.current_project_index += 1;
         }
     }
 
     pub fn decrement_current_project(&mut self)
     {
+        if self.project_list.is_empty()
+        {
+            return;
+        }
+
         let project_list_len: usize = self.project_list.len();
 
         if self.current_project_index == 0
@@ -67,7 +77,7 @@ impl App
         }
         else
         {
-            self.current_project_index -= 1
+            self.current_project_index -= 1;
         }
     }
 }
