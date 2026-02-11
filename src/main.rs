@@ -1,12 +1,9 @@
 use std::{
-    collections::HashMap,
-    fs::{File, create_dir_all, read_to_string},
-    io::{self, Write},
+    io::{self},
     path::PathBuf,
 };
 
-use crossterm::style::Stylize;
-use directories::ProjectDirs;
+use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     Terminal,
     backend::{Backend, CrosstermBackend},
@@ -18,11 +15,13 @@ use ratatui::{
 };
 
 mod app;
+mod config;
 mod input_handler;
 mod ui;
 
 use crate::{
     app::{App, Project, ProjectType},
+    config::Config,
     input_handler::{Loop, handle_input},
     ui::projects::ui,
 };
@@ -31,36 +30,20 @@ fn main() -> color_eyre::Result<()>
 {
     color_eyre::install()?;
 
-    let config: HashMap<String, String> = read_config_file()?;
-    for option in config.keys()
+    let config = match Config::read_config_file()
     {
-        match &option.as_str()
+        Ok(config) => config,
+        Err(err) =>
         {
-            &"projects_dir" =>
-            {
-                let projects_dir: String = String::from(config.get(option).unwrap());
-
-                if projects_dir.is_empty()
-                    || !PathBuf::from(&projects_dir).is_dir()
-                    || !projects_dir.ends_with('/')
-                {
-                    println!(
-                        "{}",
-                        "Error: Failed to run projman please make sure projects_dir \
-                        in .config/projman/config.toml is a valid directory \
-                        (Dont forget the trailing slash!!)"
-                            .red()
-                    );
-
-                    return Ok(());
-                }
-            }
-
-            _ => println!(
-                "{}",
-                format!("Warning: {option} is not a valid config option").yellow()
-            ),
+            println!("{}", err.yellow());
+            return Ok(());
         }
+    };
+
+    if let Err(err) = config.is_valid()
+    {
+        println!("{:?}", err.red());
+        return Ok(());
     }
 
     enable_raw_mode()?;
@@ -75,26 +58,17 @@ fn main() -> color_eyre::Result<()>
     let project_list: Vec<Project> = vec![
         Project {
             name: String::from("TestProject1"),
-            path: std::path::PathBuf::from(format!(
-                "{}TestProject1/",
-                config.get("projects_dir").unwrap()
-            )),
+            path: PathBuf::from(&config.general.projects_dir).join("TestProject1/"),
             project_type: ProjectType::Test,
         },
         Project {
             name: String::from("TestProject2"),
-            path: std::path::PathBuf::from(format!(
-                "{}TestProject2/",
-                config.get("projects_dir").unwrap()
-            )),
+            path: PathBuf::from(&config.general.projects_dir).join("TestProject2/"),
             project_type: ProjectType::Test,
         },
         Project {
             name: String::from("TestProject3"),
-            path: std::path::PathBuf::from(format!(
-                "{}TestProject3/",
-                config.get("projects_dir").unwrap()
-            )),
+            path: PathBuf::from(&config.general.projects_dir).join("TestProject3/"),
             project_type: ProjectType::Test,
         },
     ];
@@ -137,35 +111,4 @@ where
             None => (),
         }
     }
-}
-
-fn read_config_file() -> io::Result<HashMap<String, String>>
-{
-    if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
-    {
-        create_dir_all(proj_dirs.config_dir())?;
-
-        let config_path: PathBuf = proj_dirs.config_dir().join("config.toml");
-
-        if config_path.is_file()
-        {
-            let config: HashMap<String, String> =
-                toml::from_str(&read_to_string(config_path)?).map_err(io::Error::other)?;
-
-            return Ok(config);
-        }
-
-        let mut config_file: File = File::create(config_path)?;
-
-        let mut config: HashMap<String, String> = HashMap::new();
-        config.insert(String::from("projects_dir"), String::from(""));
-
-        let config_toml = toml::to_string_pretty(&config).map_err(io::Error::other)?;
-
-        config_file.write_all(config_toml.as_bytes())?;
-
-        return Ok(config);
-    }
-
-    Ok(HashMap::new())
 }

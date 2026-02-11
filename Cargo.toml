@@ -8,4 +8,5 @@ color-eyre = "0.6.5"
 crossterm = "0.29.0"
 directories = "6.0.0"
 ratatui = "0.30.0"
+serde = { version = "1.0.228", features = ["derive"] }
 toml = "0.9.11"
