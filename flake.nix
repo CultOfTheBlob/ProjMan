@@ -60,7 +60,7 @@
         ${pkgs.onefetch}/bin/onefetch
 
         alias run="cargo run"
-        alias add="cargo run"
+        alias add="cargo add"
         alias build="nix build"
       '';
     };
