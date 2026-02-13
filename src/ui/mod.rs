@@ -1,4 +1,4 @@
-pub mod projects;
+pub mod main;
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
