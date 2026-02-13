@@ -25,7 +25,7 @@ use crate::{
     app::{App, Project},
     config::Config,
     input_handler::{Loop, handle_input},
-    ui::projects::ui,
+    ui::main::ui,
 };
 
 fn main() -> color_eyre::Result<()>
@@ -91,10 +91,7 @@ fn main() -> color_eyre::Result<()>
     )?;
     terminal.show_cursor()?;
 
-    if let Ok(()) = res
-    {
-    }
-    else if let Err(err) = res
+    if let Err(err) = res
     {
         println!("{err:?}");
     }
