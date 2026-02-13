@@ -1,9 +1,9 @@
+pub mod create;
 pub mod main;
 
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 
-#[allow(dead_code)]
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect
+fn centered_rect(percent_x: u16, percent_y: u16, rect: Rect) -> Rect
 {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
@@ -12,7 +12,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect
             Constraint::Percentage(percent_y),
             Constraint::Percentage((100 - percent_y) / 2),
         ])
-        .split(r);
+        .split(rect);
 
     Layout::default()
         .direction(Direction::Horizontal)

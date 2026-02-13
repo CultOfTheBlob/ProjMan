@@ -30,7 +30,7 @@ pub fn ui(frame: &mut Frame, app: &App)
     ))
     .block(title_block);
 
-    frame.render_widget(title, chunks[0]);
+    frame.render_widget(&title, chunks[0]);
 
     let list_block = Block::default()
         .borders(Borders::ALL)
@@ -66,13 +66,18 @@ pub fn ui(frame: &mut Frame, app: &App)
 
     let list = List::new(list_items).block(list_block);
 
-    frame.render_widget(list, chunks[1]);
+    frame.render_widget(&list, chunks[1]);
 
     let current_keys_hint = {
         match app.current_screen
         {
             CurrentScreen::Main => Span::styled(
-                "(q) to quit / (Enter) to open",
+                "(q) to quit / (Enter) to open / (a) to create new project",
+                Style::default().fg(Color::Green).italic(),
+            ),
+
+            CurrentScreen::Create => Span::styled(
+                "(q) to quit / (Esc) to return to projects",
                 Style::default().fg(Color::Green).italic(),
             ),
         }
@@ -84,5 +89,5 @@ pub fn ui(frame: &mut Frame, app: &App)
             .border_type(BorderType::Rounded),
     );
 
-    frame.render_widget(key_notes_footer, chunks[2]);
+    frame.render_widget(&key_notes_footer, chunks[2]);
 }

@@ -22,10 +22,10 @@ mod input_handler;
 mod ui;
 
 use crate::{
-    app::{App, Project},
+    app::{App, CurrentScreen, Project},
     config::Config,
     input_handler::{Loop, handle_input},
-    ui::main::ui,
+    ui::{create, main},
 };
 
 fn main() -> color_eyre::Result<()>
@@ -105,7 +105,18 @@ where
 {
     loop
     {
-        terminal.draw(|f| ui(f, app))?;
+        match app.current_screen
+        {
+            CurrentScreen::Main =>
+            {
+                terminal.draw(|f| main::ui(f, app))?;
+            }
+
+            CurrentScreen::Create =>
+            {
+                terminal.draw(|f| create::ui(f, app))?;
+            }
+        }
 
         match handle_input(app)?
         {

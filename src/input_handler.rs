@@ -26,6 +26,8 @@ pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
             {
                 KeyCode::Char('q') => return Ok(Some(Loop::Break)),
 
+                KeyCode::Char('a') => app.current_screen = CurrentScreen::Create,
+
                 KeyCode::Up => app.decrement_current_project(),
                 KeyCode::Char('k') => app.decrement_current_project(),
 
@@ -34,6 +36,52 @@ pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
 
                 KeyCode::Enter => app.project_list[*app.get_current_project_index()].run()?,
                 KeyCode::Char('l') => app.project_list[*app.get_current_project_index()].run()?,
+
+                _ => (),
+            },
+
+            CurrentScreen::Create => match key.code
+            {
+                KeyCode::Esc => app.current_screen = CurrentScreen::Main,
+
+                KeyCode::Char('l') => match app.current_tab
+                {
+                    Some(mut current_tab) =>
+                    {
+                        let tabs_len: usize = app.creation_menu_tabs.len();
+
+                        if current_tab >= tabs_len - 1
+                        {
+                            current_tab = 0;
+                        }
+                        else
+                        {
+                            current_tab += 1;
+                        }
+
+                        app.current_tab = Some(current_tab)
+                    }
+                    None => app.current_tab = Some(0),
+                },
+                KeyCode::Char('h') => match app.current_tab
+                {
+                    Some(mut current_tab) =>
+                    {
+                        let tabs_len: usize = app.creation_menu_tabs.len();
+
+                        if current_tab == 0
+                        {
+                            current_tab = tabs_len - 1;
+                        }
+                        else
+                        {
+                            current_tab -= 1;
+                        }
+
+                        app.current_tab = Some(current_tab)
+                    }
+                    None => app.current_tab = Some(0),
+                },
 
                 _ => (),
             },

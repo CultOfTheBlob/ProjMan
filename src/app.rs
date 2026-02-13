@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub enum CurrentScreen
 {
     Main,
+    Create,
 }
 
 #[derive(Debug)]
@@ -14,6 +15,8 @@ pub struct App
     pub current_screen: CurrentScreen,
     pub project_list: Vec<Project>,
     current_project_index: usize,
+    pub creation_menu_tabs: Vec<String>,
+    pub current_tab: Option<usize>,
 }
 
 impl App
@@ -24,6 +27,13 @@ impl App
             current_screen: CurrentScreen::Main,
             project_list: Vec::new(),
             current_project_index: 0,
+            creation_menu_tabs: vec![
+                String::from("Name"),
+                String::from("Git Repo"),
+                String::from("Path"),
+                String::from("Type"),
+            ],
+            current_tab: Some(0),
         }
     }
 
