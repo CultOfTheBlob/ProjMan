@@ -1,6 +1,6 @@
 use ratatui::{
     Frame,
-    style::Style,
+    style::{Style, Stylize},
     symbols,
     widgets::{Block, Tabs},
 };

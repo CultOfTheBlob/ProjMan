@@ -32,6 +32,7 @@ impl App
                 String::from("Git Repo"),
                 String::from("Path"),
                 String::from("Type"),
+                String::from("Finish"),
             ],
             current_tab: Some(0),
         }

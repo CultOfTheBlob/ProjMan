@@ -44,7 +44,7 @@ pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
             {
                 KeyCode::Esc => app.current_screen = CurrentScreen::Main,
 
-                KeyCode::Char('l') => match app.current_tab
+                KeyCode::Tab => match app.current_tab
                 {
                     Some(mut current_tab) =>
                     {
@@ -57,25 +57,6 @@ pub fn handle_input(app: &mut App) -> io::Result<Option<Loop>>
                         else
                         {
                             current_tab += 1;
-                        }
-
-                        app.current_tab = Some(current_tab)
-                    }
-                    None => app.current_tab = Some(0),
-                },
-                KeyCode::Char('h') => match app.current_tab
-                {
-                    Some(mut current_tab) =>
-                    {
-                        let tabs_len: usize = app.creation_menu_tabs.len();
-
-                        if current_tab == 0
-                        {
-                            current_tab = tabs_len - 1;
-                        }
-                        else
-                        {
-                            current_tab -= 1;
                         }
 
                         app.current_tab = Some(current_tab)
