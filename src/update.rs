@@ -14,11 +14,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(_) => (),
                 Err(err) => eprintln!("{}", err.red()),
             };
+
             Task::none()
         }
         Message::Selected(index) =>
         {
             state.selected_project = Some(index);
+
             Task::none()
         }
     }
