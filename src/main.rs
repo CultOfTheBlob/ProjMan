@@ -1,5 +1,5 @@
 use color_eyre::owo_colors::OwoColorize;
-use iced::{Theme, application};
+use iced::application;
 
 mod app_state;
 mod boot;
@@ -31,6 +31,6 @@ fn main() -> iced::Result
 
     application(boot, update, view)
         .title("ProjMan")
-        .theme(Theme::Nord)
+        .theme(config.theme.theme.convert_to_iced_theme())
         .run()
 }
