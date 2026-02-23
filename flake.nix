@@ -30,7 +30,9 @@
     packages."x86_64-linux".default = naerskLib.buildPackage {
       src = ./.;
 
-      buildInputs = [pkgs.glib];
+      buildInputs = with pkgs; [
+        glib
+      ];
       nativeBuildInputs = [pkgs.pkg-config];
     };
 
@@ -50,6 +52,14 @@
         cargo
         clippy
         glib
+      ];
+
+      LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+        pkgs.wayland
+        pkgs.libxkbcommon
+        pkgs.libGL
+        pkgs.mesa
+        pkgs.vulkan-loader
       ];
 
       nativeBuildInputs = [pkgs.pkg-config];

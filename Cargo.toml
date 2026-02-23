@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 color-eyre = "0.6.5"
+iced = "0.14.0"
 crossterm = "0.28.0"
 directories = "6.0.0"
 ratatui = "0.29.0"
