@@ -9,16 +9,10 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
-pub struct General
-{
-    pub projects_dir: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-#[serde(deny_unknown_fields)]
 pub struct Config
 {
     pub general: General,
+    pub theme: Theme,
 }
 
 impl Config
@@ -49,6 +43,9 @@ impl Config
                 general: General {
                     projects_dir: String::from(""),
                 },
+                theme: Theme {
+                    theme: IcedTheme::default(),
+                },
             };
 
             let config_toml = toml::to_string_pretty(&config).map_err(io::Error::other)?;
@@ -76,5 +73,80 @@ impl Config
         }
 
         Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub struct General
+{
+    pub projects_dir: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub struct Theme
+{
+    pub theme: IcedTheme,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+pub enum IcedTheme
+{
+    Light,
+    #[default]
+    Dark,
+    Dracula,
+    Nord,
+    SolarizedLight,
+    SolarizedDark,
+    GruvboxLight,
+    GruvboxDark,
+    CatppuccinLatte,
+    CatppuccinFrappe,
+    CatppuccinMacchiato,
+    CatppuccinMocha,
+    TokyoNight,
+    TokyoNightStorm,
+    TokyoNightLight,
+    KanagawaWave,
+    KanagawaDragon,
+    KanagawaLotus,
+    Moonfly,
+    Nightfly,
+    Oxocarbon,
+    Ferra,
+}
+
+impl IcedTheme
+{
+    pub fn convert_to_iced_theme(&self) -> iced::Theme
+    {
+        match self
+        {
+            IcedTheme::Dark => iced::Theme::Dark,
+            IcedTheme::Light => iced::Theme::Light,
+            IcedTheme::Dracula => iced::Theme::Dracula,
+            IcedTheme::Nord => iced::Theme::Nord,
+            IcedTheme::SolarizedLight => iced::Theme::SolarizedLight,
+            IcedTheme::SolarizedDark => iced::Theme::SolarizedDark,
+            IcedTheme::GruvboxLight => iced::Theme::GruvboxLight,
+            IcedTheme::GruvboxDark => iced::Theme::GruvboxDark,
+            IcedTheme::CatppuccinLatte => iced::Theme::CatppuccinLatte,
+            IcedTheme::CatppuccinFrappe => iced::Theme::CatppuccinFrappe,
+            IcedTheme::CatppuccinMacchiato => iced::Theme::CatppuccinMacchiato,
+            IcedTheme::CatppuccinMocha => iced::Theme::CatppuccinMocha,
+            IcedTheme::TokyoNight => iced::Theme::TokyoNight,
+            IcedTheme::TokyoNightStorm => iced::Theme::TokyoNightStorm,
+            IcedTheme::TokyoNightLight => iced::Theme::TokyoNightLight,
+            IcedTheme::KanagawaWave => iced::Theme::KanagawaWave,
+            IcedTheme::KanagawaDragon => iced::Theme::KanagawaDragon,
+            IcedTheme::KanagawaLotus => iced::Theme::KanagawaLotus,
+            IcedTheme::Moonfly => iced::Theme::Moonfly,
+            IcedTheme::Nightfly => iced::Theme::Nightfly,
+            IcedTheme::Oxocarbon => iced::Theme::Oxocarbon,
+            IcedTheme::Ferra => iced::Theme::Ferra,
+        }
     }
 }
