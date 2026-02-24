@@ -5,4 +5,7 @@ pub enum Message
 {
     Open(Project),
     Selected(usize),
+    Remove(usize),
+    Create,
+    Import,
 }

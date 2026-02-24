@@ -23,5 +23,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::Remove(_index) => Task::none(),
+
+        Message::Create => Task::none(),
+
+        Message::Import => Task::none(),
     }
 }
