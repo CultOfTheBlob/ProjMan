@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, create_dir_all, read_to_string, remove_file, write},
+    fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
     io::{self},
     path::PathBuf,
     process,
@@ -34,7 +34,11 @@ impl Default for AppState
 
 impl AppState
 {
-    pub fn remove_project(&mut self, index: usize) -> Result<(), std::io::Error>
+    pub fn remove_project(
+        &mut self,
+        index: usize,
+        remove_folder: bool,
+    ) -> Result<(), std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -51,6 +55,11 @@ impl AppState
             }
 
             remove_file(self.project_list[index].path.join(".projman"))?;
+
+            if remove_folder
+            {
+                remove_dir_all(&self.project_list[index].path)?;
+            }
 
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
@@ -70,7 +79,7 @@ impl AppState
         Ok(())
     }
 
-    pub fn add_project(&mut self, project: Project) -> Result<(), std::io::Error>
+    pub fn create_project(&mut self, project: Project) -> Result<(), std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
