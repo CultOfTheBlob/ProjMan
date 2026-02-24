@@ -1,7 +1,12 @@
+use std::path::PathBuf;
+
 use color_eyre::owo_colors::OwoColorize;
 use iced::Task;
 
-use crate::{app_state::AppState, message::Message};
+use crate::{
+    app_state::{AppState, Project},
+    message::Message,
+};
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
@@ -23,9 +28,45 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Remove(_index) => Task::none(),
+        Message::Remove(index) =>
+        {
+            match state.remove_project(index, false)
+            {
+                Ok(_) => (),
+                Err(err) => eprintln!("{}", err.red()),
+            }
 
-        Message::Create => Task::none(),
+            state.project_list = match AppState::create_project_list_from_json()
+            {
+                Ok(projects) => projects,
+                Err(err) => panic!("{}", err.to_string().red()),
+            };
+
+            state.selected_project = None;
+
+            Task::none()
+        }
+
+        Message::Create =>
+        {
+            match state.create_project(Project {
+                name: String::from("TestProject4"),
+                path: PathBuf::from("/home/blob/Projects/TestProject4/"),
+                project_type: crate::app_state::ProjectType::Test,
+            })
+            {
+                Ok(_) => (),
+                Err(err) => eprintln!("{}", err.red()),
+            }
+
+            state.project_list = match AppState::create_project_list_from_json()
+            {
+                Ok(projects) => projects,
+                Err(err) => panic!("{}", err.to_string().red()),
+            };
+
+            Task::none()
+        }
 
         Message::Import => Task::none(),
     }

@@ -1,6 +1,6 @@
 use std::{
-    fs::{File, create_dir_all, read_to_string},
-    io,
+    fs::{File, create_dir_all, read_to_string, remove_file, write},
+    io::{self},
     path::PathBuf,
     process,
 };
@@ -20,7 +20,7 @@ impl Default for AppState
 {
     fn default() -> Self
     {
-        let project_list: Vec<Project> = match AppState::create_project_list()
+        let project_list: Vec<Project> = match AppState::create_project_list_from_json()
         {
             Ok(projects) => projects,
             Err(err) => panic!("{}", err.to_string().red()),
@@ -34,37 +34,105 @@ impl Default for AppState
 
 impl AppState
 {
-    fn create_project_list() -> Result<Vec<Project>, std::io::Error>
+    pub fn remove_project(&mut self, index: usize) -> Result<(), std::io::Error>
     {
-        match ProjectDirs::from("", "", "projman")
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            Some(proj_dirs) =>
+            create_dir_all(proj_dirs.data_dir())?;
+
+            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+
+            if !data_path.is_file()
             {
-                create_dir_all(proj_dirs.data_dir())?;
-
-                let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
-
-                if data_path.is_file()
-                {
-                    let mut proj: Vec<Project> =
-                        serde_json::from_str(&read_to_string(&data_path)?)?;
-
-                    proj.retain(|project| -> bool {
-                        let path: PathBuf = PathBuf::from(&project.path);
-                        path.exists() && path.is_dir() && path.join(".projman").is_file()
-                    });
-
-                    Ok(proj)
-                }
-                else
-                {
-                    File::create(&data_path)?;
-
-                    Ok(Vec::<Project>::new())
-                }
+                return Err(std::io::Error::new(
+                    io::ErrorKind::NotADirectory,
+                    "Error: projects.json does not exist",
+                ));
             }
-            _ => Ok(Vec::<Project>::new()),
+
+            remove_file(self.project_list[index].path.join(".projman"))?;
+
+            let mut projects_json: Vec<Project> =
+                serde_json::from_str(&read_to_string(&data_path)?)?;
+
+            projects_json.remove(index);
+
+            write(
+                &data_path,
+                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
+            )?;
+
+            self.project_list.remove(index);
+
+            return Ok(());
         }
+
+        Ok(())
+    }
+
+    pub fn add_project(&mut self, project: Project) -> Result<(), std::io::Error>
+    {
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        {
+            create_dir_all(proj_dirs.data_dir())?;
+
+            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+
+            if !data_path.is_file()
+            {
+                return Err(std::io::Error::new(
+                    io::ErrorKind::NotADirectory,
+                    "Error: projects.json does not exist",
+                ));
+            }
+
+            create_dir_all(&project.path)?;
+            File::create_new(project.path.join(".projman"))?;
+
+            let mut projects_json: Vec<Project> =
+                serde_json::from_str(&read_to_string(&data_path)?)?;
+
+            projects_json.push(project);
+
+            write(
+                &data_path,
+                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
+            )?;
+
+            self.project_list = projects_json;
+
+            return Ok(());
+        }
+
+        Ok(())
+    }
+
+    pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
+    {
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        {
+            create_dir_all(proj_dirs.data_dir())?;
+
+            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+
+            if !data_path.is_file()
+            {
+                File::create(&data_path)?;
+
+                return Ok(Vec::<Project>::new());
+            }
+            let mut projects_json: Vec<Project> =
+                serde_json::from_str(&read_to_string(&data_path)?)?;
+
+            projects_json.retain(|project| -> bool {
+                let path: PathBuf = PathBuf::from(&project.path);
+                path.exists() && path.is_dir() && path.join(".projman").is_file()
+            });
+
+            return Ok(projects_json);
+        }
+
+        Ok(Vec::<Project>::new())
     }
 }
 
