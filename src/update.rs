@@ -36,12 +36,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Err(err) => eprintln!("{}", err.red()),
             }
 
-            state.project_list = match AppState::create_project_list_from_json()
-            {
-                Ok(projects) => projects,
-                Err(err) => panic!("{}", err.to_string().red()),
-            };
-
             state.selected_project = None;
 
             Task::none()
@@ -58,12 +52,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(_) => (),
                 Err(err) => eprintln!("{}", err.red()),
             }
-
-            state.project_list = match AppState::create_project_list_from_json()
-            {
-                Ok(projects) => projects,
-                Err(err) => panic!("{}", err.to_string().red()),
-            };
 
             Task::none()
         }
