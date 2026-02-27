@@ -10,10 +10,18 @@ use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
+pub enum Popup
+{
+    Remove(usize),
+}
+
+#[derive(Debug)]
 pub struct AppState
 {
     pub project_list: Vec<Project>,
     pub selected_project: Option<usize>,
+    pub pending: Option<Popup>,
+    pub delete_project_folder: bool,
 }
 
 impl Default for AppState
@@ -28,6 +36,8 @@ impl Default for AppState
         Self {
             project_list,
             selected_project: None,
+            pending: None,
+            delete_project_folder: false,
         }
     }
 }
@@ -137,6 +147,11 @@ impl AppState
                 let path: PathBuf = PathBuf::from(&project.path);
                 path.exists() && path.is_dir() && path.join(".projman").is_file()
             });
+
+            write(
+                &data_path,
+                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
+            )?;
 
             return Ok(projects_json);
         }
