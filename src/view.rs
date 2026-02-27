@@ -168,7 +168,7 @@ fn build_project_list_container(state: &AppState) -> Container<'_, Message>
             .height(Length::Fill)
             .padding(16)
             .style(|theme: &Theme| container::Style {
-                background: Some(Color(theme.extended_palette().background.weakest.color)),
+                background: Some(Color(theme.extended_palette().background.base.color)),
                 border: Border {
                     color: theme.extended_palette().background.strongest.color,
                     width: 1.0,
@@ -179,4 +179,8 @@ fn build_project_list_container(state: &AppState) -> Container<'_, Message>
             }),
     )
     .padding(12)
+    .style(|theme: &Theme| container::Style {
+        background: Some(Color(theme.extended_palette().background.weakest.color)),
+        ..Default::default()
+    })
 }
