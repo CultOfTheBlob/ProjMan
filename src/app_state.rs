@@ -144,6 +144,10 @@ impl AppState
 
             self.project_list = projects_json;
 
+            self.new_project = Project::default();
+            self.new_project.path =
+                PathBuf::from(&self.config.general.projects_dir).join(".projman");
+
             return Ok(());
         }
 
