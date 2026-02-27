@@ -1,11 +1,11 @@
-use color_eyre::owo_colors::OwoColorize;
-use iced::application;
-
 mod app_state;
 mod boot;
 mod message;
 mod update;
 mod view;
+
+use color_eyre::owo_colors::OwoColorize;
+use iced::application;
 
 mod config;
 
