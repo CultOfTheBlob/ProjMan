@@ -1,10 +1,8 @@
-use std::path::PathBuf;
-
 use color_eyre::owo_colors::OwoColorize;
 use iced::Task;
 
 use crate::{
-    app_state::{AppState, Popup, Project},
+    app_state::{AppState, Popup},
     message::Message,
 };
 
@@ -79,14 +77,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 return Task::none();
             }
 
-            match state.create_project(Project {
-                name: format!("TestProject{}", state.project_list.len() + 1),
-                path: PathBuf::from(format!(
-                    "/home/blob/Projects/TestProject{}/",
-                    state.project_list.len() + 1
-                )),
-                project_type: crate::app_state::ProjectType::Test,
-            })
+            match state.create_project()
             {
                 Ok(_) => (),
                 Err(err) => eprintln!("{}", err.red()),

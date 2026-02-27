@@ -1,6 +1,7 @@
 use std::{
     fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
     io::{self},
+    mem::take,
     path::PathBuf,
     process,
 };
@@ -22,9 +23,10 @@ pub struct AppState
 {
     pub config: Config,
     pub project_list: Vec<Project>,
+    pub new_project: Project,
+    pub delete_project_folder: bool,
     pub selected_project: Option<usize>,
     pub pending: Option<Popup>,
-    pub delete_project_folder: bool,
 }
 
 impl Default for AppState
@@ -40,9 +42,10 @@ impl Default for AppState
         Self {
             config: Config::default(),
             project_list,
+            new_project: Project::default(),
+            delete_project_folder: false,
             selected_project: None,
             pending: None,
-            delete_project_folder: false,
         }
     }
 }
@@ -57,6 +60,10 @@ impl AppState
     pub fn apply_config(self) -> Self
     {
         Self {
+            new_project: Project {
+                path: PathBuf::from(&self.config.general.projects_dir).join(&self.new_project.name),
+                ..self.new_project
+            },
             delete_project_folder: self.config.general.delete_project_folder,
             ..self
         }
@@ -107,7 +114,7 @@ impl AppState
         Ok(())
     }
 
-    pub fn create_project(&mut self, project: Project) -> Result<(), std::io::Error>
+    pub fn create_project(&mut self) -> Result<(), std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -123,13 +130,13 @@ impl AppState
                 ));
             }
 
-            create_dir_all(&project.path)?;
-            File::create_new(project.path.join(".projman"))?;
+            create_dir_all(&self.new_project.path)?;
+            File::create_new(self.new_project.path.join(".projman"))?;
 
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
 
-            projects_json.push(project);
+            projects_json.push(take(&mut self.new_project));
 
             write(
                 &data_path,
@@ -178,9 +185,10 @@ impl AppState
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum ProjectType
 {
+    #[default]
     Test,
 }
 
@@ -209,6 +217,18 @@ pub struct Project
     pub name: String,
     pub path: PathBuf,
     pub project_type: ProjectType,
+}
+
+impl Default for Project
+{
+    fn default() -> Self
+    {
+        Self {
+            name: String::from("NewProject"),
+            path: PathBuf::from(""),
+            project_type: ProjectType::default(),
+        }
+    }
 }
 
 impl Project
