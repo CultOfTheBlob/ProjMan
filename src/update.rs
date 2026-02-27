@@ -54,14 +54,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             state.selected_project = None;
             state.pending = None;
-            state.delete_project_folder = false;
+            state.delete_project_folder = state.config.general.delete_project_folder;
 
             Task::none()
         }
         Message::CancelRemove =>
         {
             state.pending = None;
-            state.delete_project_folder = false;
+            state.delete_project_folder = state.config.general.delete_project_folder;
 
             Task::none()
         }

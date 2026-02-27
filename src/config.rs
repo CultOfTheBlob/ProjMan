@@ -42,6 +42,7 @@ impl Config
             let config: Config = Config {
                 general: General {
                     projects_dir: String::from(""),
+                    delete_project_folder: false,
                 },
                 theme: Theme {
                     theme: IcedTheme::default(),
@@ -81,6 +82,7 @@ impl Config
 pub struct General
 {
     pub projects_dir: String,
+    pub delete_project_folder: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

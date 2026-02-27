@@ -9,6 +9,8 @@ use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
+use crate::config::Config;
+
 #[derive(Debug)]
 pub enum Popup
 {
@@ -18,6 +20,7 @@ pub enum Popup
 #[derive(Debug)]
 pub struct AppState
 {
+    pub config: Config,
     pub project_list: Vec<Project>,
     pub selected_project: Option<usize>,
     pub pending: Option<Popup>,
@@ -33,7 +36,9 @@ impl Default for AppState
             Ok(projects) => projects,
             Err(err) => panic!("{}", err.to_string().red()),
         };
+
         Self {
+            config: Config::default(),
             project_list,
             selected_project: None,
             pending: None,
@@ -44,6 +49,19 @@ impl Default for AppState
 
 impl AppState
 {
+    pub fn with_config(self, config: Config) -> Self
+    {
+        AppState { config, ..self }
+    }
+
+    pub fn apply_config(self) -> Self
+    {
+        Self {
+            delete_project_folder: self.config.general.delete_project_folder,
+            ..self
+        }
+    }
+
     pub fn remove_project(
         &mut self,
         index: usize,
