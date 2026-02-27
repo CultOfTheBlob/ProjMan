@@ -5,7 +5,7 @@ pub enum Message
 {
     Open(Project),
     Selected(usize),
-    Remove(usize),
+    Remove,
     RemoveProjectFolder(bool),
     ConfirmRemove,
     CancelRemove,

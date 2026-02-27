@@ -12,6 +12,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
     {
         Message::Open(project) =>
         {
+            if state.pending.is_some()
+            {
+                return Task::none();
+            }
+
             match project.run()
             {
                 Ok(_) => (),
@@ -33,17 +38,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             Task::none()
         }
 
-        Message::Remove(project_index) =>
+        Message::Remove =>
         {
-            state.pending = Some(Popup::Remove(project_index));
+            state.pending = Some(Popup::Remove);
 
             Task::none()
         }
         Message::ConfirmRemove =>
         {
-            if let Some(Popup::Remove(project_index)) = state.pending
+            if let Some(Popup::Remove) = state.pending
             {
-                match state.remove_project(project_index, state.delete_project_folder)
+                match state.remove_project()
                 {
                     Ok(_) => (),
                     Err(err) => eprintln!("{}", err.red()),

@@ -15,7 +15,7 @@ use crate::config::Config;
 #[derive(Debug)]
 pub enum Popup
 {
-    Remove(usize),
+    Remove,
 }
 
 #[derive(Debug)]
@@ -24,8 +24,8 @@ pub struct AppState
     pub config: Config,
     pub project_list: Vec<Project>,
     pub new_project: Project,
-    pub delete_project_folder: bool,
     pub selected_project: Option<usize>,
+    pub delete_project_folder: bool,
     pub pending: Option<Popup>,
 }
 
@@ -69,11 +69,7 @@ impl AppState
         }
     }
 
-    pub fn remove_project(
-        &mut self,
-        index: usize,
-        remove_folder: bool,
-    ) -> Result<(), std::io::Error>
+    pub fn remove_project(&mut self) -> Result<(), std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -89,24 +85,27 @@ impl AppState
                 ));
             }
 
-            remove_file(self.project_list[index].path.join(".projman"))?;
-
-            if remove_folder
+            if let Some(index) = self.selected_project
             {
-                remove_dir_all(&self.project_list[index].path)?;
+                remove_file(self.project_list[index].path.join(".projman"))?;
+
+                if self.delete_project_folder
+                {
+                    remove_dir_all(&self.project_list[index].path)?;
+                }
+
+                let mut projects_json: Vec<Project> =
+                    serde_json::from_str(&read_to_string(&data_path)?)?;
+
+                projects_json.remove(index);
+
+                write(
+                    &data_path,
+                    serde_json::to_string_pretty(&projects_json)?.as_bytes(),
+                )?;
+
+                self.project_list.remove(index);
             }
-
-            let mut projects_json: Vec<Project> =
-                serde_json::from_str(&read_to_string(&data_path)?)?;
-
-            projects_json.remove(index);
-
-            write(
-                &data_path,
-                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
-            )?;
-
-            self.project_list.remove(index);
 
             return Ok(());
         }

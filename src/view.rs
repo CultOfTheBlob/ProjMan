@@ -93,12 +93,12 @@ fn build_top_bar_container(state: &AppState) -> Container<'_, Message>
     ]
     .spacing(12);
 
-    if let Some(index) = state.selected_project
+    if state.selected_project.is_some()
     {
         top_bar_content = top_bar_content.push(
             button("Remove")
                 .style(button::primary)
-                .on_press(Message::Remove(index)),
+                .on_press(Message::Remove),
         );
     }
 
