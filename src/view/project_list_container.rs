@@ -8,7 +8,7 @@ use crate::{app_state::AppState, message::Message};
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
-    let mut project_list_content = column![].spacing(4);
+    let mut project_list_content = column![].width(Length::Fill).spacing(4);
 
     for (index, project) in state.project_list.iter().enumerate()
     {
