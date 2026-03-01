@@ -88,8 +88,6 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 ..Default::default()
             }),
         container(popup_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
             .center_x(Length::Fill)
             .center_y(Length::Fill),
     ]
