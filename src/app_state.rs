@@ -1,4 +1,5 @@
 use std::{
+    fmt::{self, Display},
     fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
     io::{self},
     mem::replace,
@@ -8,6 +9,7 @@ use std::{
 
 use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
+use iced::widget::combo_box;
 use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
@@ -16,6 +18,7 @@ use crate::config::Config;
 pub enum Popup
 {
     Remove,
+    Create,
 }
 
 #[derive(Debug)]
@@ -24,6 +27,8 @@ pub struct AppState
     pub config: Config,
     pub project_list: Vec<Project>,
     pub new_project: Project,
+    pub new_project_path_changed: bool,
+    pub project_types: combo_box::State<ProjectType>,
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
@@ -43,7 +48,9 @@ impl Default for AppState
             config: Config::default(),
             project_list,
             new_project: Project::default(&Config::default()),
+            project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
             delete_project_folder: false,
+            new_project_path_changed: false,
             selected_project: None,
             pending: None,
         }
@@ -190,16 +197,18 @@ impl AppState
 pub enum ProjectType
 {
     #[default]
-    Test,
+    Base,
 }
 
 impl ProjectType
 {
+    const ALL: [ProjectType; 1] = [ProjectType::Base];
+
     fn run(&self, project: &Project) -> io::Result<()>
     {
         match self
         {
-            ProjectType::Test =>
+            ProjectType::Base =>
             {
                 process::Command::new("kitty")
                     .arg("--detach")
@@ -209,6 +218,21 @@ impl ProjectType
         }
 
         Ok(())
+    }
+}
+
+impl Display for ProjectType
+{
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
+    {
+        write!(
+            formatter,
+            "{}",
+            match self
+            {
+                ProjectType::Base => "Base",
+            }
+        )
     }
 }
 

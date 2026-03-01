@@ -4,11 +4,14 @@ use iced::{
     widget::{Container, button, checkbox, column, container, row, stack, text},
 };
 
-use crate::{app_state::AppState, message::Message};
+use crate::{
+    app_state::{AppState, Popup},
+    message::Message,
+};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
-    if state.pending.is_none()
+    if !matches!(state.pending, Some(Popup::Remove))
     {
         return content;
     }
@@ -18,7 +21,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
             text("Are you sure you want to remove this project?"),
             checkbox(state.delete_project_folder)
                 .label("Also remove project folder")
-                .on_toggle(Message::RemoveProjectFolder),
+                .on_toggle(Message::ToggleRemoveProjectFolder),
             row![
                 button("Cancel")
                     .style(button::secondary)
