@@ -251,6 +251,41 @@ impl Project
         self.project_type.run(self)
     }
 
+    pub fn path_is_valid(&self) -> (bool, String)
+    {
+        if !self.path.read_dir().iter().collect::<Vec<_>>().is_empty()
+        {
+            return (
+                false,
+                "This path already exists and isnt empty!".to_string(),
+            );
+        }
+
+        if let Some(path) = &self.path.parent()
+        {
+            if File::create_new(path.join("tmp")).is_err()
+            {
+                return (
+                    false,
+                    "Cannot create project in this directory!".to_string(),
+                );
+            }
+
+            if remove_file(path.join("tmp")).is_err()
+            {
+                return (
+                    false,
+                    format!(
+                        "Cannot validate path! (useless .tmp file created at {:?})",
+                        path
+                    ),
+                );
+            };
+        }
+
+        (true, String::new())
+    }
+
     pub fn default(config: &Config) -> Self
     {
         let name: &str = "NewProject";
