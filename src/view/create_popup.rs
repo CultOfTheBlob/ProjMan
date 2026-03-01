@@ -45,8 +45,33 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ))
             .padding(12),
             container(
-                text_input("Path...", &state.new_project.path.to_string_lossy())
-                    .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                column![
+                    text_input("Path...", &state.new_project.path.to_string_lossy())
+                        .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                        .style(|theme: &Theme, status| {
+                            let mut style = text_input::default(theme, status);
+
+                            if !state.new_project.path_is_valid().0
+                            {
+                                style.border.color = theme.extended_palette().danger.base.color
+                            }
+
+                            style
+                        }),
+                    text(state.new_project.path_is_valid().1)
+                        .height(
+                            if state.new_project.path_is_valid().0
+                            {
+                                0.into()
+                            }
+                            else
+                            {
+                                Length::Shrink
+                            }
+                        )
+                        .style(|theme: &Theme| text::danger(theme))
+                ]
+                .spacing(2)
             )
             .padding(12),
             row![
@@ -54,7 +79,17 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .style(button::secondary)
                     .on_press(Message::CancelCreate),
                 button("Confirm")
-                    .style(button::primary)
+                    .style(|theme: &Theme, status| {
+                        let mut style = button::primary(theme, status);
+
+                        if !state.new_project.path_is_valid().0
+                        {
+                            style.background =
+                                Some(Color(theme.extended_palette().background.weak.color))
+                        }
+
+                        style
+                    })
                     .on_press(Message::ConfirmCreate)
             ]
             .padding(12)

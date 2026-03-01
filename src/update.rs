@@ -92,6 +92,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ConfirmCreate =>
         {
+            if !state.new_project.path_is_valid().0
+            {
+                return Task::none();
+            }
+
             match state.create_project()
             {
                 Ok(_) => (),
