@@ -104,7 +104,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             }
 
             state.new_project = Project::default(&state.config);
-            state.selected_project = Some(state.project_list.len() + 1);
+            state.selected_project = Some(state.project_list.len() - 1);
             state.pending = None;
             state.new_project_path_changed = false;
 
