@@ -8,7 +8,7 @@ use crate::{app_state::AppState, message::Message};
 
 pub fn view(state: &AppState) -> Element<'_, Message>
 {
-    let content = container("").into();
+    let content = container("").width(0).height(0).into();
 
     let content = top_bar_container::build(state, project_list_container::build(state, content));
 
