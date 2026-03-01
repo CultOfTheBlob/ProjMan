@@ -1,7 +1,7 @@
 use std::{
     fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
     io::{self},
-    mem::take,
+    mem::replace,
     path::PathBuf,
     process,
 };
@@ -42,7 +42,7 @@ impl Default for AppState
         Self {
             config: Config::default(),
             project_list,
-            new_project: Project::default(),
+            new_project: Project::default(&Config::default()),
             delete_project_folder: false,
             selected_project: None,
             pending: None,
@@ -60,10 +60,7 @@ impl AppState
     pub fn apply_config(self) -> Self
     {
         Self {
-            new_project: Project {
-                path: PathBuf::from(&self.config.general.projects_dir).join(&self.new_project.name),
-                ..self.new_project
-            },
+            new_project: Project::default(&self.config),
             delete_project_folder: self.config.general.delete_project_folder,
             ..self
         }
@@ -135,7 +132,10 @@ impl AppState
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
 
-            projects_json.push(take(&mut self.new_project));
+            projects_json.push(replace(
+                &mut self.new_project,
+                Project::default(&self.config),
+            ));
 
             write(
                 &data_path,
@@ -144,9 +144,7 @@ impl AppState
 
             self.project_list = projects_json;
 
-            self.new_project = Project::default();
-            self.new_project.path =
-                PathBuf::from(&self.config.general.projects_dir).join(".projman");
+            self.new_project = Project::default(&self.config);
 
             return Ok(());
         }
@@ -222,22 +220,21 @@ pub struct Project
     pub project_type: ProjectType,
 }
 
-impl Default for Project
-{
-    fn default() -> Self
-    {
-        Self {
-            name: String::from("NewProject"),
-            path: PathBuf::from(""),
-            project_type: ProjectType::default(),
-        }
-    }
-}
-
 impl Project
 {
     pub fn run(&self) -> io::Result<()>
     {
         self.project_type.run(self)
+    }
+
+    pub fn default(config: &Config) -> Self
+    {
+        let name: &str = "NewProject";
+
+        Self {
+            name: String::from(name),
+            path: PathBuf::from(&config.general.projects_dir).join(name),
+            project_type: ProjectType::default(),
+        }
     }
 }
