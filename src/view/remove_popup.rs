@@ -9,7 +9,7 @@ use crate::{
     message::Message,
 };
 
-pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
     if !matches!(state.pending, Some(Popup::Remove))
     {
@@ -20,6 +20,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         column![
             text("Are you sure you want to remove this project?"),
             checkbox(state.delete_project_folder)
+                .style(checkbox::danger)
                 .label("Also remove project folder")
                 .on_toggle(Message::ToggleRemoveProjectFolder),
             row![
@@ -27,7 +28,16 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                     .style(button::secondary)
                     .on_press(Message::CancelRemove),
                 button("Confirm")
-                    .style(button::primary)
+                    .style(|theme: &Theme, status| {
+                        if state.delete_project_folder
+                        {
+                            button::danger(theme, status)
+                        }
+                        else
+                        {
+                            button::primary(theme, status)
+                        }
+                    })
                     .on_press(Message::ConfirmRemove)
             ]
             .spacing(256)
