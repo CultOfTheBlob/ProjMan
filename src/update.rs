@@ -4,8 +4,11 @@ use color_eyre::owo_colors::OwoColorize;
 use iced::Task;
 
 use crate::{
-    app_state::{AppState, Popup, Project},
     message::Message,
+    state::{
+        app_state::{AppState, Popup},
+        project::Project,
+    },
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>

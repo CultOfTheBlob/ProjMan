@@ -1,15 +1,13 @@
-mod app_state;
 mod boot;
 mod message;
+mod state;
 mod update;
 mod view;
 
 use color_eyre::owo_colors::OwoColorize;
 use iced::application;
 
-mod config;
-
-use crate::{boot::boot, config::Config, update::update, view::view};
+use crate::{boot::boot, state::config::Config, update::update, view::view};
 
 fn main() -> iced::Result
 {

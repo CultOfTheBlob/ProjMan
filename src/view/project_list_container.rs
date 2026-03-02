@@ -4,7 +4,7 @@ use iced::{
     widget::{column, container, mouse_area, row, scrollable, text},
 };
 
-use crate::{app_state::AppState, message::Message};
+use crate::{message::Message, state::app_state::AppState};
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {

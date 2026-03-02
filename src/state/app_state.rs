@@ -1,21 +1,15 @@
 use std::{
-    fmt::{self, Display},
-    fs::{
-        File, create_dir, create_dir_all, read_dir, read_to_string, remove_dir, remove_dir_all,
-        remove_file, write,
-    },
+    fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
     io::{self},
     mem::replace,
     path::PathBuf,
-    process,
 };
 
 use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
 use iced::widget::combo_box;
-use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
+use crate::state::{config::Config, project::Project, project_type::ProjectType};
 
 #[derive(Debug)]
 pub enum Popup
@@ -193,131 +187,5 @@ impl AppState
         }
 
         Ok(Vec::<Project>::new())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub enum ProjectType
-{
-    #[default]
-    Base,
-}
-
-impl ProjectType
-{
-    const ALL: [ProjectType; 1] = [ProjectType::Base];
-
-    fn run(&self, project: &Project) -> io::Result<()>
-    {
-        match self
-        {
-            ProjectType::Base =>
-            {
-                process::Command::new("kitty")
-                    .arg("--detach")
-                    .current_dir(&project.path)
-                    .spawn()?;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-impl Display for ProjectType
-{
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
-    {
-        write!(
-            formatter,
-            "{}",
-            match self
-            {
-                ProjectType::Base => "Base",
-            }
-        )
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Project
-{
-    pub name: String,
-    pub path: PathBuf,
-    pub project_type: ProjectType,
-}
-
-impl Project
-{
-    pub fn run(&self) -> io::Result<()>
-    {
-        self.project_type.run(self)
-    }
-
-    pub fn path_is_valid(&self, projects_dir: &str) -> (bool, String)
-    {
-        let error_message: &str = "Cannot create project in this directory!\n";
-
-        if !self.path.starts_with(projects_dir)
-        {
-            return (false, format!("{error_message}(not in projects_dir)"));
-        }
-
-        if !self.path.has_root()
-        {
-            return (false, format!("{error_message}(missing root slash)"));
-        }
-
-        if self.path.exists()
-        {
-            match read_dir(&self.path)
-            {
-                Ok(mut entries) =>
-                {
-                    if entries.next().is_some()
-                    {
-                        return (
-                            false,
-                            format!("{error_message}(dir exists and isnt empty)").to_string(),
-                        );
-                    }
-                }
-                Err(_) =>
-                {
-                    return (
-                        false,
-                        format!("{error_message}(could not validate dir)").to_string(),
-                    );
-                }
-            }
-
-            return (true, String::new());
-        }
-
-        match create_dir(&self.path)
-        {
-            Ok(_) =>
-            {
-                if remove_dir(&self.path).is_err()
-                {
-                    return (
-                        false,
-                        format!("{error_message}(could not validate dir)").to_string(),
-                    );
-                }
-                (true, String::new())
-            }
-            Err(_) => (false, format!("{error_message}(permission denied)")),
-        }
-    }
-    pub fn default(config: &Config) -> Self
-    {
-        let name: &str = "NewProject";
-
-        Self {
-            name: String::from(name),
-            path: PathBuf::from(&config.general.projects_dir).join(name),
-            project_type: ProjectType::default(),
-        }
     }
 }

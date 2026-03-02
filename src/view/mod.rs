@@ -5,7 +5,7 @@ mod top_bar_container;
 
 use iced::{Element, widget::container};
 
-use crate::{app_state::AppState, message::Message};
+use crate::{message::Message, state::app_state::AppState};
 
 pub fn view(state: &AppState) -> Element<'_, Message>
 {

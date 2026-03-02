@@ -1,7 +1,10 @@
 use color_eyre::owo_colors::OwoColorize;
 use iced::Task;
 
-use crate::{app_state::AppState, config::Config, message::Message};
+use crate::{
+    message::Message,
+    state::{app_state::AppState, config::Config},
+};
 
 pub fn boot() -> (AppState, Task<Message>)
 {

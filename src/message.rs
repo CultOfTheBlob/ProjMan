@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::app_state::{Project, ProjectType};
+use crate::state::{project::Project, project_type::ProjectType};
 
 #[derive(Debug, Clone)]
 pub enum Message

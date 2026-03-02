@@ -5,8 +5,8 @@ use iced::{
 };
 
 use crate::{
-    app_state::{AppState, Popup},
     message::Message,
+    state::app_state::{AppState, Popup},
 };
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
