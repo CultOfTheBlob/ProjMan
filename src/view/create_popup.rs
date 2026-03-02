@@ -33,56 +33,69 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     ..Default::default()
                 }),
             container(
-                text_input("Name...", &state.new_project.name)
-                    .on_input(Message::ChangeNewProjectName)
+                column![
+                    text("Project Name:"),
+                    text_input("", &state.new_project.name).on_input(Message::ChangeNewProjectName)
+                ]
+                .spacing(4)
             )
-            .padding(12),
-            container(combo_box(
-                &state.project_types,
-                "Select project type...",
-                Some(&state.new_project.project_type),
-                Message::ChangeNewProjectType
-            ))
             .padding(12),
             container(
                 column![
-                    text_input("Path...", &state.new_project.path.to_string_lossy())
-                        .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
-                        .style(|theme: &Theme, status| {
-                            let mut style = text_input::default(theme, status);
+                    text("Project Type:"),
+                    combo_box(
+                        &state.project_types,
+                        "",
+                        Some(&state.new_project.project_type),
+                        Message::ChangeNewProjectType
+                    )
+                ]
+                .spacing(4)
+            )
+            .padding(12),
+            container(
+                column![
+                    text("Project Path:"),
+                    column![
+                        text_input("", &state.new_project.path.to_string_lossy())
+                            .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                            .style(|theme: &Theme, status| {
+                                let mut style = text_input::default(theme, status);
 
-                            if !state
+                                if !state
+                                    .new_project
+                                    .path_is_valid(&state.config.general.projects_dir)
+                                    .0
+                                {
+                                    style.border.color = theme.extended_palette().danger.base.color
+                                }
+
+                                style
+                            }),
+                        text(
+                            state
+                                .new_project
+                                .path_is_valid(&state.config.general.projects_dir)
+                                .1
+                        )
+                        .height(
+                            if state
                                 .new_project
                                 .path_is_valid(&state.config.general.projects_dir)
                                 .0
                             {
-                                style.border.color = theme.extended_palette().danger.base.color
+                                0.into()
                             }
-
-                            style
-                        }),
-                    text(
-                        state
-                            .new_project
-                            .path_is_valid(&state.config.general.projects_dir)
-                            .1
-                    )
-                    .height(
-                        if state
-                            .new_project
-                            .path_is_valid(&state.config.general.projects_dir)
-                            .0
-                        {
-                            0.into()
-                        }
-                        else
-                        {
-                            Length::Shrink
-                        }
-                    )
-                    .style(|theme: &Theme| text::danger(theme))
+                            else
+                            {
+                                Length::Shrink
+                            }
+                        )
+                        .style(|theme: &Theme| text::danger(theme))
+                    ]
+                    .spacing(2)
                 ]
-                .spacing(2)
+                .spacing(4)
             )
             .padding(12),
             row![
