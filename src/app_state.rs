@@ -1,6 +1,9 @@
 use std::{
     fmt::{self, Display},
-    fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
+    fs::{
+        File, create_dir, create_dir_all, read_dir, read_to_string, remove_dir, remove_dir_all,
+        remove_file, write,
+    },
     io::{self},
     mem::replace,
     path::PathBuf,
@@ -251,41 +254,62 @@ impl Project
         self.project_type.run(self)
     }
 
-    pub fn path_is_valid(&self) -> (bool, String)
+    pub fn path_is_valid(&self, projects_dir: &str) -> (bool, String)
     {
-        if !self.path.read_dir().iter().collect::<Vec<_>>().is_empty()
+        let error_message: &str = "Cannot create project in this directory!\n";
+
+        if !self.path.starts_with(projects_dir)
         {
-            return (
-                false,
-                "This path already exists and isnt empty!".to_string(),
-            );
+            return (false, format!("{error_message}(not in projects_dir)"));
         }
 
-        if let Some(path) = &self.path.parent()
+        if !self.path.has_root()
         {
-            if File::create_new(path.join("tmp")).is_err()
+            return (false, format!("{error_message}(missing root slash)"));
+        }
+
+        if self.path.exists()
+        {
+            match read_dir(&self.path)
             {
-                return (
-                    false,
-                    "Cannot create project in this directory!".to_string(),
-                );
+                Ok(mut entries) =>
+                {
+                    if entries.next().is_some()
+                    {
+                        return (
+                            false,
+                            format!("{error_message}(dir exists and isnt empty)").to_string(),
+                        );
+                    }
+                }
+                Err(_) =>
+                {
+                    return (
+                        false,
+                        format!("{error_message}(could not validate dir)").to_string(),
+                    );
+                }
             }
 
-            if remove_file(path.join("tmp")).is_err()
-            {
-                return (
-                    false,
-                    format!(
-                        "Cannot validate path! (useless .tmp file created at {:?})",
-                        path
-                    ),
-                );
-            };
+            return (true, String::new());
         }
 
-        (true, String::new())
+        match create_dir(&self.path)
+        {
+            Ok(_) =>
+            {
+                if remove_dir(&self.path).is_err()
+                {
+                    return (
+                        false,
+                        format!("{error_message}(could not validate dir)").to_string(),
+                    );
+                }
+                (true, String::new())
+            }
+            Err(_) => (false, format!("{error_message}(permission denied)")),
+        }
     }
-
     pub fn default(config: &Config) -> Self
     {
         let name: &str = "NewProject";

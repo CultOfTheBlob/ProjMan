@@ -51,25 +51,36 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         .style(|theme: &Theme, status| {
                             let mut style = text_input::default(theme, status);
 
-                            if !state.new_project.path_is_valid().0
+                            if !state
+                                .new_project
+                                .path_is_valid(&state.config.general.projects_dir)
+                                .0
                             {
                                 style.border.color = theme.extended_palette().danger.base.color
                             }
 
                             style
                         }),
-                    text(state.new_project.path_is_valid().1)
-                        .height(
-                            if state.new_project.path_is_valid().0
-                            {
-                                0.into()
-                            }
-                            else
-                            {
-                                Length::Shrink
-                            }
-                        )
-                        .style(|theme: &Theme| text::danger(theme))
+                    text(
+                        state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
+                            .1
+                    )
+                    .height(
+                        if state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
+                            .0
+                        {
+                            0.into()
+                        }
+                        else
+                        {
+                            Length::Shrink
+                        }
+                    )
+                    .style(|theme: &Theme| text::danger(theme))
                 ]
                 .spacing(2)
             )
@@ -82,7 +93,10 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .style(|theme: &Theme, status| {
                         let mut style = button::primary(theme, status);
 
-                        if !state.new_project.path_is_valid().0
+                        if !state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
+                            .0
                         {
                             style.background =
                                 Some(Color(theme.extended_palette().background.weak.color))

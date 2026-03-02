@@ -92,7 +92,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ConfirmCreate =>
         {
-            if !state.new_project.path_is_valid().0
+            if !state
+                .new_project
+                .path_is_valid(&state.config.general.projects_dir)
+                .0
             {
                 return Task::none();
             }
