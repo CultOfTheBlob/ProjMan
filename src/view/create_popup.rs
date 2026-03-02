@@ -2,8 +2,8 @@ use std::path::PathBuf;
 
 use iced::{
     Background::Color,
-    Border, Element, Length, Renderer, Theme,
-    widget::{Container, button, column, combo_box, container, row, stack, text, text_input},
+    Border, Element, Length, Theme,
+    widget::{button, column, combo_box, container, row, stack, text, text_input},
 };
 
 use crate::{
@@ -18,109 +18,115 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         return content;
     }
 
-    let popup_content: Container<'_, Message, Theme, Renderer> = container(
+    let title_bar = container(text("Create Project"))
+        .width(Length::Fill)
+        .padding(8)
+        .style(|theme: &Theme| container::Style {
+            background: Some(Color(theme.extended_palette().background.weak.color)),
+            border: Border {
+                color: theme.extended_palette().background.strongest.color,
+                width: 1.0,
+                radius: 4.0.into(),
+            },
+            ..Default::default()
+        });
+
+    let project_name_widget = container(
         column![
-            container(text("Create Project"))
-                .width(Length::Fill)
-                .padding(8)
-                .style(|theme: &Theme| container::Style {
-                    background: Some(Color(theme.extended_palette().background.weak.color)),
-                    border: Border {
-                        color: theme.extended_palette().background.strongest.color,
-                        width: 1.0,
-                        radius: 4.0.into(),
-                    },
-                    ..Default::default()
-                }),
-            container(
-                column![
-                    text("Project Name:"),
-                    text_input("", &state.new_project.name).on_input(Message::ChangeNewProjectName)
-                ]
-                .spacing(4)
-            )
-            .padding(12),
-            container(
-                column![
-                    text("Project Type:"),
-                    combo_box(
-                        &state.project_types,
-                        "",
-                        Some(&state.new_project.project_type),
-                        Message::ChangeNewProjectType
-                    )
-                ]
-                .spacing(4)
-            )
-            .padding(12),
-            container(
-                column![
-                    text("Project Path:"),
-                    column![
-                        text_input("", &state.new_project.path.to_string_lossy())
-                            .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
-                            .style(|theme: &Theme, status| {
-                                let mut style = text_input::default(theme, status);
+            text("Project Name:"),
+            text_input("", &state.new_project.name).on_input(Message::ChangeNewProjectName)
+        ]
+        .spacing(4),
+    )
+    .padding(12);
 
-                                if !state
-                                    .new_project
-                                    .path_is_valid(&state.config.general.projects_dir)
-                                    .0
-                                {
-                                    style.border.color = theme.extended_palette().danger.base.color
-                                }
-
-                                style
-                            }),
-                        text(
-                            state
-                                .new_project
-                                .path_is_valid(&state.config.general.projects_dir)
-                                .1
-                        )
-                        .height(
-                            if state
-                                .new_project
-                                .path_is_valid(&state.config.general.projects_dir)
-                                .0
-                            {
-                                0.into()
-                            }
-                            else
-                            {
-                                Length::Shrink
-                            }
-                        )
-                        .style(|theme: &Theme| text::danger(theme))
-                    ]
-                    .spacing(2)
-                ]
-                .spacing(4)
+    let project_type_widget = container(
+        column![
+            text("Project Type:"),
+            combo_box(
+                &state.project_types,
+                "",
+                Some(&state.new_project.project_type),
+                Message::ChangeNewProjectType
             )
-            .padding(12),
-            row![
-                button("Cancel")
-                    .style(button::secondary)
-                    .on_press(Message::CancelCreate),
-                button("Confirm")
+        ]
+        .spacing(4),
+    )
+    .padding(12);
+
+    let project_path_widget = container(
+        column![
+            text("Project Path:"),
+            column![
+                text_input("", &state.new_project.path.to_string_lossy())
+                    .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
                     .style(|theme: &Theme, status| {
-                        let mut style = button::primary(theme, status);
+                        let mut style = text_input::default(theme, status);
 
                         if !state
                             .new_project
                             .path_is_valid(&state.config.general.projects_dir)
                             .0
                         {
-                            style.background =
-                                Some(Color(theme.extended_palette().background.weak.color))
+                            style.border.color = theme.extended_palette().danger.base.color
                         }
 
                         style
-                    })
-                    .on_press(Message::ConfirmCreate)
+                    }),
+                text(
+                    state
+                        .new_project
+                        .path_is_valid(&state.config.general.projects_dir)
+                        .1
+                )
+                .height(
+                    if state
+                        .new_project
+                        .path_is_valid(&state.config.general.projects_dir)
+                        .0
+                    {
+                        0.into()
+                    }
+                    else
+                    {
+                        Length::Shrink
+                    }
+                )
+                .style(|theme: &Theme| text::danger(theme))
             ]
-            .padding(12)
-            .spacing(256)
+            .spacing(2)
+        ]
+        .spacing(4),
+    )
+    .padding(12);
+
+    let confirm_widget = button("Cancel")
+        .style(button::secondary)
+        .on_press(Message::CancelCreate);
+
+    let cancel_widget = button("Confirm")
+        .style(|theme: &Theme, status| {
+            let mut style = button::primary(theme, status);
+
+            if !state
+                .new_project
+                .path_is_valid(&state.config.general.projects_dir)
+                .0
+            {
+                style.background = Some(Color(theme.extended_palette().background.weak.color))
+            }
+
+            style
+        })
+        .on_press(Message::ConfirmCreate);
+
+    let popup_content = container(
+        column![
+            title_bar,
+            project_name_widget,
+            project_type_widget,
+            project_path_widget,
+            row![confirm_widget, cancel_widget].padding(12).spacing(256)
         ]
         .spacing(12),
     )

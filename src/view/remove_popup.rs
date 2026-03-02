@@ -1,7 +1,7 @@
 use iced::{
     Background::Color,
-    Border, Element, Length, Renderer, Theme,
-    widget::{Container, button, checkbox, column, container, row, stack, text},
+    Border, Element, Length, Theme,
+    widget::{button, checkbox, column, container, row, stack, text},
 };
 
 use crate::{
@@ -16,31 +16,35 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         return content;
     }
 
-    let popup_content: Container<'_, Message, Theme, Renderer> = container(
+    let remove_warning_widget = text("Are you sure you want to remove this project?");
+
+    let delete_project_folder_widget = checkbox(state.delete_project_folder)
+        .style(checkbox::danger)
+        .label("Also remove project folder")
+        .on_toggle(Message::ToggleRemoveProjectFolder);
+
+    let cancel_widget = button("Cancel")
+        .style(button::secondary)
+        .on_press(Message::CancelRemove);
+
+    let confirm_widget = button("Confirm")
+        .style(|theme: &Theme, status| {
+            if state.delete_project_folder
+            {
+                button::danger(theme, status)
+            }
+            else
+            {
+                button::primary(theme, status)
+            }
+        })
+        .on_press(Message::ConfirmRemove);
+
+    let popup_content = container(
         column![
-            text("Are you sure you want to remove this project?"),
-            checkbox(state.delete_project_folder)
-                .style(checkbox::danger)
-                .label("Also remove project folder")
-                .on_toggle(Message::ToggleRemoveProjectFolder),
-            row![
-                button("Cancel")
-                    .style(button::secondary)
-                    .on_press(Message::CancelRemove),
-                button("Confirm")
-                    .style(|theme: &Theme, status| {
-                        if state.delete_project_folder
-                        {
-                            button::danger(theme, status)
-                        }
-                        else
-                        {
-                            button::primary(theme, status)
-                        }
-                    })
-                    .on_press(Message::ConfirmRemove)
-            ]
-            .spacing(256)
+            remove_warning_widget,
+            delete_project_folder_widget,
+            row![cancel_widget, confirm_widget].spacing(256)
         ]
         .spacing(16)
         .padding(24),
