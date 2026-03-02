@@ -1,5 +1,5 @@
 use std::{
-    fs::{create_dir, read_dir, remove_dir},
+    fs::{metadata, read_dir},
     io::{self},
     path::PathBuf,
 };
@@ -59,26 +59,29 @@ impl Project
                     );
                 }
             }
-
-            return (true, String::new());
         }
 
-        match create_dir(&self.path)
+        let path = &self.path;
+
+        for p in path.ancestors()
         {
-            Ok(_) =>
+            match metadata(p)
             {
-                if remove_dir(&self.path).is_err()
+                Ok(metadata) if metadata.permissions().readonly() =>
                 {
                     return (
                         false,
-                        format!("{error_message}(could not validate dir)").to_string(),
+                        format!("{error_message}(permission denied)").to_string(),
                     );
                 }
-                (true, String::new())
+
+                _ => (),
             }
-            Err(_) => (false, format!("{error_message}(permission denied)")),
         }
+
+        (true, String::new())
     }
+
     pub fn default(config: &Config) -> Self
     {
         let name: &str = "NewProject";
