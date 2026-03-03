@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use color_eyre::owo_colors::OwoColorize;
-use iced::Task;
+use iced::{Task, futures::TryFutureExt};
 
 use crate::{
     message::Message,
@@ -103,21 +103,37 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 return Task::none();
             }
 
-            match state.create_project()
+            state.project_creation_status = (true, String::from("Creating project..."));
+            Task::perform(
+                AppState::create_project(state.new_project.clone()).map_err(|e| e.to_string()),
+                Message::FinishCreate,
+            )
+        }
+        Message::FinishCreate(create_result) =>
+        {
+            match create_result
             {
-                Ok(_) => (),
-                Err(err) => eprintln!("{}", err.red()),
+                Ok(projects_list) =>
+                {
+                    state.project_creation_status = (false, String::new());
+                    state.project_list = projects_list;
+                    state.new_project = Project::default(&state.config);
+                    state.selected_project = Some(state.project_list.len() - 1);
+                    state.pending = None;
+                    state.new_project_path_changed = false;
+                }
+                Err(err) =>
+                {
+                    state.project_creation_status.0 = false;
+                    state.project_creation_status.1 = format!("Error: {err}");
+                }
             }
-
-            state.new_project = Project::default(&state.config);
-            state.selected_project = Some(state.project_list.len() - 1);
-            state.pending = None;
-            state.new_project_path_changed = false;
 
             Task::none()
         }
         Message::CancelCreate =>
         {
+            state.project_creation_status = (false, String::new());
             state.new_project = Project::default(&state.config);
             state.pending = None;
             state.new_project_path_changed = false;
@@ -136,17 +152,23 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::ChangeNewProjectType(project_type) =>
+        {
+            state.new_project.project_type = project_type;
+
+            Task::none()
+        }
+        Message::ChangeNewProjectRepo(repo) =>
+        {
+            state.new_project.repo = repo;
+
+            Task::none()
+        }
         Message::ChangeNewProjectPath(path) =>
         {
             state.new_project.path = path;
 
             state.new_project_path_changed = true;
-
-            Task::none()
-        }
-        Message::ChangeNewProjectType(project_type) =>
-        {
-            state.new_project.project_type = project_type;
 
             Task::none()
         }

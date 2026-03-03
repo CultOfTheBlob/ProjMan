@@ -32,6 +32,7 @@
 
       buildInputs = with pkgs; [
         glib
+        openssl
       ];
       nativeBuildInputs = [pkgs.pkg-config];
     };
@@ -52,6 +53,7 @@
         cargo
         clippy
         glib
+        openssl.dev
       ];
 
       LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [

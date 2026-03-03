@@ -34,21 +34,66 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let project_name_widget = container(
         column![
             text("Project Name:"),
-            text_input("", &state.new_project.name).on_input(Message::ChangeNewProjectName)
+            text_input("", &state.new_project.name).on_input_maybe(
+                if !state.project_creation_status.0
+                {
+                    Some(Message::ChangeNewProjectName)
+                }
+                else
+                {
+                    None
+                }
+            )
         ]
         .spacing(4),
     )
     .padding(12);
 
-    let project_type_widget = container(
+    let project_type_widget = if !state.project_creation_status.0
+    {
+        container(
+            column![
+                text("Project Type:"),
+                combo_box(
+                    &state.project_types,
+                    "",
+                    Some(&state.new_project.project_type),
+                    Message::ChangeNewProjectType
+                )
+            ]
+            .spacing(4),
+        )
+        .padding(12)
+    }
+    else
+    {
+        container(
+            column![
+                text("Project Type:"),
+                text_input(&state.new_project.project_type.to_string(), "")
+            ]
+            .spacing(4),
+        )
+        .padding(12)
+    };
+
+    let project_repo_widget = container(
         column![
-            text("Project Type:"),
-            combo_box(
-                &state.project_types,
-                "",
-                Some(&state.new_project.project_type),
-                Message::ChangeNewProjectType
+            text("Project Repo:"),
+            text_input(
+                "https://github.com/Author/Project.git",
+                &state.new_project.repo
             )
+            .on_input_maybe(
+                if !state.project_creation_status.0
+                {
+                    Some(Message::ChangeNewProjectRepo)
+                }
+                else
+                {
+                    None
+                }
+            ),
         ]
         .spacing(4),
     )
@@ -59,7 +104,16 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             text("Project Path:"),
             column![
                 text_input("", &state.new_project.path.to_string_lossy())
-                    .on_input(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                    .on_input_maybe(
+                        if !state.project_creation_status.0
+                        {
+                            Some(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                        }
+                        else
+                        {
+                            None
+                        }
+                    )
                     .style(|theme: &Theme, status| {
                         let mut style = text_input::default(theme, status);
 
@@ -100,11 +154,31 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     )
     .padding(12);
 
-    let confirm_widget = button("Cancel")
-        .style(button::secondary)
-        .on_press(Message::CancelCreate);
+    let porgress_widget = container(text(&state.project_creation_status.1).style(
+        if state.project_creation_status.1.starts_with("Error:")
+        {
+            text::danger
+        }
+        else
+        {
+            text::secondary
+        },
+    ))
+    .width(Length::Fill)
+    .padding(12);
 
-    let cancel_widget = button("Confirm")
+    let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
+        if !state.project_creation_status.0
+        {
+            Some(Message::CancelCreate)
+        }
+        else
+        {
+            None
+        },
+    );
+
+    let confirm_widget = button("Confirm")
         .style(|theme: &Theme, status| {
             let mut style = button::primary(theme, status);
 
@@ -118,15 +192,26 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
 
             style
         })
-        .on_press(Message::ConfirmCreate);
+        .on_press_maybe(
+            if !state.project_creation_status.0
+            {
+                Some(Message::ConfirmCreate)
+            }
+            else
+            {
+                None
+            },
+        );
 
     let popup_content = container(
         column![
             title_bar,
             project_name_widget,
             project_type_widget,
+            project_repo_widget,
             project_path_widget,
-            row![confirm_widget, cancel_widget].padding(12).spacing(256)
+            porgress_widget,
+            row![cancel_widget, confirm_widget].padding(12).spacing(256)
         ]
         .spacing(12),
     )

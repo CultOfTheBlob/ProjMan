@@ -14,8 +14,10 @@ pub enum Message
     Create,
     ConfirmCreate,
     CancelCreate,
+    FinishCreate(Result<Vec<Project>, String>),
     ChangeNewProjectName(String),
-    ChangeNewProjectPath(PathBuf),
     ChangeNewProjectType(ProjectType),
+    ChangeNewProjectRepo(String),
+    ChangeNewProjectPath(PathBuf),
     Import,
 }

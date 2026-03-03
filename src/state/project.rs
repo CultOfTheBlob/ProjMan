@@ -4,6 +4,7 @@ use std::{
     path::PathBuf,
 };
 
+use git2::{ErrorCode, Repository};
 use serde::{Deserialize, Serialize};
 
 use crate::state::{config::Config, project_type::ProjectType};
@@ -14,6 +15,7 @@ pub struct Project
     pub name: String,
     pub path: PathBuf,
     pub project_type: ProjectType,
+    pub repo: String,
 }
 
 impl Project
@@ -21,6 +23,39 @@ impl Project
     pub fn run(&self) -> io::Result<()>
     {
         self.project_type.run(self)
+    }
+
+    pub fn default(config: &Config) -> Self
+    {
+        let name: &str = "NewProject";
+
+        Self {
+            name: String::from(name),
+            path: PathBuf::from(&config.general.projects_dir).join(name),
+            project_type: ProjectType::default(),
+            repo: String::new(),
+        }
+    }
+
+    pub fn clone_repo(&self) -> Result<(), std::io::Error>
+    {
+        match Repository::clone(&self.repo, &self.path)
+        {
+            Ok(it) => it,
+            Err(err) =>
+            {
+                let kind = match err.code()
+                {
+                    ErrorCode::NotFound => io::ErrorKind::NotFound,
+                    ErrorCode::Exists => io::ErrorKind::AlreadyExists,
+                    _ => io::ErrorKind::Other,
+                };
+
+                return Err(io::Error::new(kind, err));
+            }
+        };
+
+        Ok(())
     }
 
     pub fn path_is_valid(&self, projects_dir: &str) -> (bool, String)
@@ -80,16 +115,5 @@ impl Project
         }
 
         (true, String::new())
-    }
-
-    pub fn default(config: &Config) -> Self
-    {
-        let name: &str = "NewProject";
-
-        Self {
-            name: String::from(name),
-            path: PathBuf::from(&config.general.projects_dir).join(name),
-            project_type: ProjectType::default(),
-        }
     }
 }

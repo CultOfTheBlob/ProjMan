@@ -1,7 +1,6 @@
 use std::{
-    fs::{File, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
-    io::{self},
-    mem::replace,
+    fs::{File, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file, write},
+    io::{self, ErrorKind},
     path::PathBuf,
 };
 
@@ -29,6 +28,7 @@ pub struct AppState
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
+    pub project_creation_status: (bool, String),
 }
 
 impl Default for AppState
@@ -46,6 +46,7 @@ impl Default for AppState
             project_list,
             new_project: Project::default(&Config::default()),
             project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
+            project_creation_status: (false, String::new()),
             delete_project_folder: false,
             new_project_path_changed: false,
             selected_project: None,
@@ -114,7 +115,7 @@ impl AppState
         Ok(())
     }
 
-    pub fn create_project(&mut self) -> Result<(), std::io::Error>
+    pub async fn create_project(new_project: Project) -> Result<Vec<Project>, std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -130,30 +131,33 @@ impl AppState
                 ));
             }
 
-            create_dir_all(&self.new_project.path)?;
-            File::create_new(self.new_project.path.join(".projman"))?;
+            create_dir_all(&new_project.path)?;
+
+            if let Err(err) = new_project.clone_repo()
+            {
+                remove_dir(&new_project.path)?;
+                return Err(err);
+            };
+
+            File::create_new(new_project.path.join(".projman"))?;
 
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
 
-            projects_json.push(replace(
-                &mut self.new_project,
-                Project::default(&self.config),
-            ));
+            projects_json.push(new_project);
 
             write(
                 &data_path,
                 serde_json::to_string_pretty(&projects_json)?.as_bytes(),
             )?;
 
-            self.project_list = projects_json;
-
-            self.new_project = Project::default(&self.config);
-
-            return Ok(());
+            return Ok(projects_json);
         }
 
-        Ok(())
+        Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            "Could not find data folder",
+        ))
     }
 
     fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
