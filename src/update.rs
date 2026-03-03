@@ -17,11 +17,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
     {
         Message::Open(project) =>
         {
-            if state.pending.is_some()
-            {
-                return Task::none();
-            }
-
             match project.run()
             {
                 Ok(_) => (),
@@ -32,22 +27,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::Selected(index) =>
         {
-            if state.pending.is_some()
-            {
-                return Task::none();
-            }
-
             state.selected_project = Some(index);
 
             Task::none()
         }
         Message::Remove =>
         {
-            if state.pending.is_some()
-            {
-                return Task::none();
-            }
-
             state.pending = Some(Popup::Remove);
 
             Task::none()
@@ -84,11 +69,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::Create =>
         {
-            if state.pending.is_some()
-            {
-                return Task::none();
-            }
-
             state.pending = Some(Popup::Create);
 
             Task::none()
@@ -173,14 +153,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             Task::none()
         }
 
-        Message::Import =>
-        {
-            if state.pending.is_some()
-            {
-                return Task::none();
-            }
-
-            Task::none()
-        }
+        Message::Import => Task::none(),
     }
 }

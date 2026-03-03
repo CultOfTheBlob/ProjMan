@@ -9,22 +9,42 @@ use crate::{message::Message, state::app_state::AppState};
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
     let mut top_bar_content = row![
-        button("Create")
-            .style(button::secondary)
-            .on_press(Message::Create),
-        button("Import")
-            .style(button::secondary)
-            .on_press(Message::Import)
+        button("Create").style(button::secondary).on_press_maybe(
+            if state.pending.is_none()
+            {
+                Some(Message::Create)
+            }
+            else
+            {
+                None
+            }
+        ),
+        button("Import").style(button::secondary).on_press_maybe(
+            if state.pending.is_none()
+            {
+                Some(Message::Import)
+            }
+            else
+            {
+                None
+            }
+        )
     ]
     .spacing(12);
 
     if state.selected_project.is_some()
     {
-        top_bar_content = top_bar_content.push(
-            button("Remove")
-                .style(button::primary)
-                .on_press(Message::Remove),
-        );
+        top_bar_content =
+            top_bar_content.push(button("Remove").style(button::primary).on_press_maybe(
+                if state.pending.is_none()
+                {
+                    Some(Message::Remove)
+                }
+                else
+                {
+                    None
+                },
+            ));
     }
 
     let top_bar = container(top_bar_content)
