@@ -161,7 +161,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         }
         else
         {
-            text::secondary
+            text::success
         },
     ))
     .width(Length::Fill)
