@@ -13,6 +13,12 @@ use crate::{
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
+    match AppState::create_project_list_from_json()
+    {
+        Ok(projects) => state.project_list = projects,
+        Err(err) => eprintln!("{}", err.to_string().red()),
+    };
+
     match message
     {
         Message::Open(project) =>

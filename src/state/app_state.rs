@@ -223,7 +223,7 @@ impl AppState
         ))
     }
 
-    fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
+    pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
