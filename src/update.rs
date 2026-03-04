@@ -23,6 +23,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
     {
         Message::Open(project) =>
         {
+            if state.pending.is_some()
+            {
+                return Task::none();
+            }
+
             match project.run()
             {
                 Ok(_) => (),
@@ -31,9 +36,25 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Selected(index) =>
+        Message::Select(index) =>
         {
+            if state.pending.is_some()
+            {
+                return Task::none();
+            }
+
             state.selected_project = Some(index);
+
+            Task::none()
+        }
+        Message::Deselect =>
+        {
+            if state.pending.is_some()
+            {
+                return Task::none();
+            }
+
+            state.selected_project = None;
 
             Task::none()
         }

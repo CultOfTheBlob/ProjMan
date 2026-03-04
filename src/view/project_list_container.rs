@@ -115,15 +115,18 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 },
             );
 
-        let clickable = mouse_area(row_container)
-            .on_press(Message::Selected(index))
+        let select_area = mouse_area(row_container)
+            .on_press(Message::Select(index))
             .on_double_click(Message::Open(project.clone()));
 
-        project_list_content = project_list_content.push(clickable);
+        project_list_content = project_list_content.push(select_area);
     }
 
+    let deselect_area =
+        mouse_area(space().width(Length::Fill).height(Length::Fill)).on_press(Message::Deselect);
+
     let project_list = container(
-        container(scrollable(project_list_content))
+        container(column![scrollable(project_list_content), deselect_area])
             .height(Length::Fill)
             .padding(16)
             .style(|theme: &Theme| container::Style {

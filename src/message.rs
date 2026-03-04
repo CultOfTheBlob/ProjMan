@@ -6,7 +6,8 @@ use crate::state::{project::Project, project_type::ProjectType};
 pub enum Message
 {
     Open(Project),
-    Selected(usize),
+    Select(usize),
+    Deselect,
     Remove,
     ConfirmRemove,
     CancelRemove,
