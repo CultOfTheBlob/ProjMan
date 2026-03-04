@@ -240,12 +240,10 @@ impl AppState
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
 
-            projects_json
-                .iter_mut()
-                .filter(|project| {
-                    !project.path.is_dir() || !project.path.join(".projman").is_file()
-                })
-                .for_each(|project| project.exists = false);
+            for project in &mut projects_json
+            {
+                project.exists = project.path.is_dir() && project.path.join(".projman").is_file();
+            }
 
             write(
                 &data_path,
