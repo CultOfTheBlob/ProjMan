@@ -12,6 +12,7 @@ use crate::state::{config::Config, project_type::ProjectType};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project
 {
+    pub exists: bool,
     pub name: String,
     pub path: PathBuf,
     pub project_type: ProjectType,
@@ -30,6 +31,7 @@ impl Project
         let name: &str = "NewProject";
 
         Self {
+            exists: true,
             name: String::from(name),
             path: PathBuf::from(&config.general.projects_dir).join(name),
             project_type: ProjectType::default(),

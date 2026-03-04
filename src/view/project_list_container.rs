@@ -1,7 +1,7 @@
 use iced::{
     Background::Color,
     Border, Element, Length, Theme,
-    widget::{column, container, mouse_area, row, scrollable, text},
+    widget::{button, column, container, mouse_area, row, scrollable, space, text},
 };
 
 use crate::{message::Message, state::app_state::AppState};
@@ -14,11 +14,84 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     {
         let is_selected = state.selected_project == Some(index);
 
-        let project_content = row![
-            text(&project.name),
-            text(format!("{:?}", &project.project_type))
+        let mut project_content = row![
+            column![
+                text(&project.name).style(text::primary),
+                row![
+                    text(format!("{:?}", &project.project_type)).style(text::secondary),
+                    text(format!("{:?}", &project.path)).style(text::secondary)
+                ]
+                .spacing(32)
+            ]
+            .spacing(16),
+            space().width(Length::Fill).height(48)
         ]
         .spacing(24);
+
+        if !project.exists
+        {
+            project_content = row![
+                column![
+                    text("Missing!").style(text::danger).size(18),
+                    text(format!("({})", &project.name))
+                        .size(14)
+                        .style(text::secondary),
+                ]
+                .spacing(8),
+                space().width(Length::Fill).height(48)
+            ]
+            .spacing(24);
+
+            if is_selected
+            {
+                project_content = project_content.push(
+                    button(
+                        if state.project_restoration_failed
+                        {
+                            text("Failed!")
+                        }
+                        else
+                        {
+                            text("Restore")
+                        },
+                    )
+                    .style(
+                        if state.project_restoration_failed
+                        {
+                            button::danger
+                        }
+                        else
+                        {
+                            button::primary
+                        },
+                    )
+                    .on_press_maybe(
+                        if state.pending.is_none() && !state.restoring_project
+                        {
+                            Some(Message::RestoreNonexistant)
+                        }
+                        else
+                        {
+                            None
+                        },
+                    ),
+                );
+                project_content = project_content.push(
+                    button(text("Remove"))
+                        .style(button::secondary)
+                        .on_press_maybe(
+                            if state.pending.is_none() && !state.restoring_project
+                            {
+                                Some(Message::RemoveNonexistant)
+                            }
+                            else
+                            {
+                                None
+                            },
+                        ),
+                );
+            }
+        }
 
         let row_container = container(project_content)
             .width(Length::Fill)

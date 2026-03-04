@@ -152,7 +152,40 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-
         Message::Import => Task::none(),
+        Message::RemoveNonexistant =>
+        {
+            match state.remove_project()
+            {
+                Ok(_) => (),
+                Err(err) => eprintln!("{}", err.red()),
+            }
+
+            state.selected_project = None;
+            Task::none()
+        }
+        Message::RestoreNonexistant =>
+        {
+            state.project_restoration_failed = false;
+            state.restoring_project = true;
+
+            Task::perform(
+                AppState::restore_project(state.selected_project, state.project_list.clone())
+                    .map_err(|e| e.to_string()),
+                Message::FinishRemoveNonexistant,
+            )
+        }
+        Message::FinishRemoveNonexistant(restore_result) =>
+        {
+            state.restoring_project = false;
+
+            match restore_result
+            {
+                Ok(index) => state.project_list[index].exists = true,
+                Err(_) => state.project_restoration_failed = true,
+            }
+
+            Task::none()
+        }
     }
 }

@@ -29,6 +29,8 @@ pub struct AppState
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
     pub project_creation_status: (bool, String),
+    pub project_restoration_failed: bool,
+    pub restoring_project: bool,
 }
 
 impl Default for AppState
@@ -47,8 +49,10 @@ impl Default for AppState
             new_project: Project::default(&Config::default()),
             project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
             project_creation_status: (false, String::new()),
+            project_restoration_failed: false,
             delete_project_folder: false,
             new_project_path_changed: false,
+            restoring_project: false,
             selected_project: None,
             pending: None,
         }
@@ -89,11 +93,14 @@ impl AppState
 
             if let Some(index) = self.selected_project
             {
-                remove_file(self.project_list[index].path.join(".projman"))?;
-
-                if self.delete_project_folder
+                if self.project_list[index].exists
                 {
-                    remove_dir_all(&self.project_list[index].path)?;
+                    remove_file(self.project_list[index].path.join(".projman"))?;
+
+                    if self.delete_project_folder
+                    {
+                        remove_dir_all(&self.project_list[index].path)?;
+                    }
                 }
 
                 let mut projects_json: Vec<Project> =
@@ -112,7 +119,63 @@ impl AppState
             return Ok(());
         }
 
-        Ok(())
+        Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            "Could not find data folder",
+        ))
+    }
+
+    pub async fn restore_project(
+        selected_project: Option<usize>,
+        project_list: Vec<Project>,
+    ) -> Result<usize, std::io::Error>
+    {
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        {
+            create_dir_all(proj_dirs.data_dir())?;
+
+            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+
+            if !data_path.is_file()
+            {
+                return Err(std::io::Error::new(
+                    io::ErrorKind::NotADirectory,
+                    "Error: projects.json does not exist",
+                ));
+            }
+
+            if let Some(index) = selected_project
+            {
+                let project = &project_list[index];
+
+                if !project.path.exists()
+                {
+                    project.clone_repo()?;
+                }
+
+                if !project.path.join(".projman").exists()
+                {
+                    File::create_new(project.path.join(".projman"))?;
+                }
+
+                let mut projects_json: Vec<Project> =
+                    serde_json::from_str(&read_to_string(&data_path)?)?;
+
+                projects_json[index].exists = true;
+
+                write(
+                    &data_path,
+                    serde_json::to_string_pretty(&projects_json)?.as_bytes(),
+                )?;
+
+                return Ok(index);
+            }
+        }
+
+        Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            "Could not find data folder",
+        ))
     }
 
     pub async fn create_project(new_project: Project) -> Result<Vec<Project>, std::io::Error>
@@ -177,10 +240,12 @@ impl AppState
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&data_path)?)?;
 
-            projects_json.retain(|project| -> bool {
-                let path: PathBuf = PathBuf::from(&project.path);
-                path.exists() && path.is_dir() && path.join(".projman").is_file()
-            });
+            projects_json
+                .iter_mut()
+                .filter(|project| {
+                    !project.path.is_dir() || !project.path.join(".projman").is_file()
+                })
+                .for_each(|project| project.exists = false);
 
             write(
                 &data_path,
@@ -190,6 +255,9 @@ impl AppState
             return Ok(projects_json);
         }
 
-        Ok(Vec::<Project>::new())
+        Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            "Could not find data folder",
+        ))
     }
 }

@@ -20,4 +20,7 @@ pub enum Message
     ChangeNewProjectRepo(String),
     ChangeNewProjectPath(PathBuf),
     Import,
+    RestoreNonexistant,
+    RemoveNonexistant,
+    FinishRemoveNonexistant(Result<usize, String>),
 }
