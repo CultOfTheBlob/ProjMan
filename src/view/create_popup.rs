@@ -117,10 +117,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .style(|theme: &Theme, status| {
                         let mut style = text_input::default(theme, status);
 
-                        if !state
-                            .new_project
-                            .path_is_valid(&state.config.general.projects_dir)
-                            .0
+                        if !state.project_creation_status.0
+                            && !state
+                                .new_project
+                                .path_is_valid(&state.config.general.projects_dir)
+                                .0
                         {
                             style.border.color = theme.extended_palette().danger.base.color
                         }
