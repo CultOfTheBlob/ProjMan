@@ -48,7 +48,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     button(
                         if state.project_restoration_failed
                         {
-                            text("Failed!")
+                            text("Failed! (Retry?)")
                         }
                         else
                         {
