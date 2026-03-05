@@ -1,6 +1,6 @@
 use std::{
     fs::{File, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file, write},
-    io::{self, ErrorKind},
+    io::{self, ErrorKind, Write},
     path::PathBuf,
 };
 
@@ -79,11 +79,11 @@ impl AppState
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            create_dir_all(proj_dirs.data_dir())?;
+            create_dir_all(proj_dirs.config_dir())?;
 
-            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
 
-            if !data_path.is_file()
+            if !config_path.is_file()
             {
                 return Err(std::io::Error::new(
                     io::ErrorKind::NotADirectory,
@@ -104,12 +104,12 @@ impl AppState
                 }
 
                 let mut projects_json: Vec<Project> =
-                    serde_json::from_str(&read_to_string(&data_path)?)?;
+                    serde_json::from_str(&read_to_string(&config_path)?)?;
 
                 projects_json.remove(index);
 
                 write(
-                    &data_path,
+                    &config_path,
                     serde_json::to_string_pretty(&projects_json)?.as_bytes(),
                 )?;
 
@@ -121,7 +121,7 @@ impl AppState
 
         Err(std::io::Error::new(
             ErrorKind::NotFound,
-            "Could not find data folder",
+            "Could not find config folder",
         ))
     }
 
@@ -132,11 +132,11 @@ impl AppState
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            create_dir_all(proj_dirs.data_dir())?;
+            create_dir_all(proj_dirs.config_dir())?;
 
-            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+            let config_dir: PathBuf = proj_dirs.config_dir().join("projects.json");
 
-            if !data_path.is_file()
+            if !config_dir.is_file()
             {
                 return Err(std::io::Error::new(
                     io::ErrorKind::NotADirectory,
@@ -159,12 +159,12 @@ impl AppState
                 }
 
                 let mut projects_json: Vec<Project> =
-                    serde_json::from_str(&read_to_string(&data_path)?)?;
+                    serde_json::from_str(&read_to_string(&config_dir)?)?;
 
                 projects_json[index].exists = true;
 
                 write(
-                    &data_path,
+                    &config_dir,
                     serde_json::to_string_pretty(&projects_json)?.as_bytes(),
                 )?;
 
@@ -174,7 +174,7 @@ impl AppState
 
         Err(std::io::Error::new(
             ErrorKind::NotFound,
-            "Could not find data folder",
+            "Could not find config folder",
         ))
     }
 
@@ -182,11 +182,11 @@ impl AppState
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            create_dir_all(proj_dirs.data_dir())?;
+            create_dir_all(proj_dirs.config_dir())?;
 
-            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
 
-            if !data_path.is_file()
+            if !config_path.is_file()
             {
                 return Err(std::io::Error::new(
                     io::ErrorKind::NotADirectory,
@@ -205,12 +205,12 @@ impl AppState
             File::create_new(new_project.path.join(".projman"))?;
 
             let mut projects_json: Vec<Project> =
-                serde_json::from_str(&read_to_string(&data_path)?)?;
+                serde_json::from_str(&read_to_string(&config_path)?)?;
 
             projects_json.push(new_project);
 
             write(
-                &data_path,
+                &config_path,
                 serde_json::to_string_pretty(&projects_json)?.as_bytes(),
             )?;
 
@@ -219,7 +219,7 @@ impl AppState
 
         Err(std::io::Error::new(
             ErrorKind::NotFound,
-            "Could not find data folder",
+            "Could not find config folder",
         ))
     }
 
@@ -227,18 +227,19 @@ impl AppState
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            create_dir_all(proj_dirs.data_dir())?;
+            create_dir_all(proj_dirs.config_dir())?;
 
-            let data_path: PathBuf = proj_dirs.data_dir().join("projects.json");
+            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
 
-            if !data_path.is_file()
+            if !config_path.is_file()
             {
                 File::create(&data_path)?;
 
                 return Ok(Vec::<Project>::new());
             }
+
             let mut projects_json: Vec<Project> =
-                serde_json::from_str(&read_to_string(&data_path)?)?;
+                serde_json::from_str(&read_to_string(&config_path)?)?;
 
             for project in &mut projects_json
             {
@@ -246,7 +247,7 @@ impl AppState
             }
 
             write(
-                &data_path,
+                &config_path,
                 serde_json::to_string_pretty(&projects_json)?.as_bytes(),
             )?;
 
@@ -255,7 +256,7 @@ impl AppState
 
         Err(std::io::Error::new(
             ErrorKind::NotFound,
-            "Could not find data folder",
+            "Could not find config folder",
         ))
     }
 }
