@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use git2::{ErrorCode, Repository};
+use git2::{Cred, FetchOptions, RemoteCallbacks, build::RepoBuilder};
 use serde::{Deserialize, Serialize};
 
 use crate::state::{config::Config, project_type::ProjectType};
@@ -41,21 +41,33 @@ impl Project
 
     pub fn clone_repo(&self) -> Result<(), std::io::Error>
     {
-        match Repository::clone(&self.repo, &self.path)
-        {
-            Ok(it) => it,
-            Err(err) =>
-            {
-                let kind = match err.code()
-                {
-                    ErrorCode::NotFound => io::ErrorKind::NotFound,
-                    ErrorCode::Exists => io::ErrorKind::AlreadyExists,
-                    _ => io::ErrorKind::Other,
-                };
+        let mut callbacks = RemoteCallbacks::new();
 
-                return Err(io::Error::new(kind, err));
+        callbacks.credentials(|url, username_from_url, allowed| {
+            if allowed.is_ssh_key()
+            {
+                return Cred::ssh_key_from_agent(username_from_url.unwrap());
             }
-        };
+
+            let config = git2::Config::open_default()?;
+            Cred::credential_helper(&config, url, username_from_url)
+        });
+
+        let mut fetch = FetchOptions::new();
+        fetch.remote_callbacks(callbacks);
+
+        let mut builder = RepoBuilder::new();
+        builder.fetch_options(fetch);
+
+        builder.clone(&self.repo, &self.path).map_err(|err| {
+            let kind = match err.code()
+            {
+                git2::ErrorCode::NotFound => std::io::ErrorKind::NotFound,
+                git2::ErrorCode::Exists => std::io::ErrorKind::AlreadyExists,
+                _ => std::io::ErrorKind::Other,
+            };
+            std::io::Error::new(kind, err)
+        })?;
 
         Ok(())
     }
