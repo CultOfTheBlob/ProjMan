@@ -233,7 +233,7 @@ impl AppState
 
             if !config_path.is_file()
             {
-                File::create(&data_path)?;
+                File::create(&config_path)?.write_all("[]".as_bytes())?;
 
                 return Ok(Vec::<Project>::new());
             }
