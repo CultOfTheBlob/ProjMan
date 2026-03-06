@@ -1,5 +1,8 @@
 use std::{
-    fs::{File, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file, write},
+    fs::{
+        File, create_dir, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file,
+        write,
+    },
     io::{self, ErrorKind, Write},
     path::PathBuf,
 };
@@ -203,6 +206,16 @@ impl AppState
             };
 
             File::create_new(new_project.path.join(".projman"))?;
+
+            if let Some(dir_structure) = new_project.project_type.template()?.dir_structure
+            {
+                let dirs: Vec<PathBuf> = dir_structure.parse(&new_project.path);
+
+                for dir in &dirs
+                {
+                    create_dir(dir)?;
+                }
+            }
 
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&config_path)?)?;

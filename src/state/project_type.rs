@@ -6,7 +6,10 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::state::project::Project;
+use crate::{
+    state::project::Project,
+    templates::{Template, TemplateConfig, base::Base},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum ProjectType
@@ -19,16 +22,27 @@ impl ProjectType
 {
     pub const ALL: [ProjectType; 1] = [ProjectType::Base];
 
+    pub fn template(&self) -> Result<TemplateConfig, std::io::Error>
+    {
+        match self
+        {
+            ProjectType::Base => Base::template(),
+        }
+    }
+
     pub fn run(&self, project: &Project) -> io::Result<()>
     {
         match self
         {
             ProjectType::Base =>
             {
-                process::Command::new("kitty")
-                    .arg("--detach")
-                    .current_dir(&project.path)
-                    .spawn()?;
+                for command in &Base::template()?.run
+                {
+                    process::Command::new(&command.program)
+                        .args(&command.args)
+                        .current_dir(&project.path)
+                        .spawn()?;
+                }
             }
         }
 

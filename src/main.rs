@@ -1,6 +1,7 @@
 mod boot;
 mod message;
 mod state;
+mod templates;
 mod update;
 mod view;
 
