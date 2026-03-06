@@ -129,16 +129,24 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         style
                     }),
                 text(
-                    state
-                        .new_project
-                        .path_is_valid(&state.config.general.projects_dir)
-                        .1
+                    if state.project_creation_status.0
+                    {
+                        String::new()
+                    }
+                    else
+                    {
+                        state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
+                            .1
+                    }
                 )
                 .height(
-                    if state
-                        .new_project
-                        .path_is_valid(&state.config.general.projects_dir)
-                        .0
+                    if !state.project_creation_status.0
+                        && state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
+                            .0
                     {
                         0.into()
                     }
