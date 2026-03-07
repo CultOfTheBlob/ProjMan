@@ -1,4 +1,4 @@
-use crate::templates::{Command, Folder, ProjectFile, Template, TemplateConfig};
+use crate::templates::{Command, File, Folder, Template, TemplateConfig};
 
 #[derive(Debug)]
 pub struct Base;
@@ -22,7 +22,7 @@ impl Template for Base
                 },
             ],
 
-            files: vec![ProjectFile {
+            files: vec![File {
                 path: String::from("flake.nix"),
                 content: String::from(FLAKE_NIX),
             }],

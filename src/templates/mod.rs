@@ -1,5 +1,5 @@
 use std::{
-    fs::{File, create_dir_all, read_to_string},
+    fs::{self, create_dir_all, read_to_string},
     io::{ErrorKind, Write},
     path::{Path, PathBuf},
 };
@@ -23,7 +23,7 @@ pub trait Template
             {
                 let default_template: TemplateConfig = Self::default();
 
-                File::create(&template_path)?.write_all(
+                fs::File::create(&template_path)?.write_all(
                     serde_json::to_string_pretty(&default_template)
                         .unwrap()
                         .as_bytes(),
@@ -52,7 +52,7 @@ pub trait Template
 pub struct TemplateConfig
 {
     pub dir_structure: Vec<Folder>,
-    pub files: Vec<ProjectFile>,
+    pub files: Vec<File>,
     pub run: Vec<Command>,
 }
 
@@ -81,7 +81,7 @@ impl Folder
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ProjectFile
+pub struct File
 {
     pub path: String,
     pub content: String,
