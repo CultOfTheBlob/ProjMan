@@ -27,6 +27,17 @@ impl Template for Base
                 content: String::from(FLAKE_NIX),
             }],
 
+            build: vec![
+                Command {
+                    program: String::from("git"),
+                    args: vec![String::from("add"), String::from("-A")],
+                },
+                Command {
+                    program: String::from("nix"),
+                    args: vec![String::from("develop")],
+                },
+            ],
+
             run: vec![Command {
                 program: String::from("kitty"),
                 args: vec![String::from("--detach")],

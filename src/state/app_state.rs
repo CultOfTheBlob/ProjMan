@@ -5,13 +5,17 @@ use std::{
     },
     io::{self, ErrorKind, Write},
     path::PathBuf,
+    process,
 };
 
 use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
 use iced::widget::combo_box;
 
-use crate::state::{config::Config, project::Project, project_type::ProjectType};
+use crate::{
+    state::{config::Config, project::Project, project_type::ProjectType},
+    templates::Command,
+};
 
 #[derive(Debug)]
 pub enum Popup
@@ -222,6 +226,15 @@ impl AppState
             for file in files
             {
                 write(new_project.path.join(file.path), &file.content)?;
+            }
+
+            let build_commands: Vec<Command> = new_project.project_type.template()?.build;
+            for command in &build_commands
+            {
+                process::Command::new(&command.program)
+                    .args(&command.args)
+                    .current_dir(&new_project.path)
+                    .status()?;
             }
 
             let mut projects_json: Vec<Project> =
