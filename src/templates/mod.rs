@@ -51,7 +51,7 @@ pub trait Template
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TemplateConfig
 {
-    pub dir_structure: Option<Folder>,
+    pub dir_structure: Vec<Folder>,
     pub run: Vec<Command>,
 }
 

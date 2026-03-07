@@ -207,9 +207,10 @@ impl AppState
 
             File::create_new(new_project.path.join(".projman"))?;
 
-            if let Some(dir_structure) = new_project.project_type.template()?.dir_structure
+            let dir_structure = new_project.project_type.template()?.dir_structure;
+            for dir in &dir_structure
             {
-                let dirs: Vec<PathBuf> = dir_structure.parse(&new_project.path);
+                let dirs: Vec<PathBuf> = dir.parse(&new_project.path);
 
                 for dir in &dirs
                 {
