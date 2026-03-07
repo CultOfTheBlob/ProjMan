@@ -218,6 +218,12 @@ impl AppState
                 }
             }
 
+            let files = new_project.project_type.template()?.files;
+            for file in files
+            {
+                write(new_project.path.join(file.path), &file.content)?;
+            }
+
             let mut projects_json: Vec<Project> =
                 serde_json::from_str(&read_to_string(&config_path)?)?;
 

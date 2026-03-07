@@ -52,6 +52,7 @@ pub trait Template
 pub struct TemplateConfig
 {
     pub dir_structure: Vec<Folder>,
+    pub files: Vec<ProjectFile>,
     pub run: Vec<Command>,
 }
 
@@ -77,6 +78,13 @@ impl Folder
 
         dirs
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProjectFile
+{
+    pub path: String,
+    pub content: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
