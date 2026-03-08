@@ -22,7 +22,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
     match message
     {
-        Message::Open(project) =>
+        Message::Opened(project) =>
         {
             if state.pending.is_some()
             {
@@ -37,7 +37,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Select(index) =>
+        Message::Selected(index) =>
         {
             if state.pending.is_some()
             {
@@ -48,7 +48,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Deselect =>
+        Message::Deselected =>
         {
             if state.pending.is_some()
             {
@@ -59,13 +59,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Remove =>
+        Message::Removed =>
         {
             state.pending = Some(Popup::Remove);
 
             Task::none()
         }
-        Message::ConfirmRemove =>
+        Message::RemoveConfirmed =>
         {
             if let Some(Popup::Remove) = state.pending
             {
@@ -82,26 +82,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::CancelRemove =>
+        Message::RemoveCanceled =>
         {
             state.pending = None;
             state.delete_project_folder = state.config.general.delete_project_folder;
 
             Task::none()
         }
-        Message::ToggleRemoveProjectFolder(delete_project_folder) =>
+        Message::RemoveProjectFolderToggled(delete_project_folder) =>
         {
             state.delete_project_folder = delete_project_folder;
 
             Task::none()
         }
-        Message::Create =>
+        Message::Created =>
         {
             state.pending = Some(Popup::Create);
 
             Task::none()
         }
-        Message::ConfirmCreate =>
+        Message::CreateConfirmed =>
         {
             if !state
                 .new_project
@@ -115,10 +115,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::perform(
                 AppState::create_project_dir(state.new_project.path.clone()),
-                Message::CreateProjectDir,
+                Message::ProjectDirCreated,
             )
         }
-        Message::FinishCreate(result) =>
+        Message::CreateFinished(result) =>
         {
             match result
             {
@@ -147,7 +147,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::CreateProjectDir(result) => match result
+        Message::ProjectDirCreated(result) => match result
         {
             Ok(msg) =>
             {
@@ -158,12 +158,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 Task::perform(
                     AppState::clone_project_repo(state.new_project.clone()),
-                    Message::CloneProjectRepo,
+                    Message::ProjectRepoCloned,
                 )
             }
-            Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
-        Message::CloneProjectRepo(result) => match result
+        Message::ProjectRepoCloned(result) => match result
         {
             Ok(msg) =>
             {
@@ -174,12 +174,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 Task::perform(
                     AppState::create_projman_file(state.new_project.path.clone()),
-                    Message::CreateProjmanFile,
+                    Message::ProjmanFileCreated,
                 )
             }
-            Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
-        Message::CreateProjmanFile(result) =>
+        Message::ProjmanFileCreated(result) =>
         {
             let project_template: TemplateConfig = match state.new_project.project_type.template()
             {
@@ -188,7 +188,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 {
                     return Task::perform(
                         async move { Err(format!("Could not get project template ({err})")) },
-                        Message::FinishCreate,
+                        Message::CreateFinished,
                     );
                 }
             };
@@ -207,13 +207,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                             project_template.dir_structure,
                             state.new_project.path.clone(),
                         ),
-                        Message::CreateDirStructure,
+                        Message::DirStructureCreated,
                     )
                 }
-                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
             }
         }
-        Message::CreateDirStructure(result) =>
+        Message::DirStructureCreated(result) =>
         {
             let project_template: TemplateConfig = match state.new_project.project_type.template()
             {
@@ -222,7 +222,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 {
                     return Task::perform(
                         async move { Err(format!("Could not get project template ({err})")) },
-                        Message::FinishCreate,
+                        Message::CreateFinished,
                     );
                 }
             };
@@ -241,13 +241,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                             project_template.files,
                             state.new_project.path.clone(),
                         ),
-                        Message::CreateProjectFiles,
+                        Message::ProjectFilesCreated,
                     )
                 }
-                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
             }
         }
-        Message::CreateProjectFiles(result) =>
+        Message::ProjectFilesCreated(result) =>
         {
             let project_template: TemplateConfig = match state.new_project.project_type.template()
             {
@@ -256,7 +256,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 {
                     return Task::perform(
                         async move { Err(format!("Could not get project template ({err})")) },
-                        Message::FinishCreate,
+                        Message::CreateFinished,
                     );
                 }
             };
@@ -275,13 +275,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                             project_template.build[0].clone(),
                             state.new_project.path.clone(),
                         ),
-                        |result: Result<String, String>| Message::ExecuteBuildCommand(0, result),
+                        |result: Result<String, String>| Message::BuildCommandExecuted(0, result),
                     )
                 }
-                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
             }
         }
-        Message::ExecuteBuildCommand(index, result) =>
+        Message::BuildCommandExecuted(index, result) =>
         {
             if let Ok(project_template) = state.new_project.project_type.template()
             {
@@ -305,7 +305,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                             return Task::perform(
                                 AppState::add_project_to_json(state.new_project.clone()),
-                                Message::FinishCreate,
+                                Message::CreateFinished,
                             );
                         }
 
@@ -315,17 +315,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                                 state.new_project.path.clone(),
                             ),
                             move |result: Result<String, String>| {
-                                Message::ExecuteBuildCommand(index + 1, result)
+                                Message::BuildCommandExecuted(index + 1, result)
                             },
                         );
                     }
-                    Err(err) => return Task::perform(async { Err(err) }, Message::FinishCreate),
+                    Err(err) => return Task::perform(async { Err(err) }, Message::CreateFinished),
                 }
             };
 
             Task::none()
         }
-        Message::CancelCreate =>
+        Message::CreateCanceled =>
         {
             state.project_creation_status = (false, String::new());
             state.new_project = Project::default(&state.config);
@@ -334,7 +334,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::ChangeNewProjectName(name) =>
+        Message::NewProjectNameChanged(name) =>
         {
             if !state.new_project_path_changed
             {
@@ -346,19 +346,19 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::ChangeNewProjectType(project_type) =>
+        Message::NewProjectTypeChanged(project_type) =>
         {
             state.new_project.project_type = project_type;
 
             Task::none()
         }
-        Message::ChangeNewProjectRepo(repo) =>
+        Message::NewProjectRepoChanged(repo) =>
         {
             state.new_project.repo = repo;
 
             Task::none()
         }
-        Message::ChangeNewProjectPath(path) =>
+        Message::NewProjectPathChanged(path) =>
         {
             state.new_project.path = path;
 
@@ -366,8 +366,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Import => Task::none(),
-        Message::RemoveNonexistant =>
+        Message::Imported => Task::none(),
+        Message::NonexistantRemoved =>
         {
             match state.remove_project()
             {
@@ -378,7 +378,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.selected_project = None;
             Task::none()
         }
-        Message::RestoreNonexistant =>
+        Message::NonexistantRestored =>
         {
             state.project_restoration_failed = false;
             state.restoring_project = true;
@@ -386,10 +386,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             Task::perform(
                 AppState::restore_project(state.selected_project, state.project_list.clone())
                     .map_err(|e| e.to_string()),
-                Message::FinishRemoveNonexistant,
+                Message::RemoveNonexistantFinished,
             )
         }
-        Message::FinishRemoveNonexistant(restore_result) =>
+        Message::RemoveNonexistantFinished(restore_result) =>
         {
             state.restoring_project = false;
 

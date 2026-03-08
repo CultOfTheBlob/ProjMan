@@ -37,7 +37,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             text_input("", &state.new_project.name).on_input_maybe(
                 if !state.project_creation_status.0
                 {
-                    Some(Message::ChangeNewProjectName)
+                    Some(Message::NewProjectNameChanged)
                 }
                 else
                 {
@@ -58,7 +58,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     &state.project_types,
                     "",
                     Some(&state.new_project.project_type),
-                    Message::ChangeNewProjectType
+                    Message::NewProjectTypeChanged
                 )
             ]
             .spacing(4),
@@ -87,7 +87,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .on_input_maybe(
                 if !state.project_creation_status.0
                 {
-                    Some(Message::ChangeNewProjectRepo)
+                    Some(Message::NewProjectRepoChanged)
                 }
                 else
                 {
@@ -107,7 +107,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .on_input_maybe(
                         if !state.project_creation_status.0
                         {
-                            Some(|path| Message::ChangeNewProjectPath(PathBuf::from(path)))
+                            Some(|path| Message::NewProjectPathChanged(PathBuf::from(path)))
                         }
                         else
                         {
@@ -179,7 +179,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
         if !state.project_creation_status.0
         {
-            Some(Message::CancelCreate)
+            Some(Message::CreateCanceled)
         }
         else
         {
@@ -204,7 +204,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .on_press_maybe(
             if !state.project_creation_status.0
             {
-                Some(Message::ConfirmCreate)
+                Some(Message::CreateConfirmed)
             }
             else
             {

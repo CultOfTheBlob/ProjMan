@@ -12,7 +12,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         button("Create").style(button::secondary).on_press_maybe(
             if state.pending.is_none()
             {
-                Some(Message::Create)
+                Some(Message::Created)
             }
             else
             {
@@ -22,7 +22,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         button("Import").style(button::secondary).on_press_maybe(
             if state.pending.is_none()
             {
-                Some(Message::Import)
+                Some(Message::Imported)
             }
             else
             {
@@ -40,7 +40,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
             top_bar_content.push(button("Remove").style(button::primary).on_press_maybe(
                 if state.pending.is_none()
                 {
-                    Some(Message::Remove)
+                    Some(Message::Removed)
                 }
                 else
                 {

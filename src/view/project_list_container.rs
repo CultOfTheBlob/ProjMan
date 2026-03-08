@@ -68,7 +68,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .on_press_maybe(
                         if state.pending.is_none() && !state.restoring_project
                         {
-                            Some(Message::RestoreNonexistant)
+                            Some(Message::NonexistantRestored)
                         }
                         else
                         {
@@ -82,7 +82,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         .on_press_maybe(
                             if state.pending.is_none() && !state.restoring_project
                             {
-                                Some(Message::RemoveNonexistant)
+                                Some(Message::NonexistantRemoved)
                             }
                             else
                             {
@@ -116,14 +116,14 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             );
 
         let select_area = mouse_area(row_container)
-            .on_press(Message::Select(index))
-            .on_double_click(Message::Open(project.clone()));
+            .on_press(Message::Selected(index))
+            .on_double_click(Message::Opened(project.clone()));
 
         project_list_content = project_list_content.push(select_area);
     }
 
     let deselect_area =
-        mouse_area(space().width(Length::Fill).height(Length::Fill)).on_press(Message::Deselect);
+        mouse_area(space().width(Length::Fill).height(Length::Fill)).on_press(Message::Deselected);
 
     let project_list = container(
         container(column![scrollable(project_list_content), deselect_area])

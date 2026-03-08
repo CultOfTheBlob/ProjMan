@@ -21,11 +21,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let delete_project_folder_widget = checkbox(state.delete_project_folder)
         .style(checkbox::danger)
         .label("Also remove project folder")
-        .on_toggle(Message::ToggleRemoveProjectFolder);
+        .on_toggle(Message::RemoveProjectFolderToggled);
 
     let cancel_widget = button("Cancel")
         .style(button::secondary)
-        .on_press(Message::CancelRemove);
+        .on_press(Message::RemoveCanceled);
 
     let confirm_widget = button("Confirm")
         .style(|theme: &Theme, status| {
@@ -38,7 +38,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 button::primary(theme, status)
             }
         })
-        .on_press(Message::ConfirmRemove);
+        .on_press(Message::RemoveConfirmed);
 
     let popup_content = container(
         column![
