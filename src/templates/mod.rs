@@ -48,7 +48,7 @@ pub trait Template
     fn template_path() -> &'static str;
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TemplateConfig
 {
     pub dir_structure: Vec<Folder>,
@@ -57,7 +57,7 @@ pub struct TemplateConfig
     pub run: Vec<Command>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Folder
 {
     pub name: String,
@@ -81,14 +81,14 @@ impl Folder
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct File
 {
     pub path: String,
     pub content: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Command
 {
     pub program: String,

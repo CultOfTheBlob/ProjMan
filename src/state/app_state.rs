@@ -1,20 +1,21 @@
 use std::{
     fs::{
-        File, create_dir, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file,
+        self, create_dir, create_dir_all, read_to_string, remove_dir, remove_dir_all, remove_file,
         write,
     },
     io::{self, ErrorKind, Write},
     path::PathBuf,
-    process,
+    process::{self},
 };
 
 use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
-use iced::widget::combo_box;
+use iced::{Task, widget::combo_box};
 
 use crate::{
+    message::Message,
     state::{config::Config, project::Project, project_type::ProjectType},
-    templates::Command,
+    templates::{Command, File, Folder, TemplateConfig},
 };
 
 #[derive(Debug)]
@@ -162,7 +163,7 @@ impl AppState
 
                 if !project.path.join(".projman").exists()
                 {
-                    File::create_new(project.path.join(".projman"))?;
+                    fs::File::create_new(project.path.join(".projman"))?;
                 }
 
                 let mut projects_json: Vec<Project> =
@@ -185,75 +186,188 @@ impl AppState
         ))
     }
 
-    pub async fn create_project(new_project: Project) -> Result<Vec<Project>, std::io::Error>
+    // fn create_config_dir() -> Result<PathBuf, String>
+    // {
+    //     if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+    //     {
+    //         let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
+    //
+    //         if !config_path.is_file()
+    //         {
+    //             return Err("Error: File projects.json does not exist".to_string());
+    //         }
+    //
+    //         return Ok(config_path);
+    //     }
+    //
+    //     Err("Could not find config dir".to_string())
+    // }
+
+    pub fn create_project(project: Project) -> Task<Message>
+    {
+        let project_template: TemplateConfig = match project.project_type.template()
+        {
+            Ok(template) => template,
+            Err(err) =>
+            {
+                return Task::done(Message::ProgressCreate(format!(
+                    "Error: Could not get project template ({err})"
+                )));
+            }
+        };
+
+        Task::perform(
+            AppState::create_project_dir(project.path.clone()),
+            Message::ProgressCreate,
+        )
+        .chain(Task::perform(
+            AppState::clone_project_repo(project.clone()),
+            Message::ProgressCreate,
+        ))
+        .chain(Task::perform(
+            AppState::create_projman_file(project.path.clone()),
+            Message::ProgressCreate,
+        ))
+        .chain(Task::perform(
+            AppState::create_dir_structure(
+                project_template.dir_structure.clone(),
+                project.path.clone(),
+            ),
+            Message::ProgressCreate,
+        ))
+        .chain(Task::perform(
+            AppState::create_project_files(project_template.files.clone(), project.path.clone()),
+            Message::ProgressCreate,
+        ))
+        .chain(Task::perform(
+            AppState::execute_build_command(
+                project_template.build.first().unwrap().clone(),
+                project.path.clone(),
+            ),
+            |status: bool| Message::FinishBuildCommand(0, status),
+        ))
+    }
+
+    async fn create_project_dir(project_path: PathBuf) -> String
+    {
+        match create_dir_all(&project_path)
+        {
+            Ok(_) => "Created project dir...".to_string(),
+            Err(err) => format!("Error: Could not create project directory ({err})"),
+        }
+    }
+
+    async fn clone_project_repo(project: Project) -> String
+    {
+        match project.clone_repo()
+        {
+            Ok(_) => "Cloned project repo...".to_string(),
+
+            Err(err) =>
+            {
+                let _ = remove_dir(&project.path);
+                format!("Error: Could not clone project repo ({err})")
+            }
+        }
+    }
+
+    async fn create_projman_file(project_path: PathBuf) -> String
+    {
+        match fs::File::create_new(project_path.join(".projman"))
+        {
+            Ok(_) => "Created .projman file...".to_string(),
+            Err(err) => format!("Error: Could not create .projman file {err}"),
+        }
+    }
+
+    async fn create_dir_structure(
+        project_dir_structure: Vec<Folder>,
+        project_path: PathBuf,
+    ) -> String
+    {
+        for dir in &project_dir_structure
+        {
+            let dirs: Vec<PathBuf> = dir.parse(&project_path);
+
+            for dir in &dirs
+            {
+                if let Err(err) = create_dir(dir)
+                {
+                    return format!("Error: Could not create directory structure ({err})");
+                }
+            }
+        }
+
+        "Created project directory structure...".to_string()
+    }
+
+    async fn create_project_files(project_files: Vec<File>, project_path: PathBuf) -> String
+    {
+        for file in &project_files
+        {
+            if let Err(err) = write(project_path.join(&file.path), &file.content)
+            {
+                return format!("Error: Could not create project files ({err})");
+            };
+        }
+
+        "Created project files...".to_string()
+    }
+
+    pub async fn execute_build_command(command: Command, project_path: PathBuf) -> bool
+    {
+        process::Command::new(&command.program)
+            .args(&command.args)
+            .current_dir(&project_path)
+            .status()
+            .is_ok()
+    }
+
+    pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, String>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            create_dir_all(proj_dirs.config_dir())?;
+            if let Err(err) = create_dir_all(proj_dirs.config_dir())
+            {
+                return Err(format!("Error: Could not create config dir ({err})"));
+            };
 
             let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
 
             if !config_path.is_file()
             {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::NotADirectory,
-                    "Error: projects.json does not exist",
-                ));
+                return Err("Error: projects.json does not exist".to_string());
             }
 
-            create_dir_all(&new_project.path)?;
-
-            if let Err(err) = new_project.clone_repo()
+            let projects_from_json: String = match read_to_string(&config_path)
             {
-                remove_dir(&new_project.path)?;
-                return Err(err);
+                Ok(string) => string,
+                Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
             };
 
-            File::create_new(new_project.path.join(".projman"))?;
-
-            let dir_structure = new_project.project_type.template()?.dir_structure;
-            for dir in &dir_structure
+            let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
             {
-                let dirs: Vec<PathBuf> = dir.parse(&new_project.path);
+                Ok(it) => it,
+                Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
+            };
 
-                for dir in &dirs
-                {
-                    create_dir(dir)?;
-                }
-            }
+            projects.push(project);
 
-            let files = new_project.project_type.template()?.files;
-            for file in files
+            let projects_to_json = match serde_json::to_string_pretty(&projects)
             {
-                write(new_project.path.join(file.path), &file.content)?;
-            }
+                Ok(it) => it,
+                Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
+            };
 
-            let build_commands: Vec<Command> = new_project.project_type.template()?.build;
-            for command in &build_commands
+            if let Err(err) = write(&config_path, projects_to_json.as_bytes())
             {
-                process::Command::new(&command.program)
-                    .args(&command.args)
-                    .current_dir(&new_project.path)
-                    .status()?;
-            }
+                return Err(format!("Error: Could not write to projects.json ({err})"));
+            };
 
-            let mut projects_json: Vec<Project> =
-                serde_json::from_str(&read_to_string(&config_path)?)?;
-
-            projects_json.push(new_project);
-
-            write(
-                &config_path,
-                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
-            )?;
-
-            return Ok(projects_json);
+            return Ok(projects);
         }
 
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
+        Err("Error: Could not find config dir".to_string())
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
@@ -266,7 +380,7 @@ impl AppState
 
             if !config_path.is_file()
             {
-                File::create(&config_path)?.write_all("[]".as_bytes())?;
+                fs::File::create(&config_path)?.write_all("[]".as_bytes())?;
 
                 return Ok(Vec::<Project>::new());
             }

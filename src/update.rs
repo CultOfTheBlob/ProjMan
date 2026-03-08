@@ -9,6 +9,7 @@ use crate::{
         app_state::{AppState, Popup},
         project::Project,
     },
+    templates::Command,
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
@@ -111,10 +112,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             }
 
             state.project_creation_status = (true, String::from("Creating project..."));
-            Task::perform(
-                AppState::create_project(state.new_project.clone()).map_err(|e| e.to_string()),
-                Message::FinishCreate,
-            )
+
+            AppState::create_project(state.new_project.clone())
         }
         Message::FinishCreate(create_result) =>
         {
@@ -122,11 +121,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 Ok(projects_list) =>
                 {
-                    state.project_creation_status = (false, String::new());
+                    state.project_creation_status.0 = false;
+                    state
+                        .project_creation_status
+                        .1
+                        .push_str("\nProject Created...");
                     state.project_list = projects_list;
                     state.new_project = Project::default(&state.config);
                     state.selected_project = Some(state.project_list.len() - 1);
-                    state.pending = None;
+                    // state.pending = None;
                     state.new_project_path_changed = false;
                 }
                 Err(err) =>
@@ -135,6 +138,55 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                     state.project_creation_status.1 = format!("Error: {err}");
                 }
             }
+
+            Task::none()
+        }
+        Message::ProgressCreate(text) =>
+        {
+            state
+                .project_creation_status
+                .1
+                .push_str(&format!("\n{text}"));
+            Task::none()
+        }
+        Message::FinishBuildCommand(index, status) =>
+        {
+            if let Ok(project_template) = state.new_project.project_type.template()
+            {
+                let commands: Vec<Command> = project_template.build;
+
+                match status
+                {
+                    true => state.project_creation_status.1.push_str(&format!(
+                        "\nExecuted [{} {}]...",
+                        &commands[index].program, &commands[index].args[0]
+                    )),
+                    false => state.project_creation_status.1.push_str(&format!(
+                        "\nError: Could not execute [{} {}]...",
+                        &commands[index].program, &commands[index].args[0]
+                    )),
+                }
+
+                if index >= commands.len() - 1
+                {
+                    return Task::perform(
+                        async { String::from("Executed build commands...") },
+                        Message::ProgressCreate,
+                    )
+                    .chain(Task::perform(
+                        AppState::add_project_to_json(state.new_project.clone()),
+                        Message::FinishCreate,
+                    ));
+                }
+
+                return Task::perform(
+                    AppState::execute_build_command(
+                        commands[index + 1].clone(),
+                        state.new_project.path.clone(),
+                    ),
+                    move |status: bool| Message::FinishBuildCommand(index + 1, status),
+                );
+            };
 
             Task::none()
         }
