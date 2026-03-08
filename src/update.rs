@@ -9,7 +9,7 @@ use crate::{
         app_state::{AppState, Popup},
         project::Project,
     },
-    templates::Command,
+    templates::{Command, TemplateConfig},
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
@@ -113,11 +113,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             state.project_creation_status = (true, String::from("Creating project..."));
 
-            AppState::create_project(state.new_project.clone())
+            Task::perform(
+                AppState::create_project_dir(state.new_project.path.clone()),
+                Message::CreateProjectDir,
+            )
         }
-        Message::FinishCreate(create_result) =>
+        Message::FinishCreate(result) =>
         {
-            match create_result
+            match result
             {
                 Ok(projects_list) =>
                 {
@@ -135,57 +138,189 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Err(err) =>
                 {
                     state.project_creation_status.0 = false;
-                    state.project_creation_status.1 = format!("Error: {err}");
+                    state
+                        .project_creation_status
+                        .1
+                        .push_str(&format!("\nError: {err}"));
                 }
             }
 
             Task::none()
         }
-        Message::ProgressCreate(text) =>
+        Message::CreateProjectDir(result) => match result
         {
-            state
-                .project_creation_status
-                .1
-                .push_str(&format!("\n{text}"));
-            Task::none()
+            Ok(msg) =>
+            {
+                state
+                    .project_creation_status
+                    .1
+                    .push_str(&format!("\n{msg}"));
+
+                Task::perform(
+                    AppState::clone_project_repo(state.new_project.clone()),
+                    Message::CloneProjectRepo,
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+        },
+        Message::CloneProjectRepo(result) => match result
+        {
+            Ok(msg) =>
+            {
+                state
+                    .project_creation_status
+                    .1
+                    .push_str(&format!("\n{msg}"));
+
+                Task::perform(
+                    AppState::create_projman_file(state.new_project.path.clone()),
+                    Message::CreateProjmanFile,
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+        },
+        Message::CreateProjmanFile(result) =>
+        {
+            let project_template: TemplateConfig = match state.new_project.project_type.template()
+            {
+                Ok(template) => template,
+                Err(err) =>
+                {
+                    return Task::perform(
+                        async move { Err(format!("Could not get project template ({err})")) },
+                        Message::FinishCreate,
+                    );
+                }
+            };
+
+            match result
+            {
+                Ok(msg) =>
+                {
+                    state
+                        .project_creation_status
+                        .1
+                        .push_str(&format!("\n{msg}"));
+
+                    Task::perform(
+                        AppState::create_dir_structure(
+                            project_template.dir_structure,
+                            state.new_project.path.clone(),
+                        ),
+                        Message::CreateDirStructure,
+                    )
+                }
+                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+            }
         }
-        Message::FinishBuildCommand(index, status) =>
+        Message::CreateDirStructure(result) =>
+        {
+            let project_template: TemplateConfig = match state.new_project.project_type.template()
+            {
+                Ok(template) => template,
+                Err(err) =>
+                {
+                    return Task::perform(
+                        async move { Err(format!("Could not get project template ({err})")) },
+                        Message::FinishCreate,
+                    );
+                }
+            };
+
+            match result
+            {
+                Ok(msg) =>
+                {
+                    state
+                        .project_creation_status
+                        .1
+                        .push_str(&format!("\n{msg}"));
+
+                    Task::perform(
+                        AppState::create_project_files(
+                            project_template.files,
+                            state.new_project.path.clone(),
+                        ),
+                        Message::CreateProjectFiles,
+                    )
+                }
+                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+            }
+        }
+        Message::CreateProjectFiles(result) =>
+        {
+            let project_template: TemplateConfig = match state.new_project.project_type.template()
+            {
+                Ok(template) => template,
+                Err(err) =>
+                {
+                    return Task::perform(
+                        async move { Err(format!("Could not get project template ({err})")) },
+                        Message::FinishCreate,
+                    );
+                }
+            };
+
+            match result
+            {
+                Ok(msg) =>
+                {
+                    state
+                        .project_creation_status
+                        .1
+                        .push_str(&format!("\n{msg}"));
+
+                    Task::perform(
+                        AppState::execute_build_command(
+                            project_template.build[0].clone(),
+                            state.new_project.path.clone(),
+                        ),
+                        |result: Result<String, String>| Message::ExecuteBuildCommand(0, result),
+                    )
+                }
+                Err(err) => Task::perform(async { Err(err) }, Message::FinishCreate),
+            }
+        }
+        Message::ExecuteBuildCommand(index, result) =>
         {
             if let Ok(project_template) = state.new_project.project_type.template()
             {
                 let commands: Vec<Command> = project_template.build;
 
-                match status
+                match result
                 {
-                    true => state.project_creation_status.1.push_str(&format!(
-                        "\nExecuted [{} {}]...",
-                        &commands[index].program, &commands[index].args[0]
-                    )),
-                    false => state.project_creation_status.1.push_str(&format!(
-                        "\nError: Could not execute [{} {}]...",
-                        &commands[index].program, &commands[index].args[0]
-                    )),
-                }
+                    Ok(msg) =>
+                    {
+                        state
+                            .project_creation_status
+                            .1
+                            .push_str(&format!("\n{msg}"));
 
-                if index >= commands.len() - 1
-                {
-                    return Task::perform(
-                        async { String::from("Executed build commands...") },
-                        Message::ProgressCreate,
-                    )
-                    .chain(Task::perform(
-                        AppState::add_project_to_json(state.new_project.clone()),
-                        Message::FinishCreate,
-                    ));
-                }
+                        if index >= commands.len() - 1
+                        {
+                            state
+                                .project_creation_status
+                                .1
+                                .push_str("\nExecuted build commands...");
 
-                return Task::perform(
-                    AppState::execute_build_command(
-                        commands[index + 1].clone(),
-                        state.new_project.path.clone(),
-                    ),
-                    move |status: bool| Message::FinishBuildCommand(index + 1, status),
-                );
+                            return Task::perform(
+                                AppState::add_project_to_json(state.new_project.clone()),
+                                Message::FinishCreate,
+                            );
+                        }
+
+                        return Task::perform(
+                            AppState::execute_build_command(
+                                commands[index + 1].clone(),
+                                state.new_project.path.clone(),
+                            ),
+                            move |result: Result<String, String>| {
+                                Message::ExecuteBuildCommand(index + 1, result)
+                            },
+                        );
+                    }
+                    Err(err) => return Task::perform(async { Err(err) }, Message::FinishCreate),
+                }
             };
 
             Task::none()

@@ -10,12 +10,11 @@ use std::{
 
 use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
-use iced::{Task, widget::combo_box};
+use iced::widget::combo_box;
 
 use crate::{
-    message::Message,
     state::{config::Config, project::Project, project_type::ProjectType},
-    templates::{Command, File, Folder, TemplateConfig},
+    templates::{Command, File, Folder},
 };
 
 #[derive(Debug)]
@@ -186,104 +185,42 @@ impl AppState
         ))
     }
 
-    // fn create_config_dir() -> Result<PathBuf, String>
-    // {
-    //     if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
-    //     {
-    //         let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
-    //
-    //         if !config_path.is_file()
-    //         {
-    //             return Err("Error: File projects.json does not exist".to_string());
-    //         }
-    //
-    //         return Ok(config_path);
-    //     }
-    //
-    //     Err("Could not find config dir".to_string())
-    // }
-
-    pub fn create_project(project: Project) -> Task<Message>
-    {
-        let project_template: TemplateConfig = match project.project_type.template()
-        {
-            Ok(template) => template,
-            Err(err) =>
-            {
-                return Task::done(Message::ProgressCreate(format!(
-                    "Error: Could not get project template ({err})"
-                )));
-            }
-        };
-
-        Task::perform(
-            AppState::create_project_dir(project.path.clone()),
-            Message::ProgressCreate,
-        )
-        .chain(Task::perform(
-            AppState::clone_project_repo(project.clone()),
-            Message::ProgressCreate,
-        ))
-        .chain(Task::perform(
-            AppState::create_projman_file(project.path.clone()),
-            Message::ProgressCreate,
-        ))
-        .chain(Task::perform(
-            AppState::create_dir_structure(
-                project_template.dir_structure.clone(),
-                project.path.clone(),
-            ),
-            Message::ProgressCreate,
-        ))
-        .chain(Task::perform(
-            AppState::create_project_files(project_template.files.clone(), project.path.clone()),
-            Message::ProgressCreate,
-        ))
-        .chain(Task::perform(
-            AppState::execute_build_command(
-                project_template.build.first().unwrap().clone(),
-                project.path.clone(),
-            ),
-            |status: bool| Message::FinishBuildCommand(0, status),
-        ))
-    }
-
-    async fn create_project_dir(project_path: PathBuf) -> String
+    pub async fn create_project_dir(project_path: PathBuf) -> Result<String, String>
     {
         match create_dir_all(&project_path)
         {
-            Ok(_) => "Created project dir...".to_string(),
-            Err(err) => format!("Error: Could not create project directory ({err})"),
+            Ok(_) => Ok("Created project dir...".to_string()),
+            Err(err) => Err(format!("Could not create project directory ({err})")),
         }
     }
 
-    async fn clone_project_repo(project: Project) -> String
+    pub async fn clone_project_repo(project: Project) -> Result<String, String>
     {
         match project.clone_repo()
         {
-            Ok(_) => "Cloned project repo...".to_string(),
+            Ok(_) => Ok("Cloned project repo...".to_string()),
 
             Err(err) =>
             {
                 let _ = remove_dir(&project.path);
-                format!("Error: Could not clone project repo ({err})")
+                Err(format!("Could not clone project repo ({err})"))
             }
         }
     }
 
-    async fn create_projman_file(project_path: PathBuf) -> String
+    pub async fn create_projman_file(project_path: PathBuf) -> Result<String, String>
     {
         match fs::File::create_new(project_path.join(".projman"))
         {
-            Ok(_) => "Created .projman file...".to_string(),
-            Err(err) => format!("Error: Could not create .projman file {err}"),
+            Ok(_) => Ok("Created .projman file...".to_string()),
+            Err(err) => Err(format!("Could not create .projman file {err}")),
         }
     }
 
-    async fn create_dir_structure(
+    pub async fn create_dir_structure(
         project_dir_structure: Vec<Folder>,
         project_path: PathBuf,
-    ) -> String
+    ) -> Result<String, String>
     {
         for dir in &project_dir_structure
         {
@@ -293,34 +230,51 @@ impl AppState
             {
                 if let Err(err) = create_dir(dir)
                 {
-                    return format!("Error: Could not create directory structure ({err})");
+                    return Err(format!("Could not create directory structure ({err})"));
                 }
             }
         }
 
-        "Created project directory structure...".to_string()
+        Ok("Created project directory structure...".to_string())
     }
 
-    async fn create_project_files(project_files: Vec<File>, project_path: PathBuf) -> String
+    pub async fn create_project_files(
+        project_files: Vec<File>,
+        project_path: PathBuf,
+    ) -> Result<String, String>
     {
         for file in &project_files
         {
             if let Err(err) = write(project_path.join(&file.path), &file.content)
             {
-                return format!("Error: Could not create project files ({err})");
+                return Err(format!("Could not create project files ({err})"));
             };
         }
 
-        "Created project files...".to_string()
+        Ok("Created project files...".to_string())
     }
 
-    pub async fn execute_build_command(command: Command, project_path: PathBuf) -> bool
+    pub async fn execute_build_command(
+        command: Command,
+        project_path: PathBuf,
+    ) -> Result<String, String>
     {
-        process::Command::new(&command.program)
+        match process::Command::new(&command.program)
             .args(&command.args)
             .current_dir(&project_path)
             .status()
-            .is_ok()
+        {
+            Ok(_) => Ok(format!(
+                "Executed [{} {:?}]...",
+                command.program,
+                command.args.join(" ")
+            )),
+            Err(err) => Err(format!(
+                "Could not execute [{} {:?}] ({err})",
+                command.program,
+                command.args.join(" ")
+            )),
+        }
     }
 
     pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, String>
