@@ -3,7 +3,10 @@ use std::path::PathBuf;
 use iced::{
     Background::Color,
     Border, Element, Length, Theme,
-    widget::{button, column, combo_box, container, row, stack, text, text_input},
+    widget::{
+        Text, button, column, combo_box, container, row, scrollable::Scrollable, stack, text,
+        text_input,
+    },
 };
 
 use crate::{
@@ -35,7 +38,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         column![
             text("Project Name:"),
             text_input("", &state.new_project.name).on_input_maybe(
-                if !state.project_creation_status.0
+                if !state.project_creation_status.creating
                 {
                     Some(Message::NewProjectNameChanged)
                 }
@@ -49,7 +52,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     )
     .padding(12);
 
-    let project_type_widget = if !state.project_creation_status.0
+    let project_type_widget = if !state.project_creation_status.creating
     {
         container(
             column![
@@ -85,7 +88,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 &state.new_project.repo
             )
             .on_input_maybe(
-                if !state.project_creation_status.0
+                if !state.project_creation_status.creating
                 {
                     Some(Message::NewProjectRepoChanged)
                 }
@@ -105,7 +108,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             column![
                 text_input("", &state.new_project.path.to_string_lossy())
                     .on_input_maybe(
-                        if !state.project_creation_status.0
+                        if !state.project_creation_status.creating
                         {
                             Some(|path| Message::NewProjectPathChanged(PathBuf::from(path)))
                         }
@@ -117,7 +120,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .style(|theme: &Theme, status| {
                         let mut style = text_input::default(theme, status);
 
-                        if !state.project_creation_status.0
+                        if !state.project_creation_status.creating
                             && !state
                                 .new_project
                                 .path_is_valid(&state.config.general.projects_dir)
@@ -129,7 +132,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         style
                     }),
                 text(
-                    if state.project_creation_status.0
+                    if state.project_creation_status.creating
                     {
                         String::new()
                     }
@@ -142,7 +145,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     }
                 )
                 .height(
-                    if !state.project_creation_status.0
+                    if !state.project_creation_status.creating
                         && state
                             .new_project
                             .path_is_valid(&state.config.general.projects_dir)
@@ -163,21 +166,36 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     )
     .padding(12);
 
-    let porgress_widget = container(text(&state.project_creation_status.1).style(
-        if state.project_creation_status.1.starts_with("Error:")
-        {
-            text::danger
-        }
-        else
-        {
-            text::success
-        },
-    ))
-    .width(Length::Fill)
+    let progress_widget = container(
+        Scrollable::new(column(
+            state
+                .project_creation_status
+                .log
+                .iter()
+                .enumerate()
+                .map(|(i, l)| {
+                    Text::new(l)
+                        .style(
+                            if state.project_creation_status.failed
+                                && i == state.project_creation_status.log.len() - 1
+                            {
+                                text::danger
+                            }
+                            else
+                            {
+                                text::success
+                            },
+                        )
+                        .into()
+                }),
+        ))
+        .width(Length::Fill)
+        .height(72),
+    )
     .padding(12);
 
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
-        if !state.project_creation_status.0
+        if !state.project_creation_status.creating
         {
             Some(Message::CreateCanceled)
         }
@@ -202,7 +220,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             style
         })
         .on_press_maybe(
-            if !state.project_creation_status.0
+            if !state.project_creation_status.creating
             {
                 Some(Message::CreateConfirmed)
             }
@@ -219,7 +237,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             project_type_widget,
             project_repo_widget,
             project_path_widget,
-            porgress_widget,
+            progress_widget,
             row![cancel_widget, confirm_widget].padding(12).spacing(256)
         ]
         .spacing(12),

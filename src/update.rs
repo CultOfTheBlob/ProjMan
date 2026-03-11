@@ -6,7 +6,7 @@ use iced::{Task, futures::TryFutureExt};
 use crate::{
     message::Message,
     state::{
-        app_state::{AppState, Popup},
+        app_state::{AppState, Popup, ProjectCreationStatus},
         project::Project,
     },
     templates::{Command, TemplateConfig},
@@ -111,7 +111,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 return Task::none();
             }
 
-            state.project_creation_status = (true, String::from("Creating project..."));
+            state.project_creation_status = ProjectCreationStatus {
+                creating: true,
+                failed: false,
+                log: vec![String::from("Creating project...")],
+            };
 
             Task::perform(
                 AppState::create_project_dir(state.new_project.path.clone()),
@@ -124,11 +128,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 Ok(projects_list) =>
                 {
-                    state.project_creation_status.0 = false;
+                    state.project_creation_status.creating = false;
                     state
                         .project_creation_status
-                        .1
-                        .push_str("\nProject Created...");
+                        .log
+                        .push(String::from("Project Created!"));
                     state.project_list = projects_list;
                     state.new_project = Project::default(&state.config);
                     state.selected_project = Some(state.project_list.len() - 1);
@@ -137,11 +141,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 }
                 Err(err) =>
                 {
-                    state.project_creation_status.0 = false;
+                    state.project_creation_status.creating = false;
+                    state.project_creation_status.failed = true;
                     state
                         .project_creation_status
-                        .1
-                        .push_str(&format!("\nError: {err}"));
+                        .log
+                        .push(format!("Error: {err}"));
                 }
             }
 
@@ -149,12 +154,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ProjectDirCreated(result) => match result
         {
-            Ok(msg) =>
+            Ok(log) =>
             {
-                state
-                    .project_creation_status
-                    .1
-                    .push_str(&format!("\n{msg}"));
+                state.project_creation_status.log.push(log);
 
                 Task::perform(
                     AppState::clone_project_repo(state.new_project.clone()),
@@ -165,12 +167,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         },
         Message::ProjectRepoCloned(result) => match result
         {
-            Ok(msg) =>
+            Ok(log) =>
             {
-                state
-                    .project_creation_status
-                    .1
-                    .push_str(&format!("\n{msg}"));
+                state.project_creation_status.log.push(log);
 
                 Task::perform(
                     AppState::create_projman_file(state.new_project.path.clone()),
@@ -195,12 +194,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             match result
             {
-                Ok(msg) =>
+                Ok(log) =>
                 {
-                    state
-                        .project_creation_status
-                        .1
-                        .push_str(&format!("\n{msg}"));
+                    state.project_creation_status.log.push(log);
 
                     Task::perform(
                         AppState::create_dir_structure(
@@ -229,12 +225,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             match result
             {
-                Ok(msg) =>
+                Ok(log) =>
                 {
-                    state
-                        .project_creation_status
-                        .1
-                        .push_str(&format!("\n{msg}"));
+                    state.project_creation_status.log.push(log);
 
                     Task::perform(
                         AppState::create_project_files(
@@ -263,12 +256,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             match result
             {
-                Ok(msg) =>
+                Ok(log) =>
                 {
-                    state
-                        .project_creation_status
-                        .1
-                        .push_str(&format!("\n{msg}"));
+                    state.project_creation_status.log.push(log);
 
                     Task::perform(
                         AppState::execute_build_command(
@@ -289,19 +279,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 match result
                 {
-                    Ok(msg) =>
+                    Ok(log) =>
                     {
-                        state
-                            .project_creation_status
-                            .1
-                            .push_str(&format!("\n{msg}"));
+                        state.project_creation_status.log.push(log);
 
                         if index >= commands.len() - 1
                         {
                             state
                                 .project_creation_status
-                                .1
-                                .push_str("\nExecuted build commands...");
+                                .log
+                                .push(String::from("Executed build commands..."));
 
                             return Task::perform(
                                 AppState::add_project_to_json(state.new_project.clone()),
@@ -327,7 +314,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::CreateCanceled =>
         {
-            state.project_creation_status = (false, String::new());
+            state.project_creation_status = ProjectCreationStatus {
+                creating: false,
+                failed: false,
+                log: vec![String::new()],
+            };
             state.new_project = Project::default(&state.config);
             state.pending = None;
             state.new_project_path_changed = false;

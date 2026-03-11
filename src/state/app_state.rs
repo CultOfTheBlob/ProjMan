@@ -25,6 +25,14 @@ pub enum Popup
 }
 
 #[derive(Debug)]
+pub struct ProjectCreationStatus
+{
+    pub creating: bool,
+    pub failed: bool,
+    pub log: Vec<String>,
+}
+
+#[derive(Debug)]
 pub struct AppState
 {
     pub config: Config,
@@ -35,7 +43,7 @@ pub struct AppState
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
-    pub project_creation_status: (bool, String),
+    pub project_creation_status: ProjectCreationStatus,
     pub project_restoration_failed: bool,
     pub restoring_project: bool,
 }
@@ -55,7 +63,11 @@ impl Default for AppState
             project_list,
             new_project: Project::default(&Config::default()),
             project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
-            project_creation_status: (false, String::new()),
+            project_creation_status: ProjectCreationStatus {
+                creating: false,
+                failed: false,
+                log: vec![],
+            },
             project_restoration_failed: false,
             delete_project_folder: false,
             new_project_path_changed: false,
