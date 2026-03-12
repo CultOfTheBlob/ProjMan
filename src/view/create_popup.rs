@@ -2,10 +2,11 @@ use std::path::PathBuf;
 
 use iced::{
     Background::Color,
-    Border, Element, Length, Theme,
+    Border, Element, Length, Shadow, Theme, Vector,
     widget::{
-        Text, button, column, combo_box, container, row, scrollable::Scrollable, stack, text,
-        text_input,
+        Text, button, column, combo_box, container, row,
+        scrollable::{self, Scrollable},
+        stack, text, text_input,
     },
 };
 
@@ -166,7 +167,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     )
     .padding(12);
 
-    let progress_widget = container(
+    let progress_widget = container(stack![
         Scrollable::new(column(
             state
                 .project_creation_status
@@ -190,8 +191,64 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 }),
         ))
         .width(Length::Fill)
-        .height(72),
-    )
+        .height(96)
+        .style(
+            |theme: &Theme, status: scrollable::Status| scrollable::Style {
+                container: container::Style {
+                    background: Some(Color(theme.extended_palette().background.weaker.color)),
+                    border: Border {
+                        color: theme.extended_palette().background.strong.color,
+                        width: 1.0,
+                        radius: 4.0.into(),
+                    },
+                    ..Default::default()
+                },
+                ..scrollable::default(theme, status)
+            },
+        ),
+        container(
+            button("")
+                .on_press_maybe(
+                    if state.project_creation_status.failed
+                        && !state.project_creation_status.creating
+                    {
+                        Some(Message::CreationErrorCopied)
+                    }
+                    else
+                    {
+                        None
+                    }
+                )
+                .style(|theme: &Theme, status: button::Status| {
+                    match status
+                    {
+                        button::Status::Disabled => button::Style {
+                            background: Some(Color(iced::Color::TRANSPARENT)),
+                            text_color: iced::Color::TRANSPARENT,
+                            ..button::secondary(theme, status)
+                        },
+
+                        _ => button::Style {
+                            text_color: theme.extended_palette().background.weak.color,
+                            border: Border {
+                                color: theme.extended_palette().background.strong.color,
+                                width: 1.0,
+                                radius: 4.0.into(),
+                            },
+                            shadow: Shadow {
+                                color: theme.extended_palette().background.weakest.color,
+                                offset: Vector { x: 3.0, y: 3.0 },
+                                blur_radius: 6.0,
+                            },
+                            ..button::secondary(theme, status)
+                        },
+                    }
+                })
+        )
+        .padding(8)
+        .align_right(Length::Fill)
+        .align_top(Length::Fill)
+    ])
     .padding(12);
 
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
@@ -259,7 +316,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .width(Length::Fill)
             .height(Length::Fill)
             .style(|_| container::Style {
-                background: Some(iced::Background::Color(iced::Color {
+                background: Some(Color(iced::Color {
                     r: 0.0,
                     g: 0.0,
                     b: 0.0,

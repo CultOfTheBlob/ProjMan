@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use color_eyre::owo_colors::OwoColorize;
-use iced::{Task, futures::TryFutureExt};
+use iced::{Task, clipboard, futures::TryFutureExt};
 
 use crate::{
     message::Message,
@@ -354,6 +354,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.new_project.path = path;
 
             state.new_project_path_changed = true;
+
+            Task::none()
+        }
+        Message::CreationErrorCopied =>
+        {
+            if let Some(error) = state.project_creation_status.log.last()
+            {
+                return clipboard::write::<Message>(error.to_string());
+            }
 
             Task::none()
         }

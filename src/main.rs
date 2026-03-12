@@ -31,5 +31,6 @@ fn main() -> iced::Result
     application(boot, update, view)
         .title("ProjMan")
         .theme(config.theme.theme.convert_to_iced_theme())
+        .font(include_bytes!("../fonts/JetBrainsMonoNerdFontMono-Regular.ttf").as_slice())
         .run()
 }

@@ -26,6 +26,7 @@ pub enum Message
     NewProjectTypeChanged(ProjectType),
     NewProjectRepoChanged(String),
     NewProjectPathChanged(PathBuf),
+    CreationErrorCopied,
     Imported,
     NonexistantRestored,
     NonexistantRemoved,
