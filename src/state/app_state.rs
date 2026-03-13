@@ -169,7 +169,7 @@ impl AppState
 
                 if !project.path.exists()
                 {
-                    project.clone_repo()?;
+                    project.clone_repo().map_err(std::io::Error::other)?;
                 }
 
                 if !project.path.join(".projman").exists()
@@ -334,6 +334,20 @@ impl AppState
         }
 
         Err("Error: Could not find config dir".to_string())
+    }
+
+    pub async fn commit_projman_init(project: Project) -> Result<String, String>
+    {
+        match project.init_commit()
+        {
+            Ok(_) => Ok("Committed ProjMan init...".to_string()),
+
+            Err(err) =>
+            {
+                let _ = remove_dir(&project.path);
+                Err(format!("Could commit initialization ({err})"))
+            }
+        }
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>

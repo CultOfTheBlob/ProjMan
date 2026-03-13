@@ -291,8 +291,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                                 .push(String::from("Executed build commands..."));
 
                             return Task::perform(
-                                AppState::add_project_to_json(state.new_project.clone()),
-                                Message::CreateFinished,
+                                AppState::commit_projman_init(state.new_project.clone()),
+                                Message::CommitedProjmanInit,
                             );
                         }
 
@@ -312,6 +312,19 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::CommitedProjmanInit(result) => match result
+        {
+            Ok(log) =>
+            {
+                state.project_creation_status.log.push(log);
+
+                Task::perform(
+                    AppState::add_project_to_json(state.new_project.clone()),
+                    Message::CreateFinished,
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
         Message::CreateCanceled =>
         {
             state.project_creation_status = ProjectCreationStatus {

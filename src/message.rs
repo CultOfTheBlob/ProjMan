@@ -20,6 +20,7 @@ pub enum Message
     DirStructureCreated(Result<String, String>),
     ProjectFilesCreated(Result<String, String>),
     BuildCommandExecuted(usize, Result<String, String>),
+    CommitedProjmanInit(Result<String, String>),
     CreateFinished(Result<Vec<Project>, String>),
     CreateCanceled,
     NewProjectNameChanged(String),
