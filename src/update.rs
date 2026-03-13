@@ -122,36 +122,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Message::ProjectDirCreated,
             )
         }
-        Message::CreateFinished(result) =>
-        {
-            match result
-            {
-                Ok(projects_list) =>
-                {
-                    state.project_creation_status.creating = false;
-                    state
-                        .project_creation_status
-                        .log
-                        .push(String::from("Project Created!"));
-                    state.project_list = projects_list;
-                    state.new_project = Project::default(&state.config);
-                    state.selected_project = Some(state.project_list.len() - 1);
-                    // state.pending = None;
-                    state.new_project_path_changed = false;
-                }
-                Err(err) =>
-                {
-                    state.project_creation_status.creating = false;
-                    state.project_creation_status.failed = true;
-                    state
-                        .project_creation_status
-                        .log
-                        .push(format!("Error: {err}"));
-                }
-            }
-
-            Task::none()
-        }
         Message::ProjectDirCreated(result) => match result
         {
             Ok(log) =>
@@ -325,6 +295,36 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             }
             Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
+        Message::CreateFinished(result) =>
+        {
+            match result
+            {
+                Ok(projects_list) =>
+                {
+                    state.project_creation_status.creating = false;
+                    state
+                        .project_creation_status
+                        .log
+                        .push(String::from("Project Created!"));
+                    state.project_list = projects_list;
+                    state.new_project = Project::default(&state.config);
+                    state.selected_project = Some(state.project_list.len() - 1);
+                    // state.pending = None;
+                    state.new_project_path_changed = false;
+                }
+                Err(err) =>
+                {
+                    state.project_creation_status.creating = false;
+                    state.project_creation_status.failed = true;
+                    state
+                        .project_creation_status
+                        .log
+                        .push(format!("Error: {err}"));
+                }
+            }
+
+            Task::none()
+        }
         Message::CreateCanceled =>
         {
             state.project_creation_status = ProjectCreationStatus {
