@@ -2,6 +2,7 @@ use std::{
     fmt::{self, Display},
     io::{self},
     process,
+    str::FromStr,
 };
 
 use serde::{Deserialize, Serialize};
@@ -62,5 +63,19 @@ impl Display for ProjectType
                 ProjectType::Base => "Base",
             }
         )
+    }
+}
+
+impl FromStr for ProjectType
+{
+    type Err = String;
+
+    fn from_str(string: &str) -> Result<Self, Self::Err>
+    {
+        match string
+        {
+            "Base" => Ok(ProjectType::Base),
+            _ => Err(String::from("Project type is not valid!")),
+        }
     }
 }
