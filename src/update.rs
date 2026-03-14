@@ -142,7 +142,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 state.project_creation_status.log.push(log);
 
                 Task::perform(
-                    AppState::create_projman_file(state.new_project.path.clone()),
+                    AppState::create_projman_file(
+                        state.new_project.path.clone(),
+                        state.new_project.project_type.clone(),
+                    ),
                     Message::ProjmanFileCreated,
                 )
             }

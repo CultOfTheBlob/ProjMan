@@ -13,7 +13,11 @@ use directories::ProjectDirs;
 use iced::widget::combo_box;
 
 use crate::{
-    state::{config::Config, project::Project, project_type::ProjectType},
+    state::{
+        config::Config,
+        project::Project,
+        project_type::{self, ProjectType},
+    },
     templates::{Command, File, Folder},
 };
 
@@ -174,7 +178,8 @@ impl AppState
 
                 if !project.path.join(".projman").exists()
                 {
-                    fs::File::create_new(project.path.join(".projman"))?;
+                    fs::File::create_new(project.path.join(".projman"))?
+                        .write_all(project.project_type.to_string().as_bytes())?;
                 }
 
                 let mut projects_json: Vec<Project> =
@@ -220,13 +225,24 @@ impl AppState
         }
     }
 
-    pub async fn create_projman_file(project_path: PathBuf) -> Result<String, String>
+    pub async fn create_projman_file(
+        project_path: PathBuf,
+        project_type: ProjectType,
+    ) -> Result<String, String>
     {
         match fs::File::create_new(project_path.join(".projman"))
         {
-            Ok(_) => Ok("Created .projman file...".to_string()),
-            Err(err) => Err(format!("Could not create .projman file {err}")),
-        }
+            Ok(mut file) =>
+            {
+                if let Err(err) = file.write_all(project_type.to_string().as_bytes())
+                {
+                    return Err(format!("Could not create .projman file {err}"));
+                }
+            }
+            Err(err) => return Err(format!("Could not create .projman file {err}")),
+        };
+
+        Ok("Created .projman file...".to_string())
     }
 
     pub async fn create_dir_structure(
