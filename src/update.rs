@@ -69,12 +69,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         Message::RemoveConfirmed =>
         {
             if let Some(Popup::Remove) = state.pending
+                && let Err(err) = state.remove_project()
             {
-                match state.remove_project()
-                {
-                    Ok(_) => (),
-                    Err(err) => eprintln!("{}", err.red()),
-                }
+                eprintln!("{}", err.red())
             }
 
             state.selected_project = None;
