@@ -147,21 +147,21 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Strin
 
         let projects_from_json: String = match read_to_string(&config_path)
         {
-            Ok(string) => string,
+            Ok(json) => json,
             Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
         };
 
         let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
         {
-            Ok(it) => it,
+            Ok(projects) => projects,
             Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
         };
 
         projects.push(project);
 
-        let projects_to_json = match serde_json::to_string_pretty(&projects)
+        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
         {
-            Ok(it) => it,
+            Ok(json) => json,
             Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
         };
 
