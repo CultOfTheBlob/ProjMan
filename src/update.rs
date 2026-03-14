@@ -300,14 +300,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             match result
             {
-                Ok(projects_list) =>
+                Ok(project_list) =>
                 {
                     state.project_creation_status.creating = false;
                     state
                         .project_creation_status
                         .log
                         .push(String::from("Project Created!"));
-                    state.project_list = projects_list;
+                    state.project_list = project_list;
                     state.new_project = Project::default(&state.config);
                     state.selected_project = Some(state.project_list.len() - 1);
                     // state.pending = None;
