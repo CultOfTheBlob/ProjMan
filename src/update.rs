@@ -8,6 +8,7 @@ use crate::{
     state::{
         app_state::{AppState, Popup, ProjectCreationStatus},
         project::Project,
+        project_creator,
     },
     templates::{Command, TemplateConfig},
 };
@@ -118,7 +119,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             };
 
             Task::perform(
-                AppState::create_project_dir(state.new_project.path.clone()),
+                project_creator::create_project_dir(state.new_project.path.clone()),
                 Message::ProjectDirCreated,
             )
         }
@@ -129,7 +130,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 state.project_creation_status.log.push(log);
 
                 Task::perform(
-                    AppState::clone_project_repo(state.new_project.clone()),
+                    project_creator::clone_project_repo(state.new_project.clone()),
                     Message::ProjectRepoCloned,
                 )
             }
@@ -142,7 +143,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 state.project_creation_status.log.push(log);
 
                 Task::perform(
-                    AppState::create_projman_file(
+                    project_creator::create_projman_file(
                         state.new_project.path.clone(),
                         state.new_project.project_type.clone(),
                     ),
@@ -172,7 +173,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                     state.project_creation_status.log.push(log);
 
                     Task::perform(
-                        AppState::create_dir_structure(
+                        project_creator::create_dir_structure(
                             project_template.dir_structure,
                             state.new_project.path.clone(),
                         ),
@@ -203,7 +204,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                     state.project_creation_status.log.push(log);
 
                     Task::perform(
-                        AppState::create_project_files(
+                        project_creator::create_project_files(
                             project_template.files,
                             state.new_project.path.clone(),
                         ),
@@ -234,7 +235,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                     state.project_creation_status.log.push(log);
 
                     Task::perform(
-                        AppState::execute_build_command(
+                        project_creator::execute_build_command(
                             project_template.build[0].clone(),
                             state.new_project.path.clone(),
                         ),
@@ -264,13 +265,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                                 .push(String::from("Executed build commands..."));
 
                             return Task::perform(
-                                AppState::commit_projman_init(state.new_project.clone()),
+                                project_creator::commit_projman_init(state.new_project.clone()),
                                 Message::CommitedProjmanInit,
                             );
                         }
 
                         return Task::perform(
-                            AppState::execute_build_command(
+                            project_creator::execute_build_command(
                                 commands[index + 1].clone(),
                                 state.new_project.path.clone(),
                             ),
@@ -292,7 +293,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 state.project_creation_status.log.push(log);
 
                 Task::perform(
-                    AppState::add_project_to_json(state.new_project.clone()),
+                    project_creator::add_project_to_json(state.new_project.clone()),
                     Message::CreateFinished,
                 )
             }
