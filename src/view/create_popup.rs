@@ -263,21 +263,20 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     );
 
     let confirm_widget = button("Confirm")
-        .style(|theme: &Theme, status| {
-            let mut style = button::primary(theme, status);
-
-            if !state
-                .new_project
-                .path_is_valid(&state.config.general.projects_dir)
-                .0
-            {
-                style.background = Some(Color(theme.extended_palette().background.weak.color))
-            }
-
-            style
+        .style(|theme: &Theme, status: button::Status| match status
+        {
+            button::Status::Disabled => button::Style {
+                background: Some(Color(theme.extended_palette().background.weak.color)),
+                ..button::primary(theme, status)
+            },
+            _ => button::primary(theme, status),
         })
         .on_press_maybe(
             if !state.project_creation_status.creating
+                && state
+                    .new_project
+                    .path_is_valid(&state.config.general.projects_dir)
+                    .0
             {
                 Some(Message::CreateConfirmed)
             }
