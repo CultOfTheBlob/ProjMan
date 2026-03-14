@@ -380,7 +380,37 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Imported => Task::none(),
+        Message::Imported =>
+        {
+            state.pending = Some(Popup::Import);
+
+            Task::none()
+        }
+        Message::ImportConfirmed =>
+        {
+            if let Err(err) = state.import_project()
+            {
+                eprint!("{}", err.red())
+            }
+
+            state.pending = None;
+            state.import_project_path = String::new();
+
+            Task::none()
+        }
+        Message::ImportCanceled =>
+        {
+            state.pending = None;
+            state.import_project_path = String::new();
+
+            Task::none()
+        }
+        Message::ImportProjectPathChanged(path) =>
+        {
+            state.import_project_path = path;
+
+            Task::none()
+        }
         Message::NonexistantRemoved =>
         {
             if let Err(err) = state.remove_project()
