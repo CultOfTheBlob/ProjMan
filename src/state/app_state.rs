@@ -95,6 +95,32 @@ impl AppState
         }
     }
 
+    pub fn get_config_dir(sub_dir: String, on_missing: impl Fn()) -> Result<PathBuf, String>
+    {
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        {
+            let config_path: PathBuf = proj_dirs.config_dir().to_path_buf();
+
+            if let Err(err) = create_dir_all(&config_path)
+            {
+                return Err(format!("Error: Could not create config dir ({err})"));
+            };
+
+            let config_path: PathBuf = config_path.join(&sub_dir);
+
+            if !config_path.exists()
+            {
+                on_missing();
+
+                return Err(format!("Error: {sub_dir} does not exist"));
+            }
+
+            return Ok(config_path);
+        }
+
+        Err("Error: Could not find config dir".to_string())
+    }
+
     pub fn remove_project(&mut self) -> Result<(), std::io::Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
