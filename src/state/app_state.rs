@@ -95,9 +95,7 @@ impl AppState
         }
     }
 
-    pub fn get_config_dir<F>(sub_dir: String, on_missing: Option<F>) -> Result<PathBuf, String>
-    where
-        F: Fn(),
+    pub fn get_config_dir(sub_dir: String, create_if_missing: bool) -> Result<PathBuf, String>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -112,18 +110,33 @@ impl AppState
 
             if !config_path.exists()
             {
-                if let Some(func) = on_missing
+                if create_if_missing
                 {
-                    func()
+                    match fs::File::create(&config_path)
+                    {
+                        Ok(mut file) =>
+                        {
+                            if let Err(err) = file.write_all("[]".as_bytes())
+                            {
+                                return Err(format!("Error: Could not write to {sub_dir} ({err})"));
+                            }
+                        }
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not create {sub_dir} ({err})"));
+                        }
+                    }
                 }
-
-                return Err(format!("Error: {sub_dir} does not exist"));
+                else
+                {
+                    return Err(format!("Error: {sub_dir} does not exist"));
+                }
             }
 
             return Ok(config_path);
         }
 
-        Err("Error: Could not find config dir".to_string())
+        Err(String::from("Error: Could not find config dir"))
     }
 
     pub fn remove_project(&mut self) -> Result<(), std::io::Error>
