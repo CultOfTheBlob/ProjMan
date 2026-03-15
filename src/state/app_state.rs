@@ -95,7 +95,9 @@ impl AppState
         }
     }
 
-    pub fn get_config_dir(sub_dir: String, on_missing: impl Fn()) -> Result<PathBuf, String>
+    pub fn get_config_dir<F>(sub_dir: String, on_missing: Option<F>) -> Result<PathBuf, String>
+    where
+        F: Fn(),
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -110,7 +112,10 @@ impl AppState
 
             if !config_path.exists()
             {
-                on_missing();
+                if let Some(func) = on_missing
+                {
+                    func()
+                }
 
                 return Err(format!("Error: {sub_dir} does not exist"));
             }
