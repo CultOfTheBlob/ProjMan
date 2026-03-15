@@ -22,26 +22,39 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         return content;
     }
 
-    let project_path_widget = column![
-        row![
-            text(&state.config.general.projects_dir).style(text::secondary),
-            text_input("...", &state.import_project_path,)
-                .on_input(Message::ImportProjectPathChanged)
+    let project_path_widget = container(
+        column![
+            row![
+                text(&state.config.general.projects_dir).style(text::secondary),
+                text_input("...", &state.import_project_path,)
+                    .on_input(Message::ImportProjectPathChanged)
+            ]
+            .spacing(4)
+            .align_y(Alignment::Center),
+            if !Project::is_project_path(
+                PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
+            )
+            {
+                container(text("This path is not a valid project!").style(text::danger))
+            }
+            else
+            {
+                container(text(""))
+            }
         ]
-        .spacing(2)
+        .spacing(8),
+    )
+    .padding(12);
+
+    let project_name_widget = container(
+        row![
+            text("Project Name:"),
+            text_input("", &state.import_project_name).on_input(Message::ImportProjectNameChanged)
+        ]
+        .spacing(4)
         .align_y(Alignment::Center),
-        if !Project::is_project_path(
-            PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
-        )
-        {
-            container(text("This path is not a valid project!").style(text::danger))
-        }
-        else
-        {
-            container(text(""))
-        }
-    ]
-    .spacing(8);
+    )
+    .padding(12);
 
     let cancel_widget = button("Cancel")
         .style(button::secondary)
@@ -72,6 +85,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let popup_content = container(
         column![
             project_path_widget,
+            project_name_widget,
             row![cancel_widget, confirm_widget].spacing(256)
         ]
         .spacing(16)

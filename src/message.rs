@@ -32,6 +32,7 @@ pub enum Message
     ImportConfirmed,
     ImportCanceled,
     ImportProjectPathChanged(String),
+    ImportProjectNameChanged(String),
     NonexistantRestored,
     NonexistantRemoved,
     RemoveNonexistantFinished(Result<usize, String>),

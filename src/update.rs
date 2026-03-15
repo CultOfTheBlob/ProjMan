@@ -395,6 +395,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             state.pending = None;
             state.import_project_path = String::new();
+            state.import_project_name = String::new();
+            state.import_project_name_changed = false;
 
             Task::none()
         }
@@ -402,12 +404,33 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             state.pending = None;
             state.import_project_path = String::new();
+            state.import_project_name = String::new();
+            state.import_project_name_changed = false;
 
             Task::none()
         }
         Message::ImportProjectPathChanged(path) =>
         {
+            if state.import_project_name_changed
+            {
+                state.import_project_path = path;
+
+                return Task::none();
+            }
+
+            if let Some(last) = PathBuf::from(&path).iter().next_back()
+            {
+                state.import_project_name = last.to_string_lossy().to_string()
+            }
+
             state.import_project_path = path;
+
+            Task::none()
+        }
+        Message::ImportProjectNameChanged(name) =>
+        {
+            state.import_project_name = name;
+            state.import_project_name_changed = true;
 
             Task::none()
         }

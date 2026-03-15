@@ -42,6 +42,8 @@ pub struct AppState
     pub project_restoration_failed: bool,
     pub restoring_project: bool,
     pub import_project_path: String,
+    pub import_project_name: String,
+    pub import_project_name_changed: bool,
 }
 
 impl Default for AppState
@@ -65,9 +67,11 @@ impl Default for AppState
                 log: vec![],
             },
             import_project_path: String::new(),
+            import_project_name: String::new(),
             project_restoration_failed: false,
             delete_project_folder: false,
             new_project_path_changed: false,
+            import_project_name_changed: false,
             restoring_project: false,
             selected_project: None,
             pending: None,
@@ -214,14 +218,7 @@ impl AppState
             let path: PathBuf =
                 PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
 
-            let name: String = if let Some(last) = path.iter().next_back()
-            {
-                last.to_string_lossy().to_string()
-            }
-            else
-            {
-                String::new()
-            };
+            let name: String = self.import_project_name.to_string();
 
             let project_type: ProjectType =
                 ProjectType::from_str(&read_to_string(path.join(".projman"))?)
