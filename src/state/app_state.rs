@@ -275,59 +275,72 @@ impl AppState
         }
     }
 
-    pub fn import_project(&mut self) -> Result<(), std::io::Error>
+    pub fn import_project(&mut self) -> Result<(), String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        match AppState::get_config_dir(String::from("projects.json"), None)
         {
-            create_dir_all(proj_dirs.config_dir())?;
-
-            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
-
-            if !config_path.is_file()
+            Ok(projects_path) =>
             {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::NotADirectory,
-                    "Error: projects.json does not exist",
-                ));
+                let path: PathBuf = PathBuf::from(&self.config.general.projects_dir)
+                    .join(&self.import_project_path);
+
+                let name: String = self.import_project_name.to_string();
+
+                let project_type: ProjectType = match &read_to_string(path.join(".projman"))
+                {
+                    Ok(string) => ProjectType::from_str(string)?,
+                    Err(err) => return Err(format!("Error: Could not read .projman file ({err})")),
+                };
+
+                let repo: String = match Project::get_remote(&path)
+                {
+                    Ok(url) => url,
+                    Err(err) => return Err(format!("Error: Could not get remote origin ({err})")),
+                };
+
+                let project: Project = Project {
+                    exists: true,
+                    name,
+                    path,
+                    project_type,
+                    repo,
+                };
+
+                let projects_from_json: String = match read_to_string(&projects_path)
+                {
+                    Ok(json) => json,
+                    Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
+                };
+
+                let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+                {
+                    Ok(projects) => projects,
+                    Err(err) =>
+                    {
+                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                    }
+                };
+
+                projects.push(project);
+
+                let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+                {
+                    Ok(json) => json,
+                    Err(err) =>
+                    {
+                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                    }
+                };
+
+                if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+                {
+                    return Err(format!("Error: Could not write to projects.json ({err})"));
+                };
+
+                Ok(())
             }
-
-            let path: PathBuf =
-                PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
-
-            let name: String = self.import_project_name.to_string();
-
-            let project_type: ProjectType =
-                ProjectType::from_str(&read_to_string(path.join(".projman"))?)
-                    .map_err(|err| std::io::Error::other(format!("Error: {err}")))?;
-
-            let repo: String = Project::get_remote(&path)
-                .map_err(|err| std::io::Error::other(format!("Error: {err}")))?;
-
-            let project: Project = Project {
-                exists: true,
-                name,
-                path,
-                project_type,
-                repo,
-            };
-
-            let projects_from_json: String = read_to_string(&config_path)?;
-
-            let mut projects: Vec<Project> = serde_json::from_str(&projects_from_json)?;
-
-            projects.push(project);
-
-            let projects_to_json = serde_json::to_string_pretty(&projects)?;
-
-            write(&config_path, projects_to_json.as_bytes())?;
-
-            return Ok(());
+            Err(err) => Err(err),
         }
-
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
