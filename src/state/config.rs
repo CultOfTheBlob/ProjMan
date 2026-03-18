@@ -1,11 +1,8 @@
-use std::{
-    fs::{File, create_dir_all, read_to_string},
-    io::{self, ErrorKind, Write},
-    path::PathBuf,
-};
+use std::{fs::read_to_string, path::PathBuf};
 
-use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
+
+use crate::state::app_state::AppState;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
@@ -17,46 +14,27 @@ pub struct Config
 
 impl Config
 {
-    pub fn read_config_file() -> io::Result<Config>
+    pub fn read_config_file() -> Result<Config, String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        let default_toml: String = match toml::to_string_pretty(&Config::default())
         {
-            create_dir_all(proj_dirs.config_dir())?;
+            Ok(toml) => toml,
+            Err(err) => return Err(format!("Error: Could not parse default config ({err})")),
+        };
 
-            let config_path: PathBuf = proj_dirs.config_dir().join("config.toml");
-
-            if config_path.is_file()
+        match AppState::get_config_dir(String::from("config.toml"), Some(default_toml))
+        {
+            Ok(config_path) => match &read_to_string(&config_path)
             {
-                match toml::from_str(&read_to_string(&config_path)?)
+                Ok(string) => match toml::from_str(string)
                 {
-                    Ok(config) => return Ok(config),
-                    Err(err) =>
-                    {
-                        return Err(io::Error::new(ErrorKind::InvalidData, err));
-                    }
-                }
-            }
-
-            let mut config_file: File = File::create(&config_path)?;
-
-            let config: Config = Config {
-                general: General {
-                    projects_dir: String::from(""),
-                    delete_project_folder: false,
+                    Ok(config) => Ok(config),
+                    Err(err) => Err(format!("Error Could not parse config ({err})")),
                 },
-                theme: Theme {
-                    theme: IcedTheme::default(),
-                },
-            };
-
-            let config_toml = toml::to_string_pretty(&config).map_err(io::Error::other)?;
-
-            config_file.write_all(config_toml.as_bytes())?;
-
-            return Ok(config);
+                Err(err) => Err(format!("Error Could not parse config ({err})")),
+            },
+            Err(err) => Err(err),
         }
-
-        Ok(Config::default())
     }
 
     pub fn is_valid(&self) -> Result<(), String>
