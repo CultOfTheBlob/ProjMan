@@ -95,7 +95,10 @@ impl AppState
         }
     }
 
-    pub fn get_config_dir(sub_dir: String, create_if_missing: bool) -> Result<PathBuf, String>
+    pub fn get_config_dir(
+        sub_dir: String,
+        create_if_missing: Option<String>,
+    ) -> Result<PathBuf, String>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -106,34 +109,18 @@ impl AppState
                 return Err(format!("Error: Could not create config dir ({err})"));
             };
 
-            let config_path: PathBuf = config_path.join(&sub_dir);
+            let path: PathBuf = config_path.join(&sub_dir);
 
-            if !config_path.exists()
+            if path.exists()
             {
-                if create_if_missing
-                {
-                    match fs::File::create(&config_path)
-                    {
-                        Ok(mut file) =>
-                        {
-                            if let Err(err) = file.write_all("[]".as_bytes())
-                            {
-                                return Err(format!("Error: Could not write to {sub_dir} ({err})"));
-                            }
-                        }
-                        Err(err) =>
-                        {
-                            return Err(format!("Error: Could not create {sub_dir} ({err})"));
-                        }
-                    }
-                }
-                else
-                {
-                    return Err(format!("Error: {sub_dir} does not exist"));
-                }
+                return Ok(path);
             }
 
-            return Ok(config_path);
+            if let Some(content) = create_if_missing
+                && let Err(err) = write(&path, content.as_bytes())
+            {
+                return Err(format!("Error: Could not write to {sub_dir} ({err})"));
+            }
         }
 
         Err(String::from("Error: Could not find config dir"))
