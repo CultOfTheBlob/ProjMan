@@ -9,7 +9,10 @@ use git2::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::state::{config::Config, project_type::ProjectType};
+use crate::{
+    error::Error,
+    state::{config::Config, project_type::ProjectType},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project
@@ -23,7 +26,7 @@ pub struct Project
 
 impl Project
 {
-    pub fn run(&self) -> Result<(), String>
+    pub fn run(&self) -> Result<(), Error>
     {
         self.project_type.run(self)
     }

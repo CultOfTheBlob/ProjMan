@@ -13,7 +13,7 @@ pub fn boot() -> (AppState, Task<Message>)
         Ok(config) => config,
         Err(err) =>
         {
-            println!("{}", err.yellow());
+            println!("{}", err.get_message().yellow());
             return (AppState::default(), Task::none());
         }
     };

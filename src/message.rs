@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
-use crate::state::{project::Project, project_type::ProjectType};
+use crate::{
+    error::Error,
+    state::{project::Project, project_type::ProjectType},
+};
 
 #[derive(Debug, Clone)]
 pub enum Message
@@ -14,14 +17,14 @@ pub enum Message
     RemoveProjectFolderToggled(bool),
     Created,
     CreateConfirmed,
-    ProjectDirCreated(Result<String, String>),
-    ProjectRepoCloned(Result<String, String>),
-    ProjmanFileCreated(Result<String, String>),
-    DirStructureCreated(Result<String, String>),
-    ProjectFilesCreated(Result<String, String>),
-    BuildCommandExecuted(usize, Result<String, String>),
-    CommitedProjmanInit(Result<String, String>),
-    CreateFinished(Result<Vec<Project>, String>),
+    ProjectDirCreated(Result<String, Error>),
+    ProjectRepoCloned(Result<String, Error>),
+    ProjmanFileCreated(Result<String, Error>),
+    DirStructureCreated(Result<String, Error>),
+    ProjectFilesCreated(Result<String, Error>),
+    BuildCommandExecuted(usize, Result<String, Error>),
+    CommitedProjmanInit(Result<String, Error>),
+    CreateFinished(Result<Vec<Project>, Error>),
     CreateCanceled,
     NewProjectNameChanged(String),
     NewProjectTypeChanged(ProjectType),

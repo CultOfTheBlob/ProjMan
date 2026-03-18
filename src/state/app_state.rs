@@ -9,7 +9,10 @@ use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
 use iced::widget::combo_box;
 
-use crate::state::{config::Config, project::Project, project_type::ProjectType};
+use crate::{
+    error::{Error, ErrorInfo},
+    state::{config::Config, project::Project, project_type::ProjectType},
+};
 
 #[derive(Debug)]
 pub enum Popup
@@ -53,7 +56,7 @@ impl Default for AppState
         let project_list: Vec<Project> = match AppState::create_project_list_from_json()
         {
             Ok(projects) => projects,
-            Err(err) => panic!("{}", err.to_string().red()),
+            Err(err) => panic!("{}", err.get_message().red()),
         };
 
         Self {
@@ -98,7 +101,7 @@ impl AppState
     pub fn get_config_dir(
         sub_dir: String,
         create_if_missing: Option<String>,
-    ) -> Result<PathBuf, String>
+    ) -> Result<PathBuf, Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
@@ -106,7 +109,10 @@ impl AppState
 
             if let Err(err) = create_dir_all(&config_path)
             {
-                return Err(format!("Error: Could not create config dir ({err})"));
+                return Err(Error::Create(ErrorInfo {
+                    string: String::from("config dir"),
+                    err: err.to_string(),
+                }));
             };
 
             let path: PathBuf = config_path.join(&sub_dir);
@@ -119,14 +125,20 @@ impl AppState
             if let Some(content) = create_if_missing
                 && let Err(err) = write(&path, content.as_bytes())
             {
-                return Err(format!("Error: Could not write to {sub_dir} ({err})"));
+                return Err(Error::WriteTo(ErrorInfo {
+                    string: sub_dir,
+                    err: err.to_string(),
+                }));
             }
         }
 
-        Err(String::from("Error: Could not find config dir"))
+        Err(Error::Find(ErrorInfo {
+            string: String::from("config dir"),
+            err: String::new(),
+        }))
     }
 
-    pub fn remove_project(&mut self) -> Result<(), String>
+    pub fn remove_project(&mut self) -> Result<(), Error>
     {
         match AppState::get_config_dir(String::from("projects.json"), None)
         {
@@ -139,13 +151,19 @@ impl AppState
                         if let Err(err) =
                             remove_file(self.project_list[index].path.join(".projman"))
                         {
-                            return Err(format!("Error: Could not remove .projman file ({err})"));
+                            return Err(Error::Remove(ErrorInfo {
+                                string: String::from(".projman file"),
+                                err: err.to_string(),
+                            }));
                         }
 
                         if self.delete_project_folder
                             && let Err(err) = remove_dir_all(&self.project_list[index].path)
                         {
-                            return Err(format!("Error: Could not remove project folder ({err})"));
+                            return Err(Error::Remove(ErrorInfo {
+                                string: String::from("project folder"),
+                                err: err.to_string(),
+                            }));
                         }
                     }
 
@@ -154,7 +172,10 @@ impl AppState
                         Ok(json) => json,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not read projects.json ({err})"));
+                            return Err(Error::Read(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
@@ -163,7 +184,10 @@ impl AppState
                         Ok(projects) => projects,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                            return Err(Error::Parse(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
@@ -174,13 +198,19 @@ impl AppState
                         Ok(string) => string,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not read projects.json ({err})"));
+                            return Err(Error::Read(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
                     if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                     {
-                        return Err(format!("Error: Could not write to projects.json ({err})"));
+                        return Err(Error::WriteTo(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     };
 
                     self.project_list.remove(index);
@@ -195,7 +225,7 @@ impl AppState
     pub async fn restore_project(
         selected_project: Option<usize>,
         project_list: Vec<Project>,
-    ) -> Result<usize, String>
+    ) -> Result<usize, Error>
     {
         match AppState::get_config_dir(String::from("projects.json"), None)
         {
@@ -208,7 +238,10 @@ impl AppState
                     if !project.path.exists()
                         && let Err(err) = project.clone_repo()
                     {
-                        return Err(format!("Error: Could not clone project repo ({err})"));
+                        return Err(Error::Clone(ErrorInfo {
+                            string: String::from("project repo"),
+                            err: err.to_string(),
+                        }));
                     }
 
                     if !project.path.join(".projman").exists()
@@ -219,16 +252,20 @@ impl AppState
                                 Ok(file) => file,
                                 Err(err) =>
                                 {
-                                    return Err(format!(
-                                        "Error: Could not create .projman file ({err})"
-                                    ));
+                                    return Err(Error::Create(ErrorInfo {
+                                        string: String::from(".projman file"),
+                                        err: err.to_string(),
+                                    }));
                                 }
                             };
 
                         if let Err(err) =
                             projman_file.write_all(project.project_type.to_string().as_bytes())
                         {
-                            return Err(format!("Error: Could not write to .projman file ({err})"));
+                            return Err(Error::WriteTo(ErrorInfo {
+                                string: String::from(".projman file"),
+                                err: err.to_string(),
+                            }));
                         }
                     }
 
@@ -237,7 +274,10 @@ impl AppState
                         Ok(json) => json,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not read projects.json ({err})"));
+                            return Err(Error::Read(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
@@ -246,7 +286,10 @@ impl AppState
                         Ok(projects) => projects,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                            return Err(Error::Parse(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
@@ -257,25 +300,31 @@ impl AppState
                         Ok(json) => json,
                         Err(err) =>
                         {
-                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                            return Err(Error::Parse(ErrorInfo {
+                                string: String::from("projects.json"),
+                                err: err.to_string(),
+                            }));
                         }
                     };
 
                     if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                     {
-                        return Err(format!("Error: Could not write to projects.json ({err})"));
+                        return Err(Error::WriteTo(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     };
 
                     return Ok(index);
                 }
 
-                Err(String::from("Error: No prject selected"))
+                Err(Error::Other(String::from("Error: No prject selected")))
             }
             Err(err) => Err(err),
         }
     }
 
-    pub fn import_project(&mut self) -> Result<(), String>
+    pub fn import_project(&mut self) -> Result<(), Error>
     {
         match AppState::get_config_dir(String::from("projects.json"), None)
         {
@@ -289,13 +338,25 @@ impl AppState
                 let project_type: ProjectType = match &read_to_string(path.join(".projman"))
                 {
                     Ok(string) => ProjectType::from_str(string)?,
-                    Err(err) => return Err(format!("Error: Could not read .projman file ({err})")),
+                    Err(err) =>
+                    {
+                        return Err(Error::Read(ErrorInfo {
+                            string: String::from(".projman file"),
+                            err: err.to_string(),
+                        }));
+                    }
                 };
 
                 let repo: String = match Project::get_remote(&path)
                 {
                     Ok(url) => url,
-                    Err(err) => return Err(format!("Error: Could not get remote origin ({err})")),
+                    Err(err) =>
+                    {
+                        return Err(Error::Fetch(ErrorInfo {
+                            string: String::from("remote origin"),
+                            err: err.to_string(),
+                        }));
+                    }
                 };
 
                 let project: Project = Project {
@@ -309,7 +370,13 @@ impl AppState
                 let projects_from_json: String = match read_to_string(&projects_path)
                 {
                     Ok(json) => json,
-                    Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
+                    Err(err) =>
+                    {
+                        return Err(Error::Read(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
+                    }
                 };
 
                 let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
@@ -317,7 +384,10 @@ impl AppState
                     Ok(projects) => projects,
                     Err(err) =>
                     {
-                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                        return Err(Error::Parse(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     }
                 };
 
@@ -328,13 +398,19 @@ impl AppState
                     Ok(json) => json,
                     Err(err) =>
                     {
-                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                        return Err(Error::Parse(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     }
                 };
 
                 if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                 {
-                    return Err(format!("Error: Could not write to projects.json ({err})"));
+                    return Err(Error::WriteTo(ErrorInfo {
+                        string: String::from("projects.json"),
+                        err: err.to_string(),
+                    }));
                 };
 
                 Ok(())
@@ -343,7 +419,7 @@ impl AppState
         }
     }
 
-    pub fn create_project_list_from_json() -> Result<Vec<Project>, String>
+    pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
     {
         match AppState::get_config_dir(String::from("projects.json"), Some(String::from("[]")))
         {
@@ -352,7 +428,13 @@ impl AppState
                 let projects_from_json: String = match read_to_string(&projects_path)
                 {
                     Ok(json) => json,
-                    Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
+                    Err(err) =>
+                    {
+                        return Err(Error::Read(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
+                    }
                 };
 
                 let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
@@ -360,7 +442,10 @@ impl AppState
                     Ok(projects) => projects,
                     Err(err) =>
                     {
-                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                        return Err(Error::Parse(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     }
                 };
 
@@ -375,13 +460,19 @@ impl AppState
                     Ok(json) => json,
                     Err(err) =>
                     {
-                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                        return Err(Error::Parse(ErrorInfo {
+                            string: String::from("projects.json"),
+                            err: err.to_string(),
+                        }));
                     }
                 };
 
                 if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                 {
-                    return Err(format!("Error: Could not write to projects.json ({err})"));
+                    return Err(Error::WriteTo(ErrorInfo {
+                        string: String::from("projects.json"),
+                        err: err.to_string(),
+                    }));
                 };
 
                 Ok(projects)

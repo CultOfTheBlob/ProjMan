@@ -1,17 +1,21 @@
 use std::{
+    fmt::{self, Display},
     fs::read_to_string,
     path::{Path, PathBuf},
 };
 
 use serde::{Deserialize, Serialize};
 
-use crate::state::app_state::AppState;
+use crate::{
+    error::{Error, ErrorInfo},
+    state::app_state::AppState,
+};
 
 pub mod base;
 
 pub trait Template
 {
-    fn template() -> Result<TemplateConfig, String>
+    fn template() -> Result<TemplateConfig, Error>
     {
         let default_template =
             Some(serde_json::to_string_pretty(&Self::default()).unwrap_or(String::from("{}")));
@@ -25,9 +29,21 @@ pub trait Template
                     Ok(string) => match serde_json::from_str(&string)
                     {
                         Ok(it) => it,
-                        Err(err) => return Err(format!("Error: Could not parse template ({err})")),
+                        Err(err) =>
+                        {
+                            return Err(Error::Parse(ErrorInfo {
+                                string: String::from("template"),
+                                err: err.to_string(),
+                            }));
+                        }
                     },
-                    Err(err) => return Err(format!("Error: Could not read template ({err})")),
+                    Err(err) =>
+                    {
+                        return Err(Error::Read(ErrorInfo {
+                            string: String::from("template"),
+                            err: err.to_string(),
+                        }));
+                    }
                 };
 
                 Ok(template)
@@ -86,4 +102,12 @@ pub struct Command
 {
     pub program: String,
     pub args: Vec<String>,
+}
+
+impl Display for Command
+{
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
+    {
+        write!(formatter, "{} {}", self.program, &self.args.join(" "))
+    }
 }

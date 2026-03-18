@@ -4,6 +4,7 @@ use color_eyre::owo_colors::OwoColorize;
 use iced::{Task, clipboard, futures::TryFutureExt};
 
 use crate::{
+    error::Error,
     message::Message,
     state::{
         app_state::{AppState, Popup, ProjectCreationStatus},
@@ -18,7 +19,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
     match AppState::create_project_list_from_json()
     {
         Ok(projects) => state.project_list = projects,
-        Err(err) => eprintln!("{}", err.to_string().red()),
+        Err(err) => eprintln!("{}", err.get_message().red()),
     };
 
     match message
@@ -33,7 +34,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             match project.run()
             {
                 Ok(_) => (),
-                Err(err) => eprintln!("{}", err.red()),
+                Err(err) => eprintln!("{}", err.get_message().red()),
             };
 
             Task::none()
@@ -71,7 +72,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             if let Some(Popup::Remove) = state.pending
                 && let Err(err) = state.remove_project()
             {
-                eprintln!("{}", err.red())
+                eprintln!("{}", err.get_message().red())
             }
 
             state.selected_project = None;
@@ -156,10 +157,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(template) => template,
                 Err(err) =>
                 {
-                    return Task::perform(
-                        async move { Err(format!("Could not get project template ({err})")) },
-                        Message::CreateFinished,
-                    );
+                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
                 }
             };
 
@@ -187,10 +185,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(template) => template,
                 Err(err) =>
                 {
-                    return Task::perform(
-                        async move { Err(format!("Could not get project template ({err})")) },
-                        Message::CreateFinished,
-                    );
+                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
                 }
             };
 
@@ -218,10 +213,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(template) => template,
                 Err(err) =>
                 {
-                    return Task::perform(
-                        async move { Err(format!("Could not get project template ({err})")) },
-                        Message::CreateFinished,
-                    );
+                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
                 }
             };
 
@@ -236,7 +228,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                             project_template.build[0].clone(),
                             state.new_project.path.clone(),
                         ),
-                        |result: Result<String, String>| Message::BuildCommandExecuted(0, result),
+                        |result: Result<String, Error>| Message::BuildCommandExecuted(0, result),
                     )
                 }
                 Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
@@ -272,7 +264,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                                 commands[index + 1].clone(),
                                 state.new_project.path.clone(),
                             ),
-                            move |result: Result<String, String>| {
+                            move |result: Result<String, Error>| {
                                 Message::BuildCommandExecuted(index + 1, result)
                             },
                         );
@@ -317,10 +309,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 {
                     state.project_creation_status.creating = false;
                     state.project_creation_status.failed = true;
-                    state
-                        .project_creation_status
-                        .log
-                        .push(format!("Error: {err}"));
+                    state.project_creation_status.log.push(err.get_message());
                 }
             }
 
@@ -390,7 +379,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.import_project()
             {
-                eprint!("{}", err.red())
+                eprint!("{}", err.get_message().red())
             }
 
             state.pending = None;
@@ -438,7 +427,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.remove_project()
             {
-                eprintln!("{}", err.red())
+                eprintln!("{}", err.get_message().red())
             }
 
             state.selected_project = None;
@@ -451,7 +440,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::perform(
                 AppState::restore_project(state.selected_project, state.project_list.clone())
-                    .map_err(|e| e.to_string()),
+                    .map_err(|e| e.get_message()),
                 Message::RemoveNonexistantFinished,
             )
         }

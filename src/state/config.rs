@@ -2,7 +2,10 @@ use std::{fs::read_to_string, path::PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::state::app_state::AppState;
+use crate::{
+    error::{Error, ErrorInfo},
+    state::app_state::AppState,
+};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
@@ -14,12 +17,18 @@ pub struct Config
 
 impl Config
 {
-    pub fn read_config_file() -> Result<Config, String>
+    pub fn read_config_file() -> Result<Config, Error>
     {
         let default_toml: String = match toml::to_string_pretty(&Config::default())
         {
             Ok(toml) => toml,
-            Err(err) => return Err(format!("Error: Could not parse default config ({err})")),
+            Err(err) =>
+            {
+                return Err(Error::Parse(ErrorInfo {
+                    string: String::from("default config"),
+                    err: err.to_string(),
+                }));
+            }
         };
 
         match AppState::get_config_dir(String::from("config.toml"), Some(default_toml))
@@ -29,9 +38,15 @@ impl Config
                 Ok(string) => match toml::from_str(string)
                 {
                     Ok(config) => Ok(config),
-                    Err(err) => Err(format!("Error Could not parse config ({err})")),
+                    Err(err) => Err(Error::Parse(ErrorInfo {
+                        string: String::from("config"),
+                        err: err.to_string(),
+                    })),
                 },
-                Err(err) => Err(format!("Error Could not parse config ({err})")),
+                Err(err) => Err(Error::Parse(ErrorInfo {
+                    string: String::from("config"),
+                    err: err.to_string(),
+                })),
             },
             Err(err) => Err(err),
         }

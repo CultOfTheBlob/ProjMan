@@ -1,4 +1,5 @@
 mod boot;
+mod error;
 mod message;
 mod state;
 mod templates;
@@ -17,7 +18,7 @@ fn main() -> iced::Result
         Ok(config) => config,
         Err(err) =>
         {
-            println!("{}", err.yellow());
+            println!("{}", err.get_message().yellow());
             return Ok(());
         }
     };

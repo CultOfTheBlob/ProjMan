@@ -7,6 +7,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    error::{Error, ErrorInfo},
     state::project::Project,
     templates::{Template, TemplateConfig, base::Base},
 };
@@ -22,7 +23,7 @@ impl ProjectType
 {
     pub const ALL: [ProjectType; 1] = [ProjectType::Base];
 
-    pub fn template(&self) -> Result<TemplateConfig, String>
+    pub fn template(&self) -> Result<TemplateConfig, Error>
     {
         match self
         {
@@ -30,7 +31,7 @@ impl ProjectType
         }
     }
 
-    pub fn run(&self, project: &Project) -> Result<(), String>
+    pub fn run(&self, project: &Project) -> Result<(), Error>
     {
         match self
         {
@@ -43,9 +44,10 @@ impl ProjectType
                         .current_dir(&project.path)
                         .spawn()
                     {
-                        return Err(format!(
-                            "Error: Could not run command [{command:?}] ({err})"
-                        ));
+                        return Err(Error::Run(ErrorInfo {
+                            string: command.to_string(),
+                            err: err.to_string(),
+                        }));
                     }
                 }
             }
@@ -72,14 +74,14 @@ impl Display for ProjectType
 
 impl FromStr for ProjectType
 {
-    type Err = String;
+    type Err = Error;
 
     fn from_str(string: &str) -> Result<Self, Self::Err>
     {
         match string
         {
             "Base" => Ok(ProjectType::Base),
-            _ => Err(String::from("Project type is not valid!")),
+            _ => Err(Error::Other(String::from("Project type is not valid!"))),
         }
     }
 }
