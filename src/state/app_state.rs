@@ -1,6 +1,6 @@
 use std::{
     fs::{self, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
-    io::{self, ErrorKind, Write},
+    io::Write,
     path::PathBuf,
     str::FromStr,
 };
