@@ -122,10 +122,10 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         let mut style = text_input::default(theme, status);
 
                         if !state.project_creation_status.creating
-                            && !state
+                            && state
                                 .new_project
                                 .path_is_valid(&state.config.general.projects_dir)
-                                .0
+                                .is_err()
                         {
                             style.border.color = theme.extended_palette().danger.base.color
                         }
@@ -133,16 +133,16 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         style
                     }),
                 text(
-                    if state.project_creation_status.creating
+                    if !state.project_creation_status.creating
+                        && let Err(err) = state
+                            .new_project
+                            .path_is_valid(&state.config.general.projects_dir)
                     {
-                        String::new()
+                        err
                     }
                     else
                     {
-                        state
-                            .new_project
-                            .path_is_valid(&state.config.general.projects_dir)
-                            .1
+                        String::new()
                     }
                 )
                 .height(
@@ -150,9 +150,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         && state
                             .new_project
                             .path_is_valid(&state.config.general.projects_dir)
-                            .0
+                            .is_ok()
                     {
-                        0.into()
+                        Length::from(0)
                     }
                     else
                     {
@@ -276,7 +276,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 && state
                     .new_project
                     .path_is_valid(&state.config.general.projects_dir)
-                    .0
+                    .is_ok()
             {
                 Some(Message::CreateConfirmed)
             }

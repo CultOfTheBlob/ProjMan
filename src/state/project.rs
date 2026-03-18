@@ -135,18 +135,18 @@ impl Project
         Ok(())
     }
 
-    pub fn path_is_valid(&self, projects_dir: &str) -> (bool, String)
+    pub fn path_is_valid(&self, projects_dir: &str) -> Result<(), String>
     {
         let error_message: &str = "Cannot create project in this directory!\n";
 
-        if !self.path.starts_with(projects_dir)
-        {
-            return (false, format!("{error_message}(not in projects_dir)"));
-        }
-
         if !self.path.has_root()
         {
-            return (false, format!("{error_message}(missing root slash)"));
+            return Err(format!("{error_message}(missing root slash)"));
+        }
+
+        if !self.path.starts_with(projects_dir)
+        {
+            return Err(format!("{error_message}(not in projects_dir)"));
         }
 
         if self.path.exists()
@@ -157,18 +157,12 @@ impl Project
                 {
                     if entries.next().is_some()
                     {
-                        return (
-                            false,
-                            format!("{error_message}(dir exists and isnt empty)").to_string(),
-                        );
+                        return Err(format!("{error_message}(dir exists and isnt empty)"));
                     }
                 }
                 Err(_) =>
                 {
-                    return (
-                        false,
-                        format!("{error_message}(could not validate dir)").to_string(),
-                    );
+                    return Err(format!("{error_message}(could not validate dir)"));
                 }
             }
         }
@@ -181,17 +175,14 @@ impl Project
             {
                 Ok(metadata) if metadata.permissions().readonly() =>
                 {
-                    return (
-                        false,
-                        format!("{error_message}(permission denied)").to_string(),
-                    );
+                    return Err(format!("{error_message}(permission denied)"));
                 }
 
                 _ => (),
             }
         }
 
-        (true, String::new())
+        Ok(())
     }
 
     pub fn is_project_path(path: PathBuf) -> bool
