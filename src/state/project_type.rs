@@ -23,7 +23,7 @@ impl ProjectType
 {
     pub const ALL: [ProjectType; 1] = [ProjectType::Base];
 
-    pub fn template(&self) -> Result<TemplateConfig, std::io::Error>
+    pub fn template(&self) -> Result<TemplateConfig, String>
     {
         match self
         {

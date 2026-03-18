@@ -1,46 +1,39 @@
 use std::{
-    fs::{self, create_dir_all, read_to_string},
-    io::{ErrorKind, Write},
+    fs::read_to_string,
     path::{Path, PathBuf},
 };
 
-use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
+
+use crate::state::app_state::AppState;
 
 pub mod base;
 
 pub trait Template
 {
-    fn template() -> Result<TemplateConfig, std::io::Error>
+    fn template() -> Result<TemplateConfig, String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        let default_template =
+            Some(serde_json::to_string_pretty(&Self::default()).unwrap_or(String::from("{}")));
+
+        match AppState::get_config_dir(String::from(Self::template_path()), default_template)
         {
-            create_dir_all(proj_dirs.config_dir())?;
-
-            let template_path: PathBuf = proj_dirs.config_dir().join(Self::template_path());
-
-            if !template_path.is_file()
+            Ok(template_path) =>
             {
-                let default_template: TemplateConfig = Self::default();
+                let template: TemplateConfig = match read_to_string(template_path)
+                {
+                    Ok(string) => match serde_json::from_str(&string)
+                    {
+                        Ok(it) => it,
+                        Err(err) => return Err(format!("Error: Could not parse template ({err})")),
+                    },
+                    Err(err) => return Err(format!("Error: Could not read template ({err})")),
+                };
 
-                fs::File::create(&template_path)?.write_all(
-                    serde_json::to_string_pretty(&default_template)
-                        .unwrap()
-                        .as_bytes(),
-                )?;
-
-                return Ok(default_template);
+                Ok(template)
             }
-
-            let template: TemplateConfig = serde_json::from_str(&read_to_string(template_path)?)?;
-
-            return Ok(template);
+            Err(err) => Err(err),
         }
-
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
     }
 
     fn default() -> TemplateConfig;
