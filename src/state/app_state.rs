@@ -126,54 +126,70 @@ impl AppState
         Err(String::from("Error: Could not find config dir"))
     }
 
-    pub fn remove_project(&mut self) -> Result<(), std::io::Error>
+    pub fn remove_project(&mut self) -> Result<(), String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        match AppState::get_config_dir(String::from("projects.json"), None)
         {
-            create_dir_all(proj_dirs.config_dir())?;
-
-            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
-
-            if !config_path.is_file()
+            Ok(projects_path) =>
             {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::NotADirectory,
-                    "Error: projects.json does not exist",
-                ));
-            }
-
-            if let Some(index) = self.selected_project
-            {
-                if self.project_list[index].exists
+                if let Some(index) = self.selected_project
                 {
-                    remove_file(self.project_list[index].path.join(".projman"))?;
-
-                    if self.delete_project_folder
+                    if self.project_list[index].exists
                     {
-                        remove_dir_all(&self.project_list[index].path)?;
+                        if let Err(err) =
+                            remove_file(self.project_list[index].path.join(".projman"))
+                        {
+                            return Err(format!("Error: Could not remove .projman file ({err})"));
+                        }
+
+                        if self.delete_project_folder
+                            && let Err(err) = remove_dir_all(&self.project_list[index].path)
+                        {
+                            return Err(format!("Error: Could not remove project folder ({err})"));
+                        }
                     }
+
+                    let projects_from_json: String = match read_to_string(&projects_path)
+                    {
+                        Ok(json) => json,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not read projects.json ({err})"));
+                        }
+                    };
+
+                    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+                    {
+                        Ok(projects) => projects,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                        }
+                    };
+
+                    projects.remove(index);
+
+                    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+                    {
+                        Ok(string) => string,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not read projects.json ({err})"));
+                        }
+                    };
+
+                    if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+                    {
+                        return Err(format!("Error: Could not write to projects.json ({err})"));
+                    };
+
+                    self.project_list.remove(index);
                 }
 
-                let mut projects_json: Vec<Project> =
-                    serde_json::from_str(&read_to_string(&config_path)?)?;
-
-                projects_json.remove(index);
-
-                write(
-                    &config_path,
-                    serde_json::to_string_pretty(&projects_json)?.as_bytes(),
-                )?;
-
-                self.project_list.remove(index);
+                Ok(())
             }
-
-            return Ok(());
+            Err(err) => Err(err),
         }
-
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
     }
 
     pub async fn restore_project(
