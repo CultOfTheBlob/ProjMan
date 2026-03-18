@@ -343,40 +343,50 @@ impl AppState
         }
     }
 
-    pub fn create_project_list_from_json() -> Result<Vec<Project>, std::io::Error>
+    pub fn create_project_list_from_json() -> Result<Vec<Project>, String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        match AppState::get_config_dir(String::from("projects.json"), Some(String::from("[]")))
         {
-            create_dir_all(proj_dirs.config_dir())?;
-
-            let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
-
-            if !config_path.is_file()
+            Ok(projects_path) =>
             {
-                fs::File::create(&config_path)?.write_all("[]".as_bytes())?;
+                let projects_from_json: String = match read_to_string(&projects_path)
+                {
+                    Ok(json) => json,
+                    Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
+                };
 
-                return Ok(Vec::<Project>::new());
+                let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+                {
+                    Ok(projects) => projects,
+                    Err(err) =>
+                    {
+                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                    }
+                };
+
+                for project in &mut projects
+                {
+                    project.exists =
+                        project.path.is_dir() && project.path.join(".projman").is_file();
+                }
+
+                let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+                {
+                    Ok(json) => json,
+                    Err(err) =>
+                    {
+                        return Err(format!("Error: Could not parse projects.json ({err})"));
+                    }
+                };
+
+                if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+                {
+                    return Err(format!("Error: Could not write to projects.json ({err})"));
+                };
+
+                Ok(projects)
             }
-
-            let mut projects_json: Vec<Project> =
-                serde_json::from_str(&read_to_string(&config_path)?)?;
-
-            for project in &mut projects_json
-            {
-                project.exists = project.path.is_dir() && project.path.join(".projman").is_file();
-            }
-
-            write(
-                &config_path,
-                serde_json::to_string_pretty(&projects_json)?.as_bytes(),
-            )?;
-
-            return Ok(projects_json);
+            Err(err) => Err(err),
         }
-
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
     }
 }
