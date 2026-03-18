@@ -195,55 +195,84 @@ impl AppState
     pub async fn restore_project(
         selected_project: Option<usize>,
         project_list: Vec<Project>,
-    ) -> Result<usize, std::io::Error>
+    ) -> Result<usize, String>
     {
-        if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+        match AppState::get_config_dir(String::from("projects.json"), None)
         {
-            create_dir_all(proj_dirs.config_dir())?;
-
-            let config_dir: PathBuf = proj_dirs.config_dir().join("projects.json");
-
-            if !config_dir.is_file()
+            Ok(projects_path) =>
             {
-                return Err(std::io::Error::new(
-                    io::ErrorKind::NotADirectory,
-                    "Error: projects.json does not exist",
-                ));
-            }
-
-            if let Some(index) = selected_project
-            {
-                let project = &project_list[index];
-
-                if !project.path.exists()
+                if let Some(index) = selected_project
                 {
-                    project.clone_repo().map_err(std::io::Error::other)?;
+                    let project = &project_list[index];
+
+                    if !project.path.exists()
+                        && let Err(err) = project.clone_repo()
+                    {
+                        return Err(format!("Error: Could not clone project repo ({err})"));
+                    }
+
+                    if !project.path.join(".projman").exists()
+                    {
+                        let mut projman_file: fs::File =
+                            match fs::File::create_new(project.path.join(".projman"))
+                            {
+                                Ok(file) => file,
+                                Err(err) =>
+                                {
+                                    return Err(format!(
+                                        "Error: Could not create .projman file ({err})"
+                                    ));
+                                }
+                            };
+
+                        if let Err(err) =
+                            projman_file.write_all(project.project_type.to_string().as_bytes())
+                        {
+                            return Err(format!("Error: Could not write to .projman file ({err})"));
+                        }
+                    }
+
+                    let projects_from_json: String = match read_to_string(&projects_path)
+                    {
+                        Ok(json) => json,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not read projects.json ({err})"));
+                        }
+                    };
+
+                    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+                    {
+                        Ok(projects) => projects,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                        }
+                    };
+
+                    projects[index].exists = true;
+
+                    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+                    {
+                        Ok(json) => json,
+                        Err(err) =>
+                        {
+                            return Err(format!("Error: Could not parse projects.json ({err})"));
+                        }
+                    };
+
+                    if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+                    {
+                        return Err(format!("Error: Could not write to projects.json ({err})"));
+                    };
+
+                    return Ok(index);
                 }
 
-                if !project.path.join(".projman").exists()
-                {
-                    fs::File::create_new(project.path.join(".projman"))?
-                        .write_all(project.project_type.to_string().as_bytes())?;
-                }
-
-                let mut projects_json: Vec<Project> =
-                    serde_json::from_str(&read_to_string(&config_dir)?)?;
-
-                projects_json[index].exists = true;
-
-                write(
-                    &config_dir,
-                    serde_json::to_string_pretty(&projects_json)?.as_bytes(),
-                )?;
-
-                return Ok(index);
+                Err(String::from("Error: No prject selected"))
             }
+            Err(err) => Err(err),
         }
-
-        Err(std::io::Error::new(
-            ErrorKind::NotFound,
-            "Could not find config folder",
-        ))
     }
 
     pub fn import_project(&mut self) -> Result<(), std::io::Error>
