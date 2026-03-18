@@ -5,10 +5,8 @@ use std::{
     process::{self},
 };
 
-use directories::ProjectDirs;
-
 use crate::{
-    state::{project::Project, project_type::ProjectType},
+    state::{app_state::AppState, project::Project, project_type::ProjectType},
     templates::{Command, File, Folder},
 };
 
@@ -131,47 +129,37 @@ pub async fn commit_projman_init(project: Project) -> Result<String, String>
 
 pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, String>
 {
-    if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
+    match AppState::get_config_dir(String::from("projects.json"), None)
     {
-        if let Err(err) = create_dir_all(proj_dirs.config_dir())
+        Ok(config_path) =>
         {
-            return Err(format!("Error: Could not create config dir ({err})"));
-        };
+            let projects_from_json: String = match read_to_string(&config_path)
+            {
+                Ok(json) => json,
+                Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
+            };
 
-        let config_path: PathBuf = proj_dirs.config_dir().join("projects.json");
+            let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+            {
+                Ok(projects) => projects,
+                Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
+            };
 
-        if !config_path.is_file()
-        {
-            return Err("Error: projects.json does not exist".to_string());
+            projects.push(project);
+
+            let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+            {
+                Ok(json) => json,
+                Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
+            };
+
+            if let Err(err) = write(&config_path, projects_to_json.as_bytes())
+            {
+                return Err(format!("Error: Could not write to projects.json ({err})"));
+            };
+
+            Ok(projects)
         }
-
-        let projects_from_json: String = match read_to_string(&config_path)
-        {
-            Ok(json) => json,
-            Err(err) => return Err(format!("Error: Could not read projects.json ({err})")),
-        };
-
-        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-        {
-            Ok(projects) => projects,
-            Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
-        };
-
-        projects.push(project);
-
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-        {
-            Ok(json) => json,
-            Err(err) => return Err(format!("Error: Could not parse projects.json ({err})")),
-        };
-
-        if let Err(err) = write(&config_path, projects_to_json.as_bytes())
-        {
-            return Err(format!("Error: Could not write to projects.json ({err})"));
-        };
-
-        return Ok(projects);
+        Err(err) => Err(err),
     }
-
-    Err("Error: Could not find config dir".to_string())
 }
