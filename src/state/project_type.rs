@@ -1,6 +1,5 @@
 use std::{
     fmt::{self, Display},
-    io::{self},
     process,
     str::FromStr,
 };
@@ -31,7 +30,7 @@ impl ProjectType
         }
     }
 
-    pub fn run(&self, project: &Project) -> io::Result<()>
+    pub fn run(&self, project: &Project) -> Result<(), String>
     {
         match self
         {
@@ -39,10 +38,15 @@ impl ProjectType
             {
                 for command in &Base::template()?.run
                 {
-                    process::Command::new(&command.program)
+                    if let Err(err) = process::Command::new(&command.program)
                         .args(&command.args)
                         .current_dir(&project.path)
-                        .spawn()?;
+                        .spawn()
+                    {
+                        return Err(format!(
+                            "Error: Could not run command [{command:?}] ({err})"
+                        ));
+                    }
                 }
             }
         }

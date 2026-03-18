@@ -1,6 +1,5 @@
 use std::{
     fs::{metadata, read_dir},
-    io,
     path::PathBuf,
 };
 
@@ -24,7 +23,7 @@ pub struct Project
 
 impl Project
 {
-    pub fn run(&self) -> io::Result<()>
+    pub fn run(&self) -> Result<(), String>
     {
         self.project_type.run(self)
     }
