@@ -135,6 +135,8 @@ impl AppState
                     err: err.to_string(),
                 }));
             }
+
+            return Ok(path);
         }
 
         Err(Error::Find(ErrorInfo {
