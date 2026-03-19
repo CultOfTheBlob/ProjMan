@@ -28,11 +28,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 return Task::none();
             }
 
-            match project.run()
+            if let Err(err) = project.run()
             {
-                Ok(_) => (),
-                Err(err) => eprintln!("{}", err.get_message().red()),
-            };
+                eprintln!("{}", err.get_message().red());
+            }
 
             Task::none()
         }
