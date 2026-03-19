@@ -35,7 +35,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             }
             else
             {
-                button::primary(theme, status)
+                button::warning(theme, status)
             }
         })
         .on_press(Message::RemoveConfirmed);

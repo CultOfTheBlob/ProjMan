@@ -37,7 +37,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         .is_some_and(|s| state.project_list[s].exists)
     {
         top_bar_content =
-            top_bar_content.push(button("Remove").style(button::primary).on_press_maybe(
+            top_bar_content.push(button("Remove").style(button::warning).on_press_maybe(
                 if state.pending.is_none()
                 {
                     Some(Message::Removed)
