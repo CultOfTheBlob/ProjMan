@@ -19,14 +19,14 @@ fn main() -> iced::Result
         Ok(config) => config,
         Err(err) =>
         {
-            println!("{}", err.get_message().yellow());
+            eprintln!("{}", err.get_message().yellow());
             return Ok(());
         }
     };
 
     if let Err(err) = config.is_valid()
     {
-        println!("{:?}", err.red());
+        eprintln!("{:?}", err.red());
         return Ok(());
     }
 

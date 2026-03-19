@@ -3,7 +3,6 @@ use std::{
     path::PathBuf,
 };
 
-use color_eyre::owo_colors::OwoColorize;
 use directories::ProjectDirs;
 use iced::widget::combo_box;
 
@@ -36,6 +35,20 @@ pub struct ProjectCreationStatus
 }
 
 #[derive(Debug)]
+pub enum NotifKind
+{
+    Warning,
+    Error,
+}
+
+#[derive(Debug)]
+pub struct Notification
+{
+    pub text: String,
+    pub kind: NotifKind,
+}
+
+#[derive(Debug)]
 pub struct AppState
 {
     pub config: Config,
@@ -52,21 +65,33 @@ pub struct AppState
     pub import_project_path: String,
     pub import_project_name: String,
     pub import_project_name_changed: bool,
+    pub notifications: Vec<Notification>,
 }
 
 impl Default for AppState
 {
     fn default() -> Self
     {
+        let mut notifications = vec![];
+
         let project_list: Vec<Project> = match AppState::create_project_list_from_json()
         {
             Ok(projects) => projects,
-            Err(err) => panic!("{}", err.get_message().red()),
+            Err(err) =>
+            {
+                notifications.push(Notification {
+                    text: err.get_message(),
+                    kind: NotifKind::Error,
+                });
+
+                vec![]
+            }
         };
 
         Self {
             config: Config::default(),
             project_list,
+            notifications,
             new_project: Project::default(&Config::default()),
             project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
             project_creation_status: ProjectCreationStatus {
@@ -101,6 +126,11 @@ impl AppState
             delete_project_folder: self.config.general.delete_project_folder,
             ..self
         }
+    }
+
+    pub fn push_notification(&mut self, text: String, kind: NotifKind)
+    {
+        self.notifications.push(Notification { text, kind });
     }
 
     pub fn get_config_dir(

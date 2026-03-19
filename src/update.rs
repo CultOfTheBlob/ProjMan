@@ -1,23 +1,25 @@
 use std::path::PathBuf;
 
-use color_eyre::owo_colors::OwoColorize;
 use iced::{Task, clipboard, futures::TryFutureExt};
 
 use crate::{
     error::Error,
     message::Message,
     project::{Project, project_creator},
-    state::app_state::{AppState, Popup, ProjectCreationStatus},
+    state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
     templates::{Command, TemplateConfig},
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
-    match AppState::create_project_list_from_json()
+    if !matches!(message, Message::NotificationRemoved(_))
     {
-        Ok(projects) => state.project_list = projects,
-        Err(err) => eprintln!("{}", err.get_message().red()),
-    };
+        match AppState::create_project_list_from_json()
+        {
+            Ok(projects) => state.project_list = projects,
+            Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+        };
+    }
 
     match message
     {
@@ -30,7 +32,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             if let Err(err) = project.run()
             {
-                eprintln!("{}", err.get_message().red());
+                state.push_notification(err.get_message(), NotifKind::Error);
             }
 
             Task::none()
@@ -61,12 +63,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.update_project()
             {
-                eprintln!("{}", err.get_message().red())
+                state.push_notification(err.get_message(), NotifKind::Error)
             }
 
             Task::none()
         }
+        Message::NotificationRemoved(index) =>
+        {
+            state.notifications.remove(index);
 
+            Task::none()
+        }
         Message::Removed =>
         {
             state.pending = Some(Popup::Remove);
@@ -76,14 +83,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         Message::RemoveConfirmed =>
         {
             if let Some(Popup::Remove) = state.pending
-                && let Err(err) = state.remove_project()
             {
-                eprintln!("{}", err.get_message().red())
+                match state.remove_project()
+                {
+                    Ok(_) =>
+                    {
+                        state.selected_project = None;
+                        state.pending = None;
+                        state.delete_project_folder = state.config.general.delete_project_folder;
+                    }
+                    Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+                }
             }
-
-            state.selected_project = None;
-            state.pending = None;
-            state.delete_project_folder = state.config.general.delete_project_folder;
 
             Task::none()
         }
@@ -383,15 +394,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ImportConfirmed =>
         {
-            if let Err(err) = state.import_project()
+            match state.import_project()
             {
-                eprint!("{}", err.get_message().red())
+                Ok(_) =>
+                {
+                    state.pending = None;
+                    state.import_project_path = String::new();
+                    state.import_project_name = String::new();
+                    state.import_project_name_changed = false;
+                }
+                Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
             }
-
-            state.pending = None;
-            state.import_project_path = String::new();
-            state.import_project_name = String::new();
-            state.import_project_name_changed = false;
 
             Task::none()
         }
@@ -433,7 +446,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.remove_project()
             {
-                eprintln!("{}", err.get_message().red())
+                state.push_notification(err.get_message(), NotifKind::Error)
             }
 
             state.selected_project = None;

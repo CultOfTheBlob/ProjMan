@@ -1,5 +1,6 @@
 mod create_popup;
 mod import_popup;
+mod notifications;
 mod project_list_container;
 mod remove_popup;
 mod top_bar_container;
@@ -17,6 +18,7 @@ pub fn view(state: &AppState) -> Element<'_, Message>
     content = remove_popup::build(state, content);
     content = create_popup::build(state, content);
     content = import_popup::build(state, content);
+    content = notifications::build(state, content);
 
     content
 }

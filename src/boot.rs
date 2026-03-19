@@ -1,9 +1,11 @@
-use color_eyre::owo_colors::OwoColorize;
 use iced::Task;
 
 use crate::{
     message::Message,
-    state::{app_state::AppState, config::Config},
+    state::{
+        app_state::{AppState, NotifKind},
+        config::Config,
+    },
 };
 
 pub fn boot() -> (AppState, Task<Message>)
@@ -13,8 +15,10 @@ pub fn boot() -> (AppState, Task<Message>)
         Ok(config) => config,
         Err(err) =>
         {
-            println!("{}", err.get_message().yellow());
-            return (AppState::default(), Task::none());
+            let mut app_state: AppState = AppState::default();
+            app_state.push_notification(err.get_message(), NotifKind::Warning);
+
+            return (app_state, Task::none());
         }
     };
 
