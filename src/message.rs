@@ -11,6 +11,7 @@ pub enum Message
     Opened(Project),
     Selected(usize),
     Deselected,
+    Updated,
     Removed,
     RemoveConfirmed,
     RemoveCanceled,

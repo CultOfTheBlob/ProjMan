@@ -57,6 +57,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::Updated =>
+        {
+            if let Err(err) = state.update_project()
+            {
+                eprintln!("{}", err.get_message().red())
+            }
+
+            Task::none()
+        }
+
         Message::Removed =>
         {
             state.pending = Some(Popup::Remove);

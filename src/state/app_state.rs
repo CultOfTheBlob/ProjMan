@@ -14,7 +14,7 @@ use crate::{
         config::Config,
         project_utils::{
             import_project::import_project, remove_project::remove_project,
-            restore_project::restore_project,
+            restore_project::restore_project, update_project::update_project,
         },
     },
 };
@@ -148,17 +148,22 @@ impl AppState
         remove_project(self)
     }
 
+    pub fn import_project(&mut self) -> Result<(), Error>
+    {
+        import_project(self)
+    }
+
+    pub fn update_project(&mut self) -> Result<(), Error>
+    {
+        update_project(self)
+    }
+
     pub async fn restore_project(
         selected_project: Option<usize>,
         project_list: Vec<Project>,
     ) -> Result<usize, Error>
     {
         restore_project(selected_project, project_list).await
-    }
-
-    pub fn import_project(&mut self) -> Result<(), Error>
-    {
-        import_project(self)
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
