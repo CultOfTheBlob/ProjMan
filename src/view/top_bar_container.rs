@@ -1,3 +1,4 @@
+use color_eyre::owo_colors::OwoColorize;
 use iced::{
     Background::Color,
     Border, Element, Length, Theme,
@@ -32,21 +33,31 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
     ]
     .spacing(12);
 
-    if state
-        .selected_project
-        .is_some_and(|s| state.project_list[s].exists)
+    if let Some(index) = state.selected_project
+        && state.project_list[index].exists
     {
-        top_bar_content =
-            top_bar_content.push(button("Update").style(button::primary).on_press_maybe(
-                if state.pending.is_none()
+        match state.project_list[index].is_outdated()
+        {
+            Ok(outdated) =>
+            {
+                if outdated
                 {
-                    Some(Message::Updated)
+                    top_bar_content = top_bar_content.push(
+                        button("Update").style(button::primary).on_press_maybe(
+                            if state.pending.is_none()
+                            {
+                                Some(Message::Updated)
+                            }
+                            else
+                            {
+                                None
+                            },
+                        ),
+                    );
                 }
-                else
-                {
-                    None
-                },
-            ));
+            }
+            Err(err) => eprintln!("{}", err.get_message().red()),
+        }
 
         top_bar_content =
             top_bar_content.push(button("Remove").style(button::warning).on_press_maybe(

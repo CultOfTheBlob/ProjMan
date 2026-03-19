@@ -1,5 +1,5 @@
 use std::{
-    fs::{metadata, read_dir},
+    fs::{metadata, read, read_dir},
     path::PathBuf,
 };
 
@@ -9,8 +9,11 @@ use git2::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::project::project_type::ProjectType;
-use crate::{error::Error, state::config::Config};
+use crate::{
+    error::{Error, ErrorInfo},
+    state::config::Config,
+};
+use crate::{project::project_type::ProjectType, templates::File};
 
 pub mod project_creator;
 pub mod project_type;
@@ -187,6 +190,30 @@ impl Project
         }
 
         Ok(())
+    }
+
+    pub fn is_outdated(&self) -> Result<bool, Error>
+    {
+        let project_files: Vec<File> = self.project_type.template()?.files;
+
+        for file in &project_files
+        {
+            let path: PathBuf = PathBuf::from(&self.path).join(&file.path);
+
+            let file_contents: Vec<u8> = read(&path).map_err(|err| {
+                Error::Find(ErrorInfo {
+                    string: file.path.to_string(),
+                    err: err.to_string(),
+                })
+            })?;
+
+            if file.content.as_bytes() == file_contents
+            {
+                return Ok(false);
+            }
+        }
+
+        Ok(true)
     }
 
     pub fn is_project_path(path: PathBuf) -> bool
