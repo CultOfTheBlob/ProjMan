@@ -91,7 +91,7 @@ impl AppState
 {
     pub fn with_config(self, config: Config) -> Self
     {
-        AppState { config, ..self }
+        Self { config, ..self }
     }
 
     pub fn apply_config(self) -> Self
