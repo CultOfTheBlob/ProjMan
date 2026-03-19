@@ -1,5 +1,6 @@
 use std::{fs::read_to_string, path::PathBuf};
 
+use color_eyre::owo_colors::OwoColorize;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -24,10 +25,15 @@ impl Config
             Ok(toml) => toml,
             Err(err) =>
             {
-                return Err(Error::Parse(ErrorInfo {
-                    string: String::from("default config"),
-                    err: err.to_string(),
-                }));
+                panic!(
+                    "{}",
+                    Error::Parse(ErrorInfo {
+                        string: String::from("default config"),
+                        err: err.to_string(),
+                    })
+                    .get_message()
+                    .red()
+                )
             }
         };
 
