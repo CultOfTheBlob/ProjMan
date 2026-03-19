@@ -9,10 +9,7 @@ use git2::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    error::{Error, ErrorInfo},
-    state::config::Config,
-};
+use crate::{error::Error, state::config::Config};
 use crate::{project::project_type::ProjectType, templates::File};
 
 pub mod project_creator;
@@ -192,28 +189,31 @@ impl Project
         Ok(())
     }
 
-    pub fn is_outdated(&self) -> Result<bool, Error>
+    pub fn is_outdated(&self) -> bool
     {
-        let project_files: Vec<File> = self.project_type.template()?.files;
+        let project_files: Vec<File> = match self.project_type.template()
+        {
+            Ok(template) => template.files,
+            Err(_) => return false,
+        };
 
         for file in &project_files
         {
             let path: PathBuf = PathBuf::from(&self.path).join(&file.path);
 
-            let file_contents: Vec<u8> = read(&path).map_err(|err| {
-                Error::Find(ErrorInfo {
-                    string: file.path.to_string(),
-                    err: err.to_string(),
-                })
-            })?;
+            let Ok(file_contents) = read(&path)
+            else
+            {
+                return false;
+            };
 
             if file.content.as_bytes() == file_contents
             {
-                return Ok(false);
+                return false;
             }
         }
 
-        Ok(true)
+        true
     }
 
     pub fn is_project_path(path: PathBuf) -> bool
