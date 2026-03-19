@@ -15,12 +15,14 @@ pub mod base;
 
 pub trait Template
 {
+    const TEMPLATE_PATH: &str;
+
     fn template() -> Result<TemplateConfig, Error>
     {
         let default_template =
             Some(serde_json::to_string_pretty(&Self::default()).unwrap_or(String::from("{}")));
 
-        match AppState::get_config_dir(String::from(Self::template_path()), default_template)
+        match AppState::get_config_dir(String::from(Self::TEMPLATE_PATH), default_template)
         {
             Ok(template_path) =>
             {
@@ -53,8 +55,6 @@ pub trait Template
     }
 
     fn default() -> TemplateConfig;
-
-    fn template_path() -> &'static str;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

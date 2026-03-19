@@ -5,6 +5,8 @@ pub struct Base;
 
 impl Template for Base
 {
+    const TEMPLATE_PATH: &str = "templates/base.json";
+
     fn default() -> TemplateConfig
     {
         TemplateConfig {
@@ -43,11 +45,6 @@ impl Template for Base
                 args: vec![String::from("--detach")],
             }],
         }
-    }
-
-    fn template_path() -> &'static str
-    {
-        "templates/base.json"
     }
 }
 
