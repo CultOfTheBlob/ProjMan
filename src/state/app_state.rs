@@ -1,8 +1,6 @@
 use std::{
-    fs::{self, create_dir_all, read_to_string, remove_dir_all, remove_file, write},
-    io::Write,
+    fs::{create_dir_all, read_to_string, write},
     path::PathBuf,
-    str::FromStr,
 };
 
 use color_eyre::owo_colors::OwoColorize;
@@ -11,8 +9,14 @@ use iced::widget::combo_box;
 
 use crate::{
     error::{Error, ErrorInfo},
-    state::{config::Config, project::Project, project_type::ProjectType},
     project::{Project, project_type::ProjectType},
+    state::{
+        config::Config,
+        project_utils::{
+            import_project::import_project, remove_project::remove_project,
+            restore_project::restore_project,
+        },
+    },
 };
 
 #[derive(Debug)]
@@ -141,86 +145,7 @@ impl AppState
 
     pub fn remove_project(&mut self) -> Result<(), Error>
     {
-        match AppState::get_config_dir(String::from("projects.json"), None)
-        {
-            Ok(projects_path) =>
-            {
-                if let Some(index) = self.selected_project
-                {
-                    if self.project_list[index].exists
-                    {
-                        if let Err(err) =
-                            remove_file(self.project_list[index].path.join(".projman"))
-                        {
-                            return Err(Error::Remove(ErrorInfo {
-                                string: String::from(".projman file"),
-                                err: err.to_string(),
-                            }));
-                        }
-
-                        if self.delete_project_folder
-                            && let Err(err) = remove_dir_all(&self.project_list[index].path)
-                        {
-                            return Err(Error::Remove(ErrorInfo {
-                                string: String::from("project folder"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    }
-
-                    let projects_from_json: String = match read_to_string(&projects_path)
-                    {
-                        Ok(json) => json,
-                        Err(err) =>
-                        {
-                            return Err(Error::Read(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-                    {
-                        Ok(projects) => projects,
-                        Err(err) =>
-                        {
-                            return Err(Error::Parse(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    projects.remove(index);
-
-                    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-                    {
-                        Ok(string) => string,
-                        Err(err) =>
-                        {
-                            return Err(Error::Read(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
-                    {
-                        return Err(Error::WriteTo(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
-                    };
-
-                    self.project_list.remove(index);
-                }
-
-                Ok(())
-            }
-            Err(err) => Err(err),
-        }
+        remove_project(self)
     }
 
     pub async fn restore_project(
@@ -228,196 +153,12 @@ impl AppState
         project_list: Vec<Project>,
     ) -> Result<usize, Error>
     {
-        match AppState::get_config_dir(String::from("projects.json"), None)
-        {
-            Ok(projects_path) =>
-            {
-                if let Some(index) = selected_project
-                {
-                    let project = &project_list[index];
-
-                    if !project.path.exists()
-                        && let Err(err) = project.clone_repo()
-                    {
-                        return Err(Error::Clone(ErrorInfo {
-                            string: String::from("project repo"),
-                            err: err.to_string(),
-                        }));
-                    }
-
-                    if !project.path.join(".projman").exists()
-                    {
-                        let mut projman_file: fs::File =
-                            match fs::File::create_new(project.path.join(".projman"))
-                            {
-                                Ok(file) => file,
-                                Err(err) =>
-                                {
-                                    return Err(Error::Create(ErrorInfo {
-                                        string: String::from(".projman file"),
-                                        err: err.to_string(),
-                                    }));
-                                }
-                            };
-
-                        if let Err(err) =
-                            projman_file.write_all(project.project_type.to_string().as_bytes())
-                        {
-                            return Err(Error::WriteTo(ErrorInfo {
-                                string: String::from(".projman file"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    }
-
-                    let projects_from_json: String = match read_to_string(&projects_path)
-                    {
-                        Ok(json) => json,
-                        Err(err) =>
-                        {
-                            return Err(Error::Read(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-                    {
-                        Ok(projects) => projects,
-                        Err(err) =>
-                        {
-                            return Err(Error::Parse(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    projects[index].exists = true;
-
-                    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-                    {
-                        Ok(json) => json,
-                        Err(err) =>
-                        {
-                            return Err(Error::Parse(ErrorInfo {
-                                string: String::from("projects.json"),
-                                err: err.to_string(),
-                            }));
-                        }
-                    };
-
-                    if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
-                    {
-                        return Err(Error::WriteTo(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
-                    };
-
-                    return Ok(index);
-                }
-
-                Err(Error::Other(String::from("Error: No prject selected")))
-            }
-            Err(err) => Err(err),
-        }
+        restore_project(selected_project, project_list).await
     }
 
     pub fn import_project(&mut self) -> Result<(), Error>
     {
-        match AppState::get_config_dir(String::from("projects.json"), None)
-        {
-            Ok(projects_path) =>
-            {
-                let path: PathBuf = PathBuf::from(&self.config.general.projects_dir)
-                    .join(&self.import_project_path);
-
-                let name: String = self.import_project_name.to_string();
-
-                let project_type: ProjectType = match &read_to_string(path.join(".projman"))
-                {
-                    Ok(string) => ProjectType::from_str(string)?,
-                    Err(err) =>
-                    {
-                        return Err(Error::Read(ErrorInfo {
-                            string: String::from(".projman file"),
-                            err: err.to_string(),
-                        }));
-                    }
-                };
-
-                let repo: String = match Project::get_remote(&path)
-                {
-                    Ok(url) => url,
-                    Err(err) =>
-                    {
-                        return Err(Error::Fetch(ErrorInfo {
-                            string: String::from("remote origin"),
-                            err: err.to_string(),
-                        }));
-                    }
-                };
-
-                let project: Project = Project {
-                    exists: true,
-                    name,
-                    path,
-                    project_type,
-                    repo,
-                };
-
-                let projects_from_json: String = match read_to_string(&projects_path)
-                {
-                    Ok(json) => json,
-                    Err(err) =>
-                    {
-                        return Err(Error::Read(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
-                    }
-                };
-
-                let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-                {
-                    Ok(projects) => projects,
-                    Err(err) =>
-                    {
-                        return Err(Error::Parse(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
-                    }
-                };
-
-                projects.push(project);
-
-                let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-                {
-                    Ok(json) => json,
-                    Err(err) =>
-                    {
-                        return Err(Error::Parse(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
-                    }
-                };
-
-                if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
-                {
-                    return Err(Error::WriteTo(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
-                };
-
-                Ok(())
-            }
-            Err(err) => Err(err),
-        }
+        import_project(self)
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
