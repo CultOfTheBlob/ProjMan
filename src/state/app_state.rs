@@ -12,6 +12,7 @@ use iced::widget::combo_box;
 use crate::{
     error::{Error, ErrorInfo},
     state::{config::Config, project::Project, project_type::ProjectType},
+    project::{Project, project_type::ProjectType},
 };
 
 #[derive(Debug)]

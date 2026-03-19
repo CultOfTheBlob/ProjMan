@@ -6,11 +6,8 @@ use iced::{Task, clipboard, futures::TryFutureExt};
 use crate::{
     error::Error,
     message::Message,
-    state::{
-        app_state::{AppState, Popup, ProjectCreationStatus},
-        project::Project,
-        project_creator,
-    },
+    project::{Project, project_creator},
+    state::app_state::{AppState, Popup, ProjectCreationStatus},
     templates::{Command, TemplateConfig},
 };
 

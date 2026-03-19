@@ -9,10 +9,11 @@ use git2::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    error::Error,
-    state::{config::Config, project_type::ProjectType},
-};
+use crate::project::project_type::ProjectType;
+use crate::{error::Error, state::config::Config};
+
+pub mod project_creator;
+pub mod project_type;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project

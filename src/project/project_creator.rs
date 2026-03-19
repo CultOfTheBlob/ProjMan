@@ -7,7 +7,8 @@ use std::{
 
 use crate::{
     error::{Error, ErrorInfo},
-    state::{app_state::AppState, project::Project, project_type::ProjectType},
+    project::{Project, project_type::ProjectType},
+    state::app_state::AppState,
     templates::{Command, File, Folder},
 };
 

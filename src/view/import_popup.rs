@@ -9,10 +9,8 @@ use iced::{
 
 use crate::{
     message::Message,
-    state::{
-        app_state::{AppState, Popup},
-        project::Project,
-    },
+    project::Project,
+    state::app_state::{AppState, Popup},
 };
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>

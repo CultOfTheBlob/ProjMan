@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{
     error::Error,
-    state::{project::Project, project_type::ProjectType},
+    project::{Project, project_type::ProjectType},
 };
 
 #[derive(Debug, Clone)]

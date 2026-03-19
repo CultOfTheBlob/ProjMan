@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::{Error, ErrorInfo},
-    state::project::Project,
+    project::Project,
     templates::{Template, TemplateConfig, base::Base},
 };
 
