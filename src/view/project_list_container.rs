@@ -1,7 +1,8 @@
 use iced::{
+    Alignment,
     Background::Color,
     Border, Element, Length, Theme,
-    widget::{button, column, container, mouse_area, row, scrollable, space, text},
+    widget::{button, column, container, mouse_area, row, scrollable, space, svg, text},
 };
 
 use crate::{message::Message, state::app_state::AppState};
@@ -15,6 +16,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         let is_selected = state.selected_project == Some(index);
 
         let mut project_content = row![
+            svg(project.icon()).width(80).height(80),
             column![
                 text(&project.name).style(text::primary),
                 row![
@@ -26,7 +28,8 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .spacing(16),
             space().width(Length::Fill).height(48)
         ]
-        .spacing(24);
+        .spacing(24)
+        .align_y(Alignment::Center);
 
         if !project.exists
         {

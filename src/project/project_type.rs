@@ -1,5 +1,6 @@
 use std::{
     fmt::{self, Display},
+    path::PathBuf,
     process,
     str::FromStr,
 };
@@ -54,6 +55,16 @@ impl ProjectType
         }
 
         Ok(())
+    }
+
+    pub fn icon(&self) -> PathBuf
+    {
+        let icons_path: PathBuf = PathBuf::from("icons");
+
+        match self
+        {
+            ProjectType::Base => icons_path.join("base.svg"),
+        }
     }
 }
 

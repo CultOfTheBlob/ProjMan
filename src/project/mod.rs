@@ -32,6 +32,11 @@ impl Project
         self.project_type.run(self)
     }
 
+    pub fn icon(&self) -> PathBuf
+    {
+        self.project_type.icon()
+    }
+
     pub fn default(config: &Config) -> Self
     {
         let name: &str = "NewProject";
