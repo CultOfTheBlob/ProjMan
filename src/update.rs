@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, thread::sleep, time::Duration};
 
 use iced::{Task, clipboard};
 
@@ -137,6 +137,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.project_creation_status = ProjectCreationStatus {
                 creating: true,
                 failed: false,
+                step: 0.0,
                 log: vec![String::from("Creating project...")],
             };
 
@@ -151,6 +152,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 state.project_creation_status.log.push(log);
 
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
+
                 Task::perform(
                     project_creator::clone_project_repo(state.new_project.clone()),
                     Message::ProjectRepoCloned,
@@ -163,6 +168,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             Ok(log) =>
             {
                 state.project_creation_status.log.push(log);
+
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
 
                 Task::perform(
                     project_creator::create_projman_file(
@@ -190,6 +199,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(log) =>
                 {
                     state.project_creation_status.log.push(log);
+
+                    state.project_creation_status.step += 1.0;
+
+                    sleep(Duration::from_millis(100));
 
                     Task::perform(
                         project_creator::create_dir_structure(
@@ -219,6 +232,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 {
                     state.project_creation_status.log.push(log);
 
+                    state.project_creation_status.step += 1.0;
+
+                    sleep(Duration::from_millis(100));
+
                     Task::perform(
                         project_creator::create_project_files(
                             project_template.files,
@@ -246,6 +263,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(log) =>
                 {
                     state.project_creation_status.log.push(log);
+
+                    state.project_creation_status.step += 1.0;
+
+                    sleep(Duration::from_millis(100));
 
                     Task::perform(
                         project_creator::execute_build_command(
@@ -277,6 +298,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                                 .log
                                 .push(String::from("Executed build commands..."));
 
+                            state.project_creation_status.step += 1.0;
+
+                            sleep(Duration::from_millis(100));
+
                             return Task::perform(
                                 project_creator::commit_projman_init(state.new_project.clone()),
                                 Message::CommitedProjmanInit,
@@ -305,10 +330,31 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 state.project_creation_status.log.push(log);
 
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
+
                 Task::perform(
                     project_creator::add_project_to_json(state.new_project.clone()),
-                    Message::CreateFinished,
+                    Message::ProjectAddedToJson,
                 )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
+        Message::ProjectAddedToJson(result) => match result
+        {
+            Ok(project_list) =>
+            {
+                state
+                    .project_creation_status
+                    .log
+                    .push(String::from("Project Created!"));
+                state.project_creation_status.step += 1.0;
+                state.project_list = project_list;
+
+                sleep(Duration::from_millis(1000));
+
+                Task::perform(async { Ok(()) }, Message::CreateFinished)
             }
             Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
@@ -316,16 +362,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             match result
             {
-                Ok(project_list) =>
+                Ok(_) =>
                 {
-                    state.project_creation_status.creating = false;
-                    state
-                        .project_creation_status
-                        .log
-                        .push(String::from("Project Created!"));
-                    state.project_list = project_list;
+                    state.project_creation_status = ProjectCreationStatus {
+                        creating: false,
+                        failed: false,
+                        step: 0.0,
+                        log: vec![String::new()],
+                    };
                     state.new_project = Project::default(&state.config);
                     state.selected_project = Some(state.project_list.len() - 1);
+
                     state.pending = None;
                     state.new_project_path_changed = false;
                 }
@@ -344,6 +391,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.project_creation_status = ProjectCreationStatus {
                 creating: false,
                 failed: false,
+                step: 0.0,
                 log: vec![String::new()],
             };
             state.new_project = Project::default(&state.config);

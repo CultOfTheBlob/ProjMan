@@ -12,6 +12,8 @@ use crate::{
     templates::{Command, File, Folder},
 };
 
+pub const STEPS: f32 = 8.0;
+
 pub async fn create_project_dir(project_path: PathBuf) -> Result<String, Error>
 {
     match create_dir_all(&project_path)

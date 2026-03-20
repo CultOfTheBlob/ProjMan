@@ -4,7 +4,7 @@ use iced::{
     Background::Color,
     Border, Element, Length, Shadow, Theme, Vector,
     widget::{
-        Text, button, column, combo_box, container, row,
+        Text, button, column, combo_box, container, progress_bar, row,
         scrollable::{self, Scrollable},
         stack, text, text_input,
     },
@@ -12,6 +12,7 @@ use iced::{
 
 use crate::{
     message::Message,
+    project::project_creator,
     state::app_state::{AppState, Popup},
 };
 
@@ -167,88 +168,95 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     )
     .padding(12);
 
-    let progress_widget = container(stack![
-        Scrollable::new(column(
-            state
-                .project_creation_status
-                .log
-                .iter()
-                .enumerate()
-                .map(|(i, l)| {
-                    Text::new(l)
-                        .style(
-                            if state.project_creation_status.failed
-                                && i == state.project_creation_status.log.len() - 1
-                            {
-                                text::danger
-                            }
-                            else
-                            {
-                                text::success
-                            },
-                        )
-                        .into()
-                }),
-        ))
-        .width(Length::Fill)
-        .height(96)
-        .style(
-            |theme: &Theme, status: scrollable::Status| scrollable::Style {
-                container: container::Style {
-                    background: Some(Color(theme.extended_palette().background.weaker.color)),
+    let console_widget = Scrollable::new(column(
+        state
+            .project_creation_status
+            .log
+            .iter()
+            .enumerate()
+            .map(|(i, l)| {
+                Text::new(l)
+                    .style(
+                        if state.project_creation_status.failed
+                            && i == state.project_creation_status.log.len() - 1
+                        {
+                            text::danger
+                        }
+                        else
+                        {
+                            text::success
+                        },
+                    )
+                    .into()
+            }),
+    ))
+    .width(Length::Fill)
+    .height(96)
+    .style(
+        |theme: &Theme, status: scrollable::Status| scrollable::Style {
+            container: container::Style {
+                background: Some(Color(theme.extended_palette().background.weaker.color)),
+                border: Border {
+                    color: theme.extended_palette().background.strong.color,
+                    width: 1.0,
+                    radius: 4.0.into(),
+                },
+                ..Default::default()
+            },
+            ..scrollable::default(theme, status)
+        },
+    );
+
+    let copy_widget = container(
+        button("")
+            .on_press_maybe(
+                if state.project_creation_status.failed && !state.project_creation_status.creating
+                {
+                    Some(Message::CreationErrorCopied)
+                }
+                else
+                {
+                    None
+                },
+            )
+            .style(|theme: &Theme, status: button::Status| match status
+            {
+                button::Status::Disabled => button::Style {
+                    background: Some(Color(iced::Color::TRANSPARENT)),
+                    text_color: iced::Color::TRANSPARENT,
+                    ..button::secondary(theme, status)
+                },
+
+                _ => button::Style {
+                    text_color: theme.extended_palette().background.weak.color,
                     border: Border {
                         color: theme.extended_palette().background.strong.color,
                         width: 1.0,
                         radius: 4.0.into(),
                     },
-                    ..Default::default()
+                    shadow: Shadow {
+                        color: theme.extended_palette().background.weakest.color,
+                        offset: Vector { x: 3.0, y: 3.0 },
+                        blur_radius: 6.0,
+                    },
+                    ..button::secondary(theme, status)
                 },
-                ..scrollable::default(theme, status)
-            },
-        ),
-        container(
-            button("")
-                .on_press_maybe(
-                    if state.project_creation_status.failed
-                        && !state.project_creation_status.creating
-                    {
-                        Some(Message::CreationErrorCopied)
-                    }
-                    else
-                    {
-                        None
-                    }
-                )
-                .style(|theme: &Theme, status: button::Status| {
-                    match status
-                    {
-                        button::Status::Disabled => button::Style {
-                            background: Some(Color(iced::Color::TRANSPARENT)),
-                            text_color: iced::Color::TRANSPARENT,
-                            ..button::secondary(theme, status)
-                        },
+            }),
+    )
+    .padding(8)
+    .align_right(Length::Fill)
+    .align_top(Length::Fill);
 
-                        _ => button::Style {
-                            text_color: theme.extended_palette().background.weak.color,
-                            border: Border {
-                                color: theme.extended_palette().background.strong.color,
-                                width: 1.0,
-                                radius: 4.0.into(),
-                            },
-                            shadow: Shadow {
-                                color: theme.extended_palette().background.weakest.color,
-                                offset: Vector { x: 3.0, y: 3.0 },
-                                blur_radius: 6.0,
-                            },
-                            ..button::secondary(theme, status)
-                        },
-                    }
-                })
-        )
-        .padding(8)
-        .align_right(Length::Fill)
-        .align_top(Length::Fill)
-    ])
+    let progress_widget = container(
+        column![
+            progress_bar(
+                0.0..=project_creator::STEPS,
+                state.project_creation_status.step
+            ),
+            stack![console_widget, copy_widget]
+        ]
+        .spacing(8),
+    )
     .padding(12);
 
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(

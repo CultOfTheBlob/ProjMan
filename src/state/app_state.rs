@@ -19,36 +19,6 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum Popup
-{
-    Remove,
-    Create,
-    Import,
-}
-
-#[derive(Debug)]
-pub struct ProjectCreationStatus
-{
-    pub creating: bool,
-    pub failed: bool,
-    pub log: Vec<String>,
-}
-
-#[derive(Debug)]
-pub enum NotifKind
-{
-    Warning,
-    Error,
-}
-
-#[derive(Debug)]
-pub struct Notification
-{
-    pub text: String,
-    pub kind: NotifKind,
-}
-
-#[derive(Debug)]
 pub struct AppState
 {
     pub config: Config,
@@ -97,6 +67,7 @@ impl Default for AppState
             project_creation_status: ProjectCreationStatus {
                 creating: false,
                 failed: false,
+                step: 0.0,
                 log: vec![],
             },
             import_project_path: String::new(),
@@ -267,4 +238,35 @@ impl AppState
             Err(err) => Err(err),
         }
     }
+}
+
+#[derive(Debug)]
+pub enum Popup
+{
+    Remove,
+    Create,
+    Import,
+}
+
+#[derive(Debug)]
+pub struct ProjectCreationStatus
+{
+    pub creating: bool,
+    pub failed: bool,
+    pub step: f32,
+    pub log: Vec<String>,
+}
+
+#[derive(Debug)]
+pub enum NotifKind
+{
+    Warning,
+    Error,
+}
+
+#[derive(Debug)]
+pub struct Notification
+{
+    pub text: String,
+    pub kind: NotifKind,
 }
