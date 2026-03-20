@@ -139,7 +139,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                             .new_project
                             .path_is_valid(&state.config.general.projects_dir)
                     {
-                        err
+                        String::from(" ") + &err
                     }
                     else
                     {

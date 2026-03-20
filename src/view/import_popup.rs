@@ -33,7 +33,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
             )
             {
-                container(text("This path is not a valid project!").style(text::danger))
+                container(text(" This path is not a valid project!").style(text::danger))
             }
             else
             {
