@@ -12,7 +12,10 @@ use crate::{
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
-    if !matches!(message, Message::NotificationRemoved(_))
+    if !matches!(
+        message,
+        Message::NotificationRemoved(_) | Message::NotificationCopied(_)
+    )
     {
         match AppState::create_project_list_from_json()
         {
@@ -73,6 +76,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.notifications.remove(index);
 
             Task::none()
+        }
+        Message::NotificationCopied(index) =>
+        {
+            clipboard::write::<Message>(state.notifications[index].text.to_string())
         }
         Message::Removed =>
         {

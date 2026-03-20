@@ -33,20 +33,38 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             container(
                 row![
                     new_notif,
-                    button("")
-                        .on_press(Message::NotificationRemoved(index))
-                        .style(|theme: &Theme, status: button::Status| {
-                            button::Style {
-                                text_color: theme.extended_palette().background.weak.color,
-                                border: Border {
-                                    color: theme.extended_palette().background.base.color,
-                                    width: 0.0,
-                                    radius: 4.0.into(),
-                                },
+                    row![
+                        button("")
+                            .on_press(Message::NotificationCopied(index))
+                            .style(|theme: &Theme, status: button::Status| {
+                                button::Style {
+                                    text_color: theme.extended_palette().background.strongest.color,
+                                    border: Border {
+                                        color: theme.extended_palette().background.base.color,
+                                        width: 0.0,
+                                        radius: 4.0.into(),
+                                    },
 
-                                ..button::secondary(theme, status)
-                            }
-                        })
+                                    ..button::subtle(theme, status)
+                                }
+                            }),
+                        button("")
+                            .on_press(Message::NotificationRemoved(index))
+                            .style(|theme: &Theme, status: button::Status| {
+                                button::Style {
+                                    text_color: theme.extended_palette().background.strongest.color,
+                                    border: Border {
+                                        color: theme.extended_palette().background.base.color,
+                                        width: 0.0,
+                                        radius: 4.0.into(),
+                                    },
+
+                                    ..button::subtle(theme, status)
+                                }
+                            })
+                    ]
+                    .padding(4)
+                    .spacing(2),
                 ]
                 .align_y(Alignment::Center)
                 .spacing(8),
@@ -54,7 +72,16 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .padding(12)
             .max_width(1024)
             .style(|theme: &Theme| container::Style {
-                background: Some(Color(theme.extended_palette().background.weaker.color)),
+                background: Some(Color({
+                    let color = theme.extended_palette().background.weaker.color;
+
+                    iced::Color {
+                        r: color.r,
+                        g: color.g,
+                        b: color.b,
+                        a: 0.5,
+                    }
+                })),
                 border: Border {
                     color: theme.extended_palette().background.strongest.color,
                     width: 1.0,
@@ -68,7 +95,16 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let popup_content = container(notif_widget)
         .width(Length::Shrink)
         .style(|theme: &Theme| container::Style {
-            background: Some(Color(theme.extended_palette().background.weakest.color)),
+            background: Some(Color({
+                let color = theme.extended_palette().background.weakest.color;
+
+                iced::Color {
+                    r: color.r,
+                    g: color.g,
+                    b: color.b,
+                    a: 0.5,
+                }
+            })),
             border: Border {
                 color: theme.extended_palette().background.strongest.color,
                 width: 1.0,

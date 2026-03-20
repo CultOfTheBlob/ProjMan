@@ -41,4 +41,5 @@ pub enum Message
     NonexistantRemoved,
     RemoveNonexistantFinished(Result<usize, String>),
     NotificationRemoved(usize),
+    NotificationCopied(usize),
 }
