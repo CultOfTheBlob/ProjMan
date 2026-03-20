@@ -29,9 +29,16 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             NotifKind::Error => new_notif = new_notif.style(text::danger),
         }
 
+        let notif_icon = match &notification.kind
+        {
+            NotifKind::Warning => text("").size(32).style(text::warning),
+            NotifKind::Error => text("").size(32).style(text::danger),
+        };
+
         notif_widget = notif_widget.push(
             container(
                 row![
+                    notif_icon,
                     new_notif,
                     row![
                         button("")
