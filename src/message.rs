@@ -8,6 +8,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub enum Message
 {
+    Tick,
     Opened(Project),
     Selected(usize),
     Deselected,

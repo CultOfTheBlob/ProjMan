@@ -12,20 +12,18 @@ use crate::{
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
-    if !matches!(
-        message,
-        Message::NotificationRemoved(_) | Message::NotificationCopied(_)
-    )
-    {
-        match AppState::create_project_list_from_json()
-        {
-            Ok(projects) => state.project_list = projects,
-            Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
-        };
-    }
-
     match message
     {
+        Message::Tick =>
+        {
+            match AppState::create_project_list_from_json()
+            {
+                Ok(projects) => state.project_list = projects,
+                Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+            };
+
+            Task::none()
+        }
         Message::Opened(project) =>
         {
             if state.pending.is_some()
