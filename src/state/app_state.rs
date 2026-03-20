@@ -130,6 +130,14 @@ impl AppState
 
     pub fn push_notification(&mut self, text: String, kind: NotifKind)
     {
+        for notification in &self.notifications
+        {
+            if notification.text == text
+            {
+                return;
+            }
+        }
+
         self.notifications.push(Notification { text, kind });
     }
 
