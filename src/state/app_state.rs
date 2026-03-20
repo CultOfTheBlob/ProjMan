@@ -225,6 +225,11 @@ impl AppState
                     }
                 };
 
+                if projects_to_json == projects_from_json
+                {
+                    return Ok(projects);
+                }
+
                 if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                 {
                     return Err(Error::WriteTo(ErrorInfo {
