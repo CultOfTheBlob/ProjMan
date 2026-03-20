@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use iced::{Task, clipboard, futures::TryFutureExt};
+use iced::{Task, clipboard};
 
 use crate::{
     error::Error,
@@ -465,8 +465,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.restoring_project = true;
 
             Task::perform(
-                AppState::restore_project(state.selected_project, state.project_list.clone())
-                    .map_err(|e| e.get_message()),
+                AppState::restore_project(state.selected_project, state.project_list.clone()),
                 Message::RemoveNonexistantFinished,
             )
         }
@@ -477,7 +476,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             match restore_result
             {
                 Ok(index) => state.project_list[index].exists = true,
-                Err(_) => state.project_restoration_failed = true,
+                Err(err) =>
+                {
+                    state.project_restoration_failed = true;
+
+                    state.push_notification(err.get_message(), NotifKind::Error);
+                }
             }
 
             Task::none()

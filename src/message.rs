@@ -39,7 +39,7 @@ pub enum Message
     ImportProjectNameChanged(String),
     NonexistantRestored,
     NonexistantRemoved,
-    RemoveNonexistantFinished(Result<usize, String>),
+    RemoveNonexistantFinished(Result<usize, Error>),
     NotificationRemoved(usize),
     NotificationCopied(usize),
 }
