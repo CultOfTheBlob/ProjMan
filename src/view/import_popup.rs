@@ -20,6 +20,19 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         return content;
     }
 
+    let title_bar = container(text("Import Project"))
+        .width(Length::Fill)
+        .padding(8)
+        .style(|theme: &Theme| container::Style {
+            background: Some(Color(theme.extended_palette().background.weak.color)),
+            border: Border {
+                color: theme.extended_palette().background.strongest.color,
+                width: 1.0,
+                radius: 4.0.into(),
+            },
+            ..Default::default()
+        });
+
     let project_path_widget = container(
         column![
             row![
@@ -79,6 +92,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         );
 
     let popup_content = container(column![
+        title_bar,
         project_path_widget.padding(16),
         project_name_widget.padding(16),
         row![cancel_widget, confirm_widget].padding(16).spacing(256)
