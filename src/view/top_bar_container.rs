@@ -8,7 +8,7 @@ use crate::{message::Message, state::app_state::AppState};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
-    let mut top_bar_content = row![
+    let top_bar_content = row![
         button("Create").style(button::secondary).on_press_maybe(
             if state.pending.is_none()
             {
@@ -31,37 +31,6 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         )
     ]
     .spacing(12);
-
-    if let Some(index) = state.selected_project
-        && state.project_list[index].exists
-    {
-        if state.project_list[index].is_outdated()
-        {
-            top_bar_content =
-                top_bar_content.push(button("Update").style(button::primary).on_press_maybe(
-                    if state.pending.is_none()
-                    {
-                        Some(Message::Updated)
-                    }
-                    else
-                    {
-                        None
-                    },
-                ));
-        }
-
-        top_bar_content =
-            top_bar_content.push(button("Remove").style(button::warning).on_press_maybe(
-                if state.pending.is_none()
-                {
-                    Some(Message::Removed)
-                }
-                else
-                {
-                    None
-                },
-            ));
-    }
 
     let top_bar = container(top_bar_content)
         .width(Length::Fill)
