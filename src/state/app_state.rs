@@ -112,6 +112,29 @@ impl AppState
         self.notifications.push(Notification { text, kind });
     }
 
+    pub fn remove_project(&mut self) -> Result<(), Error>
+    {
+        remove_project(self)
+    }
+
+    pub fn import_project(&mut self) -> Result<(), Error>
+    {
+        import_project(self)
+    }
+
+    pub fn update_project(&mut self) -> Result<(), Error>
+    {
+        update_project(self)
+    }
+
+    pub async fn restore_project(
+        selected_project: Option<usize>,
+        project_list: Vec<Project>,
+    ) -> Result<usize, Error>
+    {
+        restore_project(selected_project, project_list).await
+    }
+
     pub fn get_config_dir(
         sub_dir: String,
         create_if_missing: Option<String>,
@@ -152,29 +175,6 @@ impl AppState
             string: String::from("config dir"),
             err: String::new(),
         }))
-    }
-
-    pub fn remove_project(&mut self) -> Result<(), Error>
-    {
-        remove_project(self)
-    }
-
-    pub fn import_project(&mut self) -> Result<(), Error>
-    {
-        import_project(self)
-    }
-
-    pub fn update_project(&mut self) -> Result<(), Error>
-    {
-        update_project(self)
-    }
-
-    pub async fn restore_project(
-        selected_project: Option<usize>,
-        project_list: Vec<Project>,
-    ) -> Result<usize, Error>
-    {
-        restore_project(selected_project, project_list).await
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
@@ -251,6 +251,7 @@ pub enum Popup
     Remove,
     Create,
     Import,
+    Edit,
 }
 
 #[derive(Debug)]
