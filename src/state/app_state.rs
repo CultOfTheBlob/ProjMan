@@ -142,7 +142,12 @@ impl AppState
         project_list: Vec<Project>,
     ) -> Result<usize, Error>
     {
-        restore_project(selected_project, project_list).await
+        if let Some(index) = selected_project
+        {
+            return restore_project(index, project_list).await;
+        }
+
+        Err(Error::Other(String::from("Error: No prject selected")))
     }
 
     pub fn get_config_dir(
