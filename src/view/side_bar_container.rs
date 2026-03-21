@@ -40,6 +40,33 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 
     top_bar_content = top_bar_content.push(
         button(
+            row![text("").size(24), text("Edit")]
+                .spacing(4)
+                .align_y(Alignment::Center),
+        )
+        .width(Length::Fill)
+        .style(|theme: &Theme, status: button::Status| match status
+        {
+            button::Status::Disabled => button::subtle(theme, status),
+
+            _ => button::secondary(theme, status),
+        })
+        .on_press_maybe(
+            if state.pending.is_none()
+                && let Some(index) = state.selected_project
+                && state.project_list[index].exists
+            {
+                Some(Message::Edited(index))
+            }
+            else
+            {
+                None
+            },
+        ),
+    );
+
+    top_bar_content = top_bar_content.push(
+        button(
             row![text("").size(24), text("Update")]
                 .spacing(4)
                 .align_y(Alignment::Center),

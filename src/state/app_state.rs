@@ -12,8 +12,9 @@ use crate::{
     state::{
         config::Config,
         project_utils::{
-            import_project::import_project, remove_project::remove_project,
-            restore_project::restore_project, update_project::update_project,
+            edit_project::edit_project, import_project::import_project,
+            remove_project::remove_project, restore_project::restore_project,
+            update_project::update_project,
         },
     },
 };
@@ -35,6 +36,8 @@ pub struct AppState
     pub import_project_path: String,
     pub import_project_name: String,
     pub import_project_name_changed: bool,
+    pub edit_project_name: String,
+    pub edit_project_repo: String,
     pub notifications: Vec<Notification>,
 }
 
@@ -72,6 +75,8 @@ impl Default for AppState
             },
             import_project_path: String::new(),
             import_project_name: String::new(),
+            edit_project_name: String::new(),
+            edit_project_repo: String::new(),
             project_restoration_failed: false,
             delete_project_folder: false,
             new_project_path_changed: false,
@@ -125,6 +130,11 @@ impl AppState
     pub fn update_project(&mut self) -> Result<(), Error>
     {
         update_project(self)
+    }
+
+    pub fn edit_project(&mut self) -> Result<(), Error>
+    {
+        edit_project(self)
     }
 
     pub async fn restore_project(

@@ -69,6 +69,51 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::Edited(index) =>
+        {
+            state.pending = Some(Popup::Edit);
+
+            let project: &Project = &state.project_list[index];
+
+            state.edit_project_name = project.name.to_string();
+            state.edit_project_repo = project.repo.to_string();
+
+            Task::none()
+        }
+        Message::EditConfirmed =>
+        {
+            if let Some(Popup::Edit) = state.pending
+            {
+                match state.edit_project()
+                {
+                    Ok(_) =>
+                    {
+                        state.pending = None;
+                    }
+                    Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+                }
+            }
+
+            Task::none()
+        }
+        Message::EditCanceled =>
+        {
+            state.pending = None;
+
+            Task::none()
+        }
+        Message::EditProjectNameChanged(name) =>
+        {
+            state.edit_project_name = name;
+
+            Task::none()
+        }
+        Message::EditProjectRepoChanged(repo) =>
+        {
+            state.edit_project_repo = repo;
+
+            Task::none()
+        }
         Message::NotificationRemoved(index) =>
         {
             state.notifications.remove(index);
