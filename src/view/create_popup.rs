@@ -51,8 +51,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             )
         ]
         .spacing(4),
-    )
-    .padding(12);
+    );
 
     let project_type_widget = if !state.project_creation_status.creating
     {
@@ -68,7 +67,6 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ]
             .spacing(4),
         )
-        .padding(12)
     }
     else
     {
@@ -79,7 +77,6 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ]
             .spacing(4),
         )
-        .padding(12)
     };
 
     let project_repo_widget = container(
@@ -101,8 +98,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ),
         ]
         .spacing(4),
-    )
-    .padding(12);
+    );
 
     let project_path_widget = container(
         column![
@@ -165,8 +161,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .spacing(2)
         ]
         .spacing(4),
-    )
-    .padding(12);
+    );
 
     let console_widget = Scrollable::new(column(
         state
@@ -256,8 +251,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             stack![console_widget, copy_widget]
         ]
         .spacing(8),
-    )
-    .padding(12);
+    );
 
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
         if !state.project_creation_status.creating
@@ -294,18 +288,15 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             },
         );
 
-    let popup_content = container(
-        column![
-            title_bar,
-            project_name_widget,
-            project_type_widget,
-            project_repo_widget,
-            project_path_widget,
-            progress_widget,
-            row![cancel_widget, confirm_widget].padding(12).spacing(256)
-        ]
-        .spacing(12),
-    )
+    let popup_content = container(column![
+        title_bar,
+        project_name_widget.padding(16),
+        project_type_widget.padding(16),
+        project_repo_widget.padding(16),
+        project_path_widget.padding(16),
+        progress_widget.padding(16),
+        row![cancel_widget, confirm_widget].padding(16).spacing(256)
+    ])
     .width(Length::Shrink)
     .style(|theme: &Theme| container::Style {
         background: Some(Color(theme.extended_palette().background.base.color)),

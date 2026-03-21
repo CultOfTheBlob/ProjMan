@@ -58,15 +58,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .style(button::primary)
         .on_press(Message::EditConfirmed);
 
-    let popup_content = container(
-        column![
-            project_name_widget,
-            project_repo_widget,
-            row![cancel_widget, confirm_widget].spacing(256)
-        ]
-        .spacing(32)
-        .padding(24),
-    )
+    let popup_content = container(column![
+        project_name_widget.padding(16),
+        project_repo_widget.padding(16),
+        row![cancel_widget, confirm_widget].padding(16).spacing(256)
+    ])
     .width(Length::Shrink)
     .style(|theme: &Theme| container::Style {
         background: Some(Color(theme.extended_palette().background.base.color)),

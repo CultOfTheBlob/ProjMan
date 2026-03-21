@@ -16,12 +16,14 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         return content;
     }
 
-    let remove_warning_widget = text("Are you sure you want to remove this project?");
+    let remove_warning_widget = container(text("Are you sure you want to remove this project?"));
 
-    let delete_project_folder_widget = checkbox(state.delete_project_folder)
-        .style(checkbox::danger)
-        .label("Also remove project folder")
-        .on_toggle(Message::RemoveProjectFolderToggled);
+    let delete_project_folder_widget = container(
+        checkbox(state.delete_project_folder)
+            .style(checkbox::danger)
+            .label("Also remove project folder")
+            .on_toggle(Message::RemoveProjectFolderToggled),
+    );
 
     let cancel_widget = button("Cancel")
         .style(button::secondary)
@@ -40,15 +42,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         })
         .on_press(Message::RemoveConfirmed);
 
-    let popup_content = container(
-        column![
-            remove_warning_widget,
-            delete_project_folder_widget,
-            row![cancel_widget, confirm_widget].spacing(256)
-        ]
-        .spacing(16)
-        .padding(24),
-    )
+    let popup_content = container(column![
+        remove_warning_widget.padding(16),
+        delete_project_folder_widget.padding(16),
+        row![cancel_widget, confirm_widget].padding(16).spacing(256)
+    ])
     .width(Length::Shrink)
     .style(|theme: &Theme| container::Style {
         background: Some(Color(theme.extended_palette().background.base.color)),

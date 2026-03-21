@@ -41,8 +41,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             }
         ]
         .spacing(8),
-    )
-    .padding(12);
+    );
 
     let project_name_widget = container(
         row![
@@ -51,8 +50,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         ]
         .spacing(4)
         .align_y(Alignment::Center),
-    )
-    .padding(12);
+    );
 
     let cancel_widget = button("Cancel")
         .style(button::secondary)
@@ -80,15 +78,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             },
         );
 
-    let popup_content = container(
-        column![
-            project_path_widget,
-            project_name_widget,
-            row![cancel_widget, confirm_widget].spacing(256)
-        ]
-        .spacing(16)
-        .padding(24),
-    )
+    let popup_content = container(column![
+        project_path_widget.padding(16),
+        project_name_widget.padding(16),
+        row![cancel_widget, confirm_widget].padding(16).spacing(256)
+    ])
     .width(Length::Shrink)
     .style(|theme: &Theme| container::Style {
         background: Some(Color(theme.extended_palette().background.base.color)),
