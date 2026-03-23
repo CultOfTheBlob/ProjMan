@@ -1,12 +1,13 @@
 use std::{
-    collections::BTreeMap,
+    cmp::Ordering,
     fs::{metadata, read, read_dir},
     path::PathBuf,
 };
 
+use bytesize::ByteSize;
 use git2::{
-    Cred, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks, Repository, Signature,
-    build::RepoBuilder,
+    BranchType, Cred, FetchOptions, Index, IndexAddOption, PushOptions, RemoteCallbacks,
+    Repository, Signature, build::RepoBuilder,
 };
 use serde::{Deserialize, Serialize};
 use tokei::{LanguageType, Languages};
@@ -54,6 +55,18 @@ impl Project
 
     pub fn info(&self) -> Option<ProjectInfo>
     {
+        let repo: Repository = match Repository::open(&self.path)
+        {
+            Ok(repo) => repo,
+            Err(_) => return None,
+        };
+
+        let index: Index = match repo.index()
+        {
+            Ok(index) => index,
+            Err(_) => return None,
+        };
+
         let mut languages = Languages::new();
         languages.get_statistics(
             &self.project_type.included_paths(&self.path),
@@ -74,12 +87,42 @@ impl Project
 
             language_percentage.push((language_type, percentage));
         }
-        language_percentage
-            .sort_by(|l, p| p.1.partial_cmp(&l.1).unwrap_or(std::cmp::Ordering::Equal));
+        language_percentage.sort_by(|l, p| p.1.partial_cmp(&l.1).unwrap_or(Ordering::Equal));
+
+        let mut project_size: ByteSize = ByteSize::default();
+        for entry in index.iter()
+        {
+            project_size += ByteSize::b(entry.file_size as u64);
+        }
+
+        let file_count: usize = index.len();
+
+        let branches: Vec<String> = match repo.branches(Some(BranchType::Local))
+        {
+            Ok(branches) => branches
+                .filter_map(|branch| {
+                    let (branch, _) = branch.ok()?;
+                    let name = branch.name().ok()??.to_string();
+                    Some(name)
+                })
+                .collect(),
+            Err(_) => return None,
+        };
+
+        let current_branch: usize = {
+            let head = repo.head().ok()?;
+            let branch_name = head.shorthand()?;
+
+            branches.iter().position(|b| b == branch_name)?
+        };
 
         Some(ProjectInfo {
             line_count,
             language_percentage,
+            project_size,
+            file_count,
+            branches,
+            current_branch,
         })
     }
 
@@ -270,4 +313,8 @@ pub struct ProjectInfo
 {
     pub line_count: usize,
     pub language_percentage: Vec<(LanguageType, f64)>,
+    pub project_size: ByteSize,
+    pub file_count: usize,
+    pub branches: Vec<String>,
+    pub current_branch: usize,
 }
