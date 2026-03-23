@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     fs::{metadata, read, read_dir},
     path::PathBuf,
 };
@@ -8,6 +9,7 @@ use git2::{
     build::RepoBuilder,
 };
 use serde::{Deserialize, Serialize};
+use tokei::{LanguageType, Languages};
 
 use crate::{error::Error, state::config::Config};
 use crate::{project::project_type::ProjectType, templates::File};
@@ -48,6 +50,37 @@ impl Project
             project_type: ProjectType::default(),
             repo: String::new(),
         }
+    }
+
+    pub fn info(&self) -> Option<ProjectInfo>
+    {
+        let mut languages = Languages::new();
+        languages.get_statistics(
+            &self.project_type.included_paths(&self.path),
+            self.project_type.excluded_paths(),
+            &tokei::Config::default(),
+        );
+
+        let mut line_count: usize = 0;
+        for language in languages.values()
+        {
+            line_count += language.code;
+        }
+
+        let mut language_percentage: Vec<(LanguageType, f64)> = vec![];
+        for (language_type, language) in languages
+        {
+            let percentage: f64 = (language.code as f64 / line_count as f64) * 100.0;
+
+            language_percentage.push((language_type, percentage));
+        }
+        language_percentage
+            .sort_by(|l, p| p.1.partial_cmp(&l.1).unwrap_or(std::cmp::Ordering::Equal));
+
+        Some(ProjectInfo {
+            line_count,
+            language_percentage,
+        })
     }
 
     pub fn get_remote(path: &PathBuf) -> Result<String, git2::Error>
@@ -230,4 +263,11 @@ impl Project
 
         false
     }
+}
+
+#[derive(Debug)]
+pub struct ProjectInfo
+{
+    pub line_count: usize,
+    pub language_percentage: Vec<(LanguageType, f64)>,
 }

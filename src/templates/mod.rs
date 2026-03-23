@@ -55,6 +55,9 @@ pub trait Template
     }
 
     fn default() -> TemplateConfig;
+
+    fn included_paths() -> &'static [&'static str];
+    fn excluded_paths() -> &'static [&'static str];
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

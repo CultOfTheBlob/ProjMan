@@ -46,6 +46,16 @@ impl Template for Base
             }],
         }
     }
+
+    fn included_paths() -> &'static [&'static str]
+    {
+        &["src", "tests"]
+    }
+
+    fn excluded_paths() -> &'static [&'static str]
+    {
+        &["target"]
+    }
 }
 
 const FLAKE_NIX: &str = r#"{

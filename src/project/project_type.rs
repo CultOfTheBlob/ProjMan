@@ -1,6 +1,6 @@
 use std::{
     fmt::{self, Display},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process,
     str::FromStr,
 };
@@ -55,6 +55,25 @@ impl ProjectType
         }
 
         Ok(())
+    }
+
+    pub fn included_paths(&self, root: &Path) -> Vec<PathBuf>
+    {
+        match self
+        {
+            ProjectType::Base => Base::included_paths()
+                .iter()
+                .map(|path| root.join(path))
+                .collect(),
+        }
+    }
+
+    pub fn excluded_paths(&self) -> &'static [&'static str]
+    {
+        match self
+        {
+            ProjectType::Base => Base::excluded_paths(),
+        }
     }
 
     pub fn icon(&self) -> PathBuf
