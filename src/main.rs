@@ -7,12 +7,15 @@ mod templates;
 mod update;
 mod view;
 
-use std::time::Duration;
+use std::{path::PathBuf, time::Duration};
 
 use color_eyre::owo_colors::OwoColorize;
 use iced::application;
 
-use crate::{boot::boot, message::Message, state::config::Config, update::update, view::view};
+use crate::{
+    boot::boot, message::Message, project::Project, state::config::Config, update::update,
+    view::view,
+};
 
 fn main() -> iced::Result
 {
@@ -31,6 +34,18 @@ fn main() -> iced::Result
         eprintln!("{:?}", err.red());
         return Ok(());
     }
+
+    println!(
+        "{:?}",
+        Project {
+            exists: true,
+            name: "Test".to_string(),
+            path: PathBuf::from("/home/blob/Projects/ProjMan"),
+            project_type: project::project_type::ProjectType::Base,
+            repo: "https://github.com/CultOfTheBlob/TestProject.git".to_string()
+        }
+        .info()
+    );
 
     application(boot, update, view)
         .title("ProjMan")

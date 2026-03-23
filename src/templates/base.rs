@@ -7,7 +7,7 @@ impl Template for Base
 {
     const TEMPLATE_PATH: &str = "templates/base.json";
 
-    fn default() -> TemplateConfig
+    fn default(&self) -> TemplateConfig
     {
         TemplateConfig {
             dir_structure: vec![
@@ -47,14 +47,19 @@ impl Template for Base
         }
     }
 
-    fn included_paths() -> &'static [&'static str]
+    fn included_paths(&self) -> &'static [&'static str]
     {
         &["src", "tests"]
     }
 
-    fn excluded_paths() -> &'static [&'static str]
+    fn excluded_paths(&self) -> &'static [&'static str]
     {
         &["target"]
+    }
+
+    fn icon_path(&self) -> &'static str
+    {
+        "base.svg"
     }
 }
 

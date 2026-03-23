@@ -74,6 +74,7 @@
         alias run="cargo run"
         alias add="cargo add"
         alias build="nix build"
+        alias nv="nvim -u /home/blob/.config/nvim/init.lua"
       '';
     };
   };

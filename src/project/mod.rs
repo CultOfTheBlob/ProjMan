@@ -229,7 +229,7 @@ impl Project
 
     pub fn is_outdated(&self) -> bool
     {
-        let project_files: Vec<File> = match self.project_type.template()
+        let project_files: Vec<File> = match self.project_type.template_config()
         {
             Ok(template) => template.files,
             Err(_) => return false,

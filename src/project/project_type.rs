@@ -24,33 +24,32 @@ impl ProjectType
 {
     pub const ALL: [ProjectType; 1] = [ProjectType::Base];
 
-    pub fn template(&self) -> Result<TemplateConfig, Error>
+    fn template(&self) -> impl Template
     {
         match self
         {
-            ProjectType::Base => Base::template(),
+            ProjectType::Base => Base,
         }
+    }
+
+    pub fn template_config(&self) -> Result<TemplateConfig, Error>
+    {
+        self.template().template()
     }
 
     pub fn run(&self, project: &Project) -> Result<(), Error>
     {
-        match self
+        for command in &self.template_config()?.run
         {
-            ProjectType::Base =>
+            if let Err(err) = process::Command::new(&command.program)
+                .args(&command.args)
+                .current_dir(&project.path)
+                .spawn()
             {
-                for command in &Base::template()?.run
-                {
-                    if let Err(err) = process::Command::new(&command.program)
-                        .args(&command.args)
-                        .current_dir(&project.path)
-                        .spawn()
-                    {
-                        return Err(Error::Run(ErrorInfo {
-                            string: command.to_string(),
-                            err: err.to_string(),
-                        }));
-                    }
-                }
+                return Err(Error::Run(ErrorInfo {
+                    string: command.to_string(),
+                    err: err.to_string(),
+                }));
             }
         }
 
@@ -59,31 +58,23 @@ impl ProjectType
 
     pub fn included_paths(&self, root: &Path) -> Vec<PathBuf>
     {
-        match self
-        {
-            ProjectType::Base => Base::included_paths()
-                .iter()
-                .map(|path| root.join(path))
-                .collect(),
-        }
+        self.template()
+            .included_paths()
+            .iter()
+            .map(|path| root.join(path))
+            .collect()
     }
 
     pub fn excluded_paths(&self) -> &'static [&'static str]
     {
-        match self
-        {
-            ProjectType::Base => Base::excluded_paths(),
-        }
+        self.template().excluded_paths()
     }
 
     pub fn icon(&self) -> PathBuf
     {
         let icons_path: PathBuf = PathBuf::from("icons");
 
-        match self
-        {
-            ProjectType::Base => icons_path.join("base.svg"),
-        }
+        icons_path.join(self.template().icon_path())
     }
 }
 

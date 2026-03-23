@@ -13,7 +13,7 @@ pub fn update_project(state: &mut AppState) -> Result<(), Error>
     {
         let project: &Project = &state.project_list[index];
 
-        let project_files: Vec<File> = project.project_type.template()?.files;
+        let project_files: Vec<File> = project.project_type.template_config()?.files;
 
         for file in &project_files
         {

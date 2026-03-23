@@ -17,10 +17,10 @@ pub trait Template
 {
     const TEMPLATE_PATH: &str;
 
-    fn template() -> Result<TemplateConfig, Error>
+    fn template(&self) -> Result<TemplateConfig, Error>
     {
         let default_template =
-            Some(serde_json::to_string_pretty(&Self::default()).unwrap_or(String::from("{}")));
+            Some(serde_json::to_string_pretty(&self.default()).unwrap_or(String::from("{}")));
 
         match AppState::get_config_dir(String::from(Self::TEMPLATE_PATH), default_template)
         {
@@ -54,10 +54,12 @@ pub trait Template
         }
     }
 
-    fn default() -> TemplateConfig;
+    fn default(&self) -> TemplateConfig;
 
-    fn included_paths() -> &'static [&'static str];
-    fn excluded_paths() -> &'static [&'static str];
+    fn included_paths(&self) -> &'static [&'static str];
+    fn excluded_paths(&self) -> &'static [&'static str];
+
+    fn icon_path(&self) -> &'static str;
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

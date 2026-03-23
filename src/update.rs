@@ -228,14 +228,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         },
         Message::ProjmanFileCreated(result) =>
         {
-            let project_template: TemplateConfig = match state.new_project.project_type.template()
-            {
-                Ok(template) => template,
-                Err(err) =>
+            let project_template: TemplateConfig =
+                match state.new_project.project_type.template_config()
                 {
-                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                }
-            };
+                    Ok(template) => template,
+                    Err(err) =>
+                    {
+                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
+                    }
+                };
 
             match result
             {
@@ -260,14 +261,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::DirStructureCreated(result) =>
         {
-            let project_template: TemplateConfig = match state.new_project.project_type.template()
-            {
-                Ok(template) => template,
-                Err(err) =>
+            let project_template: TemplateConfig =
+                match state.new_project.project_type.template_config()
                 {
-                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                }
-            };
+                    Ok(template) => template,
+                    Err(err) =>
+                    {
+                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
+                    }
+                };
 
             match result
             {
@@ -292,14 +294,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ProjectFilesCreated(result) =>
         {
-            let project_template: TemplateConfig = match state.new_project.project_type.template()
-            {
-                Ok(template) => template,
-                Err(err) =>
+            let project_template: TemplateConfig =
+                match state.new_project.project_type.template_config()
                 {
-                    return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                }
-            };
+                    Ok(template) => template,
+                    Err(err) =>
+                    {
+                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
+                    }
+                };
 
             match result
             {
@@ -324,7 +327,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::BuildCommandExecuted(index, result) =>
         {
-            if let Ok(project_template) = state.new_project.project_type.template()
+            if let Ok(project_template) = state.new_project.project_type.template_config()
             {
                 let commands: Vec<Command> = project_template.build;
 
