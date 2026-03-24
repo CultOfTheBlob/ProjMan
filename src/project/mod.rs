@@ -1,10 +1,9 @@
 use std::{
     cmp::{Ordering, Reverse},
-    fs::{metadata, read, read_dir, read_to_string},
+    fs::{metadata, read, read_dir},
     path::PathBuf,
 };
 
-use askalono::{Store, TextData};
 use bytesize::ByteSize;
 use git2::{
     BranchType, Commit, Cred, FetchOptions, Index, IndexAddOption, Oid, PushOptions,
@@ -27,6 +26,7 @@ pub struct Project
     pub path: PathBuf,
     pub project_type: ProjectType,
     pub repo: String,
+    pub license: String,
 }
 
 impl Project
@@ -51,6 +51,7 @@ impl Project
             path: PathBuf::from(&config.general.projects_dir).join(name),
             project_type: ProjectType::default(),
             repo: String::new(),
+            license: String::new(),
         }
     }
 
@@ -153,24 +154,6 @@ impl Project
             authors
         };
 
-        let license: String = {
-            let store: Store = Store::from_cache(
-                &include_bytes!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/cache/license.cache.zstd"
-                ))[..],
-            )
-            .ok()?;
-
-            let license_path: PathBuf = self.path.join("LICENSE");
-            let license_contents: String = read_to_string(license_path).ok()?;
-
-            store
-                .analyze(&TextData::from(license_contents.as_str()))
-                .name
-                .to_string()
-        };
-
         Some(ProjectInfo {
             line_count,
             language_percentage,
@@ -181,7 +164,6 @@ impl Project
             last_commit,
             commit_count,
             authors,
-            license,
         })
     }
 
@@ -379,5 +361,4 @@ pub struct ProjectInfo
     pub last_commit: String,
     pub commit_count: usize,
     pub authors: Vec<(String, f64)>,
-    pub license: String,
 }

@@ -4,6 +4,8 @@ use std::{
     str::FromStr,
 };
 
+use askalono::{Store, TextData};
+
 use crate::{
     error::{Error, ErrorInfo},
     project::{Project, project_type::ProjectType},
@@ -45,12 +47,50 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 }
             };
 
+            let license: String = {
+                let store: Store = match Store::from_cache(
+                    &include_bytes!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/cache/license.cache.zstd"
+                    ))[..],
+                )
+                {
+                    Ok(store) => store,
+                    Err(err) =>
+                    {
+                        return Err(Error::Fetch(ErrorInfo {
+                            string: String::from("project license"),
+                            err: err.to_string(),
+                        }));
+                    }
+                };
+
+                let license_path: PathBuf = path.join("LICENSE");
+                let license_contents: String = match read_to_string(&license_path)
+                {
+                    Ok(contents) => contents,
+                    Err(err) =>
+                    {
+                        return Err(Error::Read(ErrorInfo {
+                            string: String::from("LICENSE file"),
+                            err: err.to_string(),
+                        }));
+                    }
+                };
+
+                store
+                    .analyze(&TextData::from(license_contents.as_str()))
+                    .name
+                    .to_string()
+            };
+
             let project: Project = Project {
                 exists: true,
                 name,
                 path,
                 project_type,
                 repo,
+                license,
             };
 
             let projects_from_json: String = match read_to_string(&projects_path)

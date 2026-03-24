@@ -5,6 +5,8 @@ use std::{
     process::{self},
 };
 
+use askalono::{Store, TextData};
+
 use crate::{
     error::{Error, ErrorInfo},
     project::{Project, project_type::ProjectType},
@@ -176,6 +178,48 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                         err: err.to_string(),
                     }));
                 }
+            };
+
+            let project: Project = {
+                let license: String = {
+                    let store: Store = match Store::from_cache(
+                        &include_bytes!(concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/cache/license.cache.zstd"
+                        ))[..],
+                    )
+                    {
+                        Ok(store) => store,
+                        Err(err) =>
+                        {
+                            return Err(Error::Fetch(ErrorInfo {
+                                string: String::from("project license"),
+                                err: err.to_string(),
+                            }));
+                        }
+                    };
+
+                    let license_path: PathBuf = project.path.join("LICENSE");
+
+                    let license_contents: String = match read_to_string(&license_path)
+                    {
+                        Ok(contents) => contents,
+                        Err(err) =>
+                        {
+                            return Err(Error::Read(ErrorInfo {
+                                string: String::from("LICENSE file"),
+                                err: err.to_string(),
+                            }));
+                        }
+                    };
+
+                    store
+                        .analyze(&TextData::from(license_contents.as_str()))
+                        .name
+                        .to_string()
+                };
+
+                Project { license, ..project }
             };
 
             projects.push(project);
