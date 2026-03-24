@@ -1,13 +1,14 @@
 use std::{
-    cmp::Ordering,
+    cmp::{Ordering, Reverse},
+    collections::HashSet,
     fs::{metadata, read, read_dir},
     path::PathBuf,
 };
 
 use bytesize::ByteSize;
 use git2::{
-    BranchType, Cred, FetchOptions, Index, IndexAddOption, PushOptions, RemoteCallbacks,
-    Repository, Signature, build::RepoBuilder,
+    BranchType, Commit, Cred, FetchOptions, Index, IndexAddOption, Oid, PushOptions,
+    RemoteCallbacks, Repository, Revwalk, Signature, build::RepoBuilder,
 };
 use serde::{Deserialize, Serialize};
 use tokei::{LanguageType, Languages};
@@ -67,7 +68,9 @@ impl Project
             Err(_) => return None,
         };
 
-        let mut languages = Languages::new();
+        let head: git2::Reference<'_> = repo.head().ok()?;
+
+        let mut languages: Languages = Languages::new();
         languages.get_statistics(
             &self.project_type.included_paths(&self.path),
             self.project_type.excluded_paths(),
@@ -110,10 +113,52 @@ impl Project
         };
 
         let current_branch: usize = {
-            let head = repo.head().ok()?;
             let branch_name = head.shorthand()?;
 
             branches.iter().position(|b| b == branch_name)?
+        };
+
+        let last_commit: String = head.peel_to_commit().ok()?.summary()?.to_string();
+
+        let commit_count: usize = {
+            let mut revwalk: Revwalk = repo.revwalk().ok()?;
+            revwalk.push_head().ok()?;
+
+            revwalk.count()
+        };
+
+        let authors: Vec<(String, f64)> = {
+            let mut revwalk: Revwalk = repo.revwalk().ok()?;
+            revwalk.push_head().ok()?;
+
+            let mut authors: Vec<(String, usize)> = vec![];
+            for oid in revwalk
+            {
+                let oid: Oid = oid.ok()?;
+                let commit: Commit<'_> = repo.find_commit(oid).ok()?;
+                let author: String = commit.author().name()?.to_string();
+
+                if let Some(author) = authors.iter_mut().find(|(name, _)| name == &author)
+                {
+                    author.1 += 1;
+                }
+                else
+                {
+                    authors.push((author, 1));
+                }
+
+                authors.sort_by_key(|c| Reverse(c.1));
+            }
+
+            let authors: Vec<(String, f64)> = authors
+                .into_iter()
+                .map(|(name, commits)| {
+                    let percentage = (commits as f64 / commit_count as f64) * 100.0;
+                    (name, percentage)
+                })
+                .collect();
+
+            authors
         };
 
         Some(ProjectInfo {
@@ -123,6 +168,9 @@ impl Project
             file_count,
             branches,
             current_branch,
+            last_commit,
+            commit_count,
+            authors,
         })
     }
 
@@ -317,4 +365,7 @@ pub struct ProjectInfo
     pub file_count: usize,
     pub branches: Vec<String>,
     pub current_branch: usize,
+    pub last_commit: String,
+    pub commit_count: usize,
+    pub authors: Vec<(String, f64)>,
 }
