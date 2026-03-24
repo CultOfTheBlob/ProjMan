@@ -9,114 +9,107 @@ use crate::{message::Message, state::app_state::AppState};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
-    let mut top_bar_content = column![].spacing(12);
+    let open_widget = button(
+        row![text("").size(24), text("Open")]
+            .spacing(4)
+            .align_y(Alignment::Center),
+    )
+    .width(Length::Fill)
+    .style(|theme: &Theme, status: button::Status| match status
+    {
+        button::Status::Disabled => button::subtle(theme, status),
 
-    top_bar_content = top_bar_content.push(
-        button(
-            row![text("").size(24), text("Open")]
-                .spacing(4)
-                .align_y(Alignment::Center),
-        )
-        .width(Length::Fill)
-        .style(|theme: &Theme, status: button::Status| match status
+        _ => button::secondary(theme, status),
+    })
+    .on_press_maybe(
+        if state.pending.is_none()
+            && let Some(index) = state.selected_project
+            && state.project_list[index].exists
         {
-            button::Status::Disabled => button::subtle(theme, status),
-
-            _ => button::secondary(theme, status),
-        })
-        .on_press_maybe(
-            if state.pending.is_none()
-                && let Some(index) = state.selected_project
-                && state.project_list[index].exists
-            {
-                Some(Message::Opened(state.project_list[index].clone()))
-            }
-            else
-            {
-                None
-            },
-        ),
+            Some(Message::Opened(state.project_list[index].clone()))
+        }
+        else
+        {
+            None
+        },
     );
 
-    top_bar_content = top_bar_content.push(
-        button(
-            row![text("").size(24), text("Edit")]
-                .spacing(4)
-                .align_y(Alignment::Center),
-        )
-        .width(Length::Fill)
-        .style(|theme: &Theme, status: button::Status| match status
-        {
-            button::Status::Disabled => button::subtle(theme, status),
+    let edit_widget = button(
+        row![text("").size(24), text("Edit")]
+            .spacing(4)
+            .align_y(Alignment::Center),
+    )
+    .width(Length::Fill)
+    .style(|theme: &Theme, status: button::Status| match status
+    {
+        button::Status::Disabled => button::subtle(theme, status),
 
-            _ => button::secondary(theme, status),
-        })
-        .on_press_maybe(
-            if state.pending.is_none()
-                && let Some(index) = state.selected_project
-                && state.project_list[index].exists
-            {
-                Some(Message::Edited(index))
-            }
-            else
-            {
-                None
-            },
-        ),
+        _ => button::secondary(theme, status),
+    })
+    .on_press_maybe(
+        if state.pending.is_none()
+            && let Some(index) = state.selected_project
+            && state.project_list[index].exists
+        {
+            Some(Message::Edited(index))
+        }
+        else
+        {
+            None
+        },
     );
 
-    top_bar_content = top_bar_content.push(
-        button(
-            row![text("").size(24), text("Update")]
-                .spacing(4)
-                .align_y(Alignment::Center),
-        )
-        .width(Length::Fill)
-        .style(|theme: &Theme, status: button::Status| match status
-        {
-            button::Status::Disabled => button::subtle(theme, status),
+    let update_widget = button(
+        row![text("").size(24), text("Update")]
+            .spacing(4)
+            .align_y(Alignment::Center),
+    )
+    .width(Length::Fill)
+    .style(|theme: &Theme, status: button::Status| match status
+    {
+        button::Status::Disabled => button::subtle(theme, status),
 
-            _ => button::primary(theme, status),
-        })
-        .on_press_maybe(
-            if state.pending.is_none()
-                && let Some(index) = state.selected_project
-                && state.project_list[index].exists
-                && state.project_list[index].is_outdated()
-            {
-                Some(Message::Updated)
-            }
-            else
-            {
-                None
-            },
-        ),
+        _ => button::primary(theme, status),
+    })
+    .on_press_maybe(
+        if state.pending.is_none()
+            && let Some(index) = state.selected_project
+            && state.project_list[index].exists
+            && state.project_list[index].is_outdated()
+        {
+            Some(Message::Updated)
+        }
+        else
+        {
+            None
+        },
     );
 
-    top_bar_content = top_bar_content.push(
-        button(
-            row![text("󰆴").size(24), text("Remove")]
-                .spacing(4)
-                .align_y(Alignment::Center),
-        )
-        .width(Length::Fill)
-        .style(|theme: &Theme, status: button::Status| match status
-        {
-            button::Status::Disabled => button::subtle(theme, status),
+    let remove_widget = button(
+        row![text("󰆴").size(24), text("Remove")]
+            .spacing(4)
+            .align_y(Alignment::Center),
+    )
+    .width(Length::Fill)
+    .style(|theme: &Theme, status: button::Status| match status
+    {
+        button::Status::Disabled => button::subtle(theme, status),
 
-            _ => button::warning(theme, status),
-        })
-        .on_press_maybe(
-            if state.pending.is_none() && state.selected_project.is_some()
-            {
-                Some(Message::Removed)
-            }
-            else
-            {
-                None
-            },
-        ),
+        _ => button::warning(theme, status),
+    })
+    .on_press_maybe(
+        if state.pending.is_none() && state.selected_project.is_some()
+        {
+            Some(Message::Removed)
+        }
+        else
+        {
+            None
+        },
     );
+
+    let top_bar_content =
+        column![open_widget, edit_widget, update_widget, remove_widget].spacing(12);
 
     let top_bar = container(top_bar_content)
         .width(Length::FillPortion(1))

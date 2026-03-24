@@ -8,29 +8,29 @@ use crate::{message::Message, state::app_state::AppState};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
-    let top_bar_content = row![
-        button("Create").style(button::secondary).on_press_maybe(
-            if state.pending.is_none()
-            {
-                Some(Message::Created)
-            }
-            else
-            {
-                None
-            }
-        ),
-        button("Import").style(button::secondary).on_press_maybe(
-            if state.pending.is_none()
-            {
-                Some(Message::Imported)
-            }
-            else
-            {
-                None
-            }
-        )
-    ]
-    .spacing(12);
+    let create_widget = button("Create").style(button::secondary).on_press_maybe(
+        if state.pending.is_none()
+        {
+            Some(Message::Created)
+        }
+        else
+        {
+            None
+        },
+    );
+
+    let import_widget = button("Import").style(button::secondary).on_press_maybe(
+        if state.pending.is_none()
+        {
+            Some(Message::Imported)
+        }
+        else
+        {
+            None
+        },
+    );
+
+    let top_bar_content = row![create_widget, import_widget].spacing(12);
 
     let top_bar = container(top_bar_content)
         .width(Length::Fill)
