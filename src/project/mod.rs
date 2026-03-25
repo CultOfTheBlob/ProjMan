@@ -1,5 +1,5 @@
 use std::{
-    cmp::{Ordering, Reverse},
+    cmp::Ordering,
     fs::{metadata, read, read_dir},
     path::PathBuf,
 };
@@ -139,11 +139,9 @@ impl Project
                 {
                     authors.push((author, 1));
                 }
-
-                authors.sort_by_key(|c| Reverse(c.1));
             }
 
-            let authors: Vec<(String, f64)> = authors
+            let mut authors: Vec<(String, f64)> = authors
                 .into_iter()
                 .map(|(name, commits)| {
                     let percentage = (commits as f64 / commit_count as f64) * 100.0;
@@ -151,7 +149,16 @@ impl Project
                 })
                 .collect();
 
-            authors
+            authors.sort_by(|a, p| p.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
+
+            if authors.len() > 4
+            {
+                authors[0..4].to_vec()
+            }
+            else
+            {
+                authors
+            }
         };
 
         Some(ProjectInfo {
