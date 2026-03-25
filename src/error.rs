@@ -10,7 +10,7 @@ pub enum Error
 {
     Other(String),
     Create(ErrorInfo),
-    WriteTo(ErrorInfo),
+    Write(ErrorInfo),
     Find(ErrorInfo),
     Remove(ErrorInfo),
     Read(ErrorInfo),
@@ -18,6 +18,7 @@ pub enum Error
     Clone(ErrorInfo),
     Fetch(ErrorInfo),
     Run(ErrorInfo),
+    Open(ErrorInfo),
     Commit(ErrorInfo),
 }
 
@@ -32,7 +33,7 @@ impl Error
             {
                 format!("Error: Could not create {string} ({err})")
             }
-            Error::WriteTo(ErrorInfo { string, err }) =>
+            Error::Write(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not write to {string} ({err})")
             }
@@ -63,6 +64,10 @@ impl Error
             Error::Run(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not run [{string}] ({err})")
+            }
+            Error::Open(ErrorInfo { string, err }) =>
+            {
+                format!("Error: Could not open {string} ({err})")
             }
             Error::Commit(ErrorInfo { string, err }) =>
             {

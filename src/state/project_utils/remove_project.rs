@@ -80,7 +80,7 @@ pub fn remove_project(state: &mut AppState) -> Result<(), Error>
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::WriteTo(ErrorInfo {
+                return Err(Error::Write(ErrorInfo {
                     string: String::from("projects.json"),
                     err: err.to_string(),
                 }));

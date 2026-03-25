@@ -44,7 +44,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                 if let Err(err) =
                     projman_file.write_all(project.project_type.to_string().as_bytes())
                 {
-                    return Err(Error::WriteTo(ErrorInfo {
+                    return Err(Error::Write(ErrorInfo {
                         string: String::from(".projman file"),
                         err: err.to_string(),
                     }));
@@ -91,7 +91,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::WriteTo(ErrorInfo {
+                return Err(Error::Write(ErrorInfo {
                     string: String::from("projects.json"),
                     err: err.to_string(),
                 }));

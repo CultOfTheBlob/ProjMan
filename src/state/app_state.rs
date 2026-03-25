@@ -179,7 +179,7 @@ impl AppState
             if let Some(content) = create_if_missing
                 && let Err(err) = write(&path, content.as_bytes())
             {
-                return Err(Error::WriteTo(ErrorInfo {
+                return Err(Error::Write(ErrorInfo {
                     string: sub_dir,
                     err: err.to_string(),
                 }));
@@ -249,7 +249,7 @@ impl AppState
 
                 if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                 {
-                    return Err(Error::WriteTo(ErrorInfo {
+                    return Err(Error::Write(ErrorInfo {
                         string: String::from("projects.json"),
                         err: err.to_string(),
                     }));

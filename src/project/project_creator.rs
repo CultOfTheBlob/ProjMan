@@ -238,7 +238,7 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
 
             if let Err(err) = write(&config_path, projects_to_json.as_bytes())
             {
-                return Err(Error::WriteTo(ErrorInfo {
+                return Err(Error::Write(ErrorInfo {
                     string: String::from("projects.json"),
                     err: err.to_string(),
                 }));
