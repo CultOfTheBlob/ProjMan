@@ -39,7 +39,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             container(
                 row![
                     notif_icon,
-                    new_notif,
+                    new_notif.wrapping(text::Wrapping::Glyph),
                     row![
                         button("")
                             .on_press(Message::NotificationCopied(index))
@@ -74,7 +74,8 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .spacing(2),
                 ]
                 .align_y(Alignment::Center)
-                .spacing(8),
+                .spacing(8)
+                .wrap(),
             )
             .padding(12)
             .max_width(1024)
