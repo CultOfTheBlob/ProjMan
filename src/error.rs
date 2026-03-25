@@ -1,17 +1,7 @@
 macro_rules! error {
     ($type:path, $str:expr, $err:expr) => {
-        $type(ErrorInfo {
-            string: $str.to_string(),
-            err: $err.to_string(),
-        })
+        $type(ErrorInfo::new($str.to_string(), $err.to_string()))
     };
-}
-
-#[derive(Debug, Clone)]
-pub struct ErrorInfo
-{
-    pub string: String,
-    pub err: String,
 }
 
 #[derive(Debug, Clone)]
@@ -83,5 +73,19 @@ impl Error
                 format!("Error: Could not commit {string} ({err})")
             }
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ErrorInfo
+{
+    string: String,
+    err: String,
+}
+impl ErrorInfo
+{
+    pub fn new(string: String, err: String) -> Self
+    {
+        ErrorInfo { string, err }
     }
 }
