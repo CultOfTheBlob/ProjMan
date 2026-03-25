@@ -1,3 +1,12 @@
+macro_rules! error {
+    ($type:path, $str:expr, $err:expr) => {
+        $type(ErrorInfo {
+            string: $str.to_string(),
+            err: $err.to_string(),
+        })
+    };
+}
+
 #[derive(Debug, Clone)]
 pub struct ErrorInfo
 {

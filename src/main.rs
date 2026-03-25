@@ -1,4 +1,5 @@
 mod boot;
+#[macro_use]
 mod error;
 mod message;
 mod project;
