@@ -11,7 +11,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 {
     if !state.sidebar_expanded
     {
-        return content;
+        return row![content].padding(4).into();
     }
 
     let open_widget = button(
