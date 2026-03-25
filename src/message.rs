@@ -18,6 +18,7 @@ pub enum Message
     EditCanceled,
     EditProjectNameChanged(String),
     EditProjectRepoChanged(String),
+    RepoOpened,
     Removed,
     RemoveConfirmed,
     RemoveCanceled,

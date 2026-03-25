@@ -143,7 +143,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             }),
     )
     .padding(12)
-    .width(Length::FillPortion(9))
+    .width(Length::FillPortion(12))
     .style(|theme: &Theme| container::Style {
         background: Some(Color(theme.extended_palette().background.weakest.color)),
         ..Default::default()

@@ -3,7 +3,7 @@ use std::{path::PathBuf, thread::sleep, time::Duration};
 use iced::{Task, clipboard};
 
 use crate::{
-    error::Error,
+    error::{Error, ErrorInfo},
     message::Message,
     project::{Project, project_creator},
     state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
@@ -111,6 +111,27 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         Message::EditProjectRepoChanged(repo) =>
         {
             state.edit_project_repo = repo;
+
+            Task::none()
+        }
+        Message::RepoOpened =>
+        {
+            if let Some(index) = state.selected_project
+            {
+                let project: &Project = &state.project_list[index];
+
+                if let Err(err) = open::that(&project.repo)
+                {
+                    state.push_notification(
+                        Error::Fetch(ErrorInfo {
+                            string: String::from("project repo"),
+                            err: err.to_string(),
+                        })
+                        .get_message(),
+                        NotifKind::Error,
+                    );
+                }
+            }
 
             Task::none()
         }
