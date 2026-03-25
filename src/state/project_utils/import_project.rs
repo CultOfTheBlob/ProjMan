@@ -28,10 +28,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 Ok(string) => ProjectType::from_str(string)?,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from(".projman file"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, ".projman file", err));
                 }
             };
 
@@ -40,10 +37,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 Ok(url) => url,
                 Err(err) =>
                 {
-                    return Err(Error::Fetch(ErrorInfo {
-                        string: String::from("remote origin"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Fetch, "remote origin", err));
                 }
             };
 
@@ -58,10 +52,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                     Ok(store) => store,
                     Err(err) =>
                     {
-                        return Err(Error::Fetch(ErrorInfo {
-                            string: String::from("project license"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Fetch, "project license", err));
                     }
                 };
 
@@ -71,10 +62,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                     Ok(contents) => contents,
                     Err(err) =>
                     {
-                        return Err(Error::Read(ErrorInfo {
-                            string: String::from("LICENSE file"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Read, "LICENSE file", err));
                     }
                 };
 
@@ -98,10 +86,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
@@ -110,10 +95,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 Ok(projects) => projects,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
@@ -124,19 +106,13 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: String::from("projects.json"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, "projects.json", err));
             };
 
             Ok(())

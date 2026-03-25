@@ -163,10 +163,7 @@ impl AppState
 
             if let Err(err) = create_dir_all(&config_path)
             {
-                return Err(Error::Create(ErrorInfo {
-                    string: String::from("config dir"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Create, "config dir", err));
             };
 
             let path: PathBuf = config_path.join(&sub_dir);
@@ -179,19 +176,13 @@ impl AppState
             if let Some(content) = create_if_missing
                 && let Err(err) = write(&path, content.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: sub_dir,
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, sub_dir, err));
             }
 
             return Ok(path);
         }
 
-        Err(Error::Find(ErrorInfo {
-            string: String::from("config dir"),
-            err: String::new(),
-        }))
+        Err(error!(Error::Find, "config dir", ""))
     }
 
     pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
@@ -205,10 +196,7 @@ impl AppState
                     Ok(json) => json,
                     Err(err) =>
                     {
-                        return Err(Error::Read(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Read, "projects.json", err));
                     }
                 };
 
@@ -217,10 +205,7 @@ impl AppState
                     Ok(projects) => projects,
                     Err(err) =>
                     {
-                        return Err(Error::Parse(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Parse, "projects.json", err));
                     }
                 };
 
@@ -235,10 +220,7 @@ impl AppState
                     Ok(json) => json,
                     Err(err) =>
                     {
-                        return Err(Error::Parse(ErrorInfo {
-                            string: String::from("projects.json"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Parse, "projects.json", err));
                     }
                 };
 
@@ -249,10 +231,7 @@ impl AppState
 
                 if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
                 {
-                    return Err(Error::Write(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Write, "projects.json", err));
                 };
 
                 Ok(projects)

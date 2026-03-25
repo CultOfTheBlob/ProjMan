@@ -46,10 +46,7 @@ impl ProjectType
                 .current_dir(&project.path)
                 .spawn()
             {
-                return Err(Error::Run(ErrorInfo {
-                    string: command.to_string(),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Run, command.to_string(), err));
             }
         }
 

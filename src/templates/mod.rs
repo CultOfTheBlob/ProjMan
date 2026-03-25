@@ -33,18 +33,12 @@ pub trait Template
                         Ok(it) => it,
                         Err(err) =>
                         {
-                            return Err(Error::Parse(ErrorInfo {
-                                string: String::from("template"),
-                                err: err.to_string(),
-                            }));
+                            return Err(error!(Error::Parse, "template", err));
                         }
                     },
                     Err(err) =>
                     {
-                        return Err(Error::Read(ErrorInfo {
-                            string: String::from("template"),
-                            err: err.to_string(),
-                        }));
+                        return Err(error!(Error::Read, "template", err));
                     }
                 };
 

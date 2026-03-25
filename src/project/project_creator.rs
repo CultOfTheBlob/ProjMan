@@ -21,10 +21,7 @@ pub async fn create_project_dir(project_path: PathBuf) -> Result<String, Error>
     match create_dir_all(&project_path)
     {
         Ok(_) => Ok("Created project dir...".to_string()),
-        Err(err) => Err(Error::Create(ErrorInfo {
-            string: String::from("project dir"),
-            err: err.to_string(),
-        })),
+        Err(err) => Err(error!(Error::Create, "project dir", err)),
     }
 }
 
@@ -37,10 +34,7 @@ pub async fn clone_project_repo(project: Project) -> Result<String, Error>
         Err(err) =>
         {
             let _ = remove_dir(&project.path);
-            Err(Error::Clone(ErrorInfo {
-                string: String::from("project repo"),
-                err: err.to_string(),
-            }))
+            Err(error!(Error::Clone, "project repo", err))
         }
     }
 }
@@ -56,18 +50,12 @@ pub async fn create_projman_file(
         {
             if let Err(err) = file.write_all(project_type.to_string().as_bytes())
             {
-                return Err(Error::Create(ErrorInfo {
-                    string: String::from(".projman file"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, ".projman file", err));
             }
         }
         Err(err) =>
         {
-            return Err(Error::Create(ErrorInfo {
-                string: String::from(".projman file"),
-                err: err.to_string(),
-            }));
+            return Err(error!(Error::Create, ".projman file", err));
         }
     };
 
@@ -87,10 +75,7 @@ pub async fn create_dir_structure(
         {
             if let Err(err) = create_dir(dir)
             {
-                return Err(Error::Create(ErrorInfo {
-                    string: String::from("directory structure"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Create, "directory structure", err));
             }
         }
     }
@@ -107,10 +92,7 @@ pub async fn create_project_files(
     {
         if let Err(err) = write(project_path.join(&file.path), &file.content)
         {
-            return Err(Error::Create(ErrorInfo {
-                string: String::from("project files"),
-                err: err.to_string(),
-            }));
+            return Err(error!(Error::Create, "project files", err));
         };
     }
 
@@ -126,10 +108,7 @@ pub async fn execute_build_command(command: Command, project_path: PathBuf)
         .status()
     {
         Ok(_) => Ok(format!("Executed [{}]...", command)),
-        Err(err) => Err(Error::Run(ErrorInfo {
-            string: command.to_string(),
-            err: err.to_string(),
-        })),
+        Err(err) => Err(error!(Error::Run, command, err)),
     }
 }
 
@@ -142,10 +121,7 @@ pub async fn commit_projman_init(project: Project) -> Result<String, Error>
         Err(err) =>
         {
             let _ = remove_dir(&project.path);
-            Err(Error::Commit(ErrorInfo {
-                string: String::from("ProjMan init"),
-                err: err.to_string(),
-            }))
+            Err(error!(Error::Commit, "ProjMan init", err))
         }
     }
 }
@@ -161,10 +137,7 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
@@ -173,10 +146,7 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                 Ok(projects) => projects,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
@@ -192,10 +162,7 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                         Ok(store) => store,
                         Err(err) =>
                         {
-                            return Err(Error::Fetch(ErrorInfo {
-                                string: String::from("project license"),
-                                err: err.to_string(),
-                            }));
+                            return Err(error!(Error::Parse, "project license", err));
                         }
                     };
 
@@ -206,10 +173,7 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                         Ok(contents) => contents,
                         Err(err) =>
                         {
-                            return Err(Error::Read(ErrorInfo {
-                                string: String::from("LICENSE file"),
-                                err: err.to_string(),
-                            }));
+                            return Err(error!(Error::Read, "LICENSE file", err));
                         }
                     };
 
@@ -229,19 +193,13 @@ pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
             if let Err(err) = write(&config_path, projects_to_json.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: String::from("projects.json"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, "projects.json", err));
             };
 
             Ok(projects)

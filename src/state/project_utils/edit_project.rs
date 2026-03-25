@@ -22,10 +22,7 @@ pub fn edit_project(state: &mut AppState) -> Result<(), Error>
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
@@ -34,10 +31,7 @@ pub fn edit_project(state: &mut AppState) -> Result<(), Error>
                 Ok(projects) => projects,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
@@ -52,19 +46,13 @@ pub fn edit_project(state: &mut AppState) -> Result<(), Error>
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: String::from("projects.json"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, "projects.json", err));
             };
 
             Ok(())

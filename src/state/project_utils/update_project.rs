@@ -19,10 +19,7 @@ pub fn update_project(state: &mut AppState) -> Result<(), Error>
         {
             if let Err(err) = write(project.path.join(&file.path), &file.content)
             {
-                return Err(Error::Create(ErrorInfo {
-                    string: String::from("project files"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Create, "project files", err));
             };
         }
 

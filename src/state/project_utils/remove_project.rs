@@ -21,19 +21,13 @@ pub fn remove_project(state: &mut AppState) -> Result<(), Error>
             {
                 if let Err(err) = remove_file(state.project_list[index].path.join(".projman"))
                 {
-                    return Err(Error::Remove(ErrorInfo {
-                        string: String::from(".projman file"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Remove, ".projman file", err));
                 }
 
                 if state.delete_project_folder
                     && let Err(err) = remove_dir_all(&state.project_list[index].path)
                 {
-                    return Err(Error::Remove(ErrorInfo {
-                        string: String::from("project folder"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Remove, "project folder", err));
                 }
             }
 
@@ -42,10 +36,7 @@ pub fn remove_project(state: &mut AppState) -> Result<(), Error>
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
@@ -54,10 +45,7 @@ pub fn remove_project(state: &mut AppState) -> Result<(), Error>
                 Ok(projects) => projects,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
@@ -71,19 +59,13 @@ pub fn remove_project(state: &mut AppState) -> Result<(), Error>
                 Ok(string) => string,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: String::from("projects.json"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, "projects.json", err));
             };
 
             if let Some(index) = state.selected_project

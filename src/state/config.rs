@@ -27,12 +27,9 @@ impl Config
             {
                 panic!(
                     "{}",
-                    Error::Parse(ErrorInfo {
-                        string: String::from("default config"),
-                        err: err.to_string(),
-                    })
-                    .get_message()
-                    .red()
+                    error!(Error::Parse, "default config", err)
+                        .get_message()
+                        .red()
                 )
             }
         };
@@ -44,15 +41,9 @@ impl Config
                 Ok(string) => match toml::from_str(string)
                 {
                     Ok(config) => Ok(config),
-                    Err(err) => Err(Error::Parse(ErrorInfo {
-                        string: String::from("config"),
-                        err: err.to_string(),
-                    })),
+                    Err(err) => Err(error!(Error::Parse, "config", err)),
                 },
-                Err(err) => Err(Error::Parse(ErrorInfo {
-                    string: String::from("config"),
-                    err: err.to_string(),
-                })),
+                Err(err) => Err(error!(Error::Parse, "config", err)),
             },
             Err(err) => Err(err),
         }

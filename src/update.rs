@@ -123,11 +123,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 if let Err(err) = open::that(&project.repo)
                 {
                     state.push_notification(
-                        Error::Open(ErrorInfo {
-                            string: String::from("project repo"),
-                            err: err.to_string(),
-                        })
-                        .get_message(),
+                        error!(Error::Open, "project repo", err).get_message(),
                         NotifKind::Error,
                     );
                 }

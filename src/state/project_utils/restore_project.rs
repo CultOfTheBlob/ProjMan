@@ -20,10 +20,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
             if !project.path.exists()
                 && let Err(err) = project.clone_repo()
             {
-                return Err(Error::Clone(ErrorInfo {
-                    string: String::from("project repo"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Clone, "project repo", err));
             }
 
             if !project.path.join(".projman").exists()
@@ -34,20 +31,14 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                         Ok(file) => file,
                         Err(err) =>
                         {
-                            return Err(Error::Create(ErrorInfo {
-                                string: String::from(".projman file"),
-                                err: err.to_string(),
-                            }));
+                            return Err(error!(Error::Create, ".projman file", err));
                         }
                     };
 
                 if let Err(err) =
                     projman_file.write_all(project.project_type.to_string().as_bytes())
                 {
-                    return Err(Error::Write(ErrorInfo {
-                        string: String::from(".projman file"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Write, ".projman file", err));
                 }
             }
 
@@ -56,10 +47,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Read(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Read, "projects.json", err));
                 }
             };
 
@@ -68,10 +56,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                 Ok(projects) => projects,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
@@ -82,19 +67,13 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                 Ok(json) => json,
                 Err(err) =>
                 {
-                    return Err(Error::Parse(ErrorInfo {
-                        string: String::from("projects.json"),
-                        err: err.to_string(),
-                    }));
+                    return Err(error!(Error::Parse, "projects.json", err));
                 }
             };
 
             if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(Error::Write(ErrorInfo {
-                    string: String::from("projects.json"),
-                    err: err.to_string(),
-                }));
+                return Err(error!(Error::Write, "projects.json", err));
             };
 
             Ok(index)
