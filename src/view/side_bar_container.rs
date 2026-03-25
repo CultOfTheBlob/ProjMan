@@ -9,6 +9,11 @@ use crate::{message::Message, project::Project, state::app_state::AppState};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
+    if !state.sidebar_expanded
+    {
+        return content;
+    }
+
     let open_widget = button(
         row![text("").size(24), text("Open")]
             .spacing(4)

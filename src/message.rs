@@ -50,4 +50,5 @@ pub enum Message
     RemoveNonexistantFinished(Result<usize, Error>),
     NotificationRemoved(usize),
     NotificationCopied(usize),
+    SideBarToggled,
 }

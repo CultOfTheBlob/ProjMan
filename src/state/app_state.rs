@@ -39,6 +39,7 @@ pub struct AppState
     pub edit_project_name: String,
     pub edit_project_repo: String,
     pub notifications: Vec<Notification>,
+    pub sidebar_expanded: bool,
 }
 
 impl Default for AppState
@@ -82,6 +83,7 @@ impl Default for AppState
             new_project_path_changed: false,
             import_project_name_changed: false,
             restoring_project: false,
+            sidebar_expanded: true,
             selected_project: None,
             pending: None,
         }

@@ -1,7 +1,7 @@
 use iced::{
     Background::Color,
     Border, Element, Length, Theme,
-    widget::{button, column, container, row},
+    widget::{button, column, container, row, space, text},
 };
 
 use crate::{message::Message, state::app_state::AppState};
@@ -30,7 +30,27 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
         },
     );
 
-    let top_bar_content = row![create_widget, import_widget].spacing(12);
+    let sidebar_expand_widget =
+        button(text(if state.sidebar_expanded { "" } else { "" }).size(24))
+            .style(button::subtle)
+            .on_press_maybe(
+                if state.pending.is_none()
+                {
+                    Some(Message::SideBarToggled)
+                }
+                else
+                {
+                    None
+                },
+            );
+
+    let top_bar_content = row![
+        create_widget,
+        import_widget,
+        space().width(Length::Fill),
+        sidebar_expand_widget
+    ]
+    .spacing(12);
 
     let top_bar = container(top_bar_content)
         .width(Length::Fill)

@@ -135,6 +135,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::SideBarToggled =>
+        {
+            state.sidebar_expanded = !state.sidebar_expanded;
+
+            Task::none()
+        }
         Message::NotificationRemoved(index) =>
         {
             state.notifications.remove(index);
