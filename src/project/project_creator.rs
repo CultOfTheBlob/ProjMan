@@ -2,11 +2,11 @@ use std::{
     fs::{self, create_dir, create_dir_all, read_to_string, remove_dir, write},
     io::Write,
     path::PathBuf,
-    process::{self},
     sync::Arc,
 };
 
 use askalono::{Store, TextData};
+use tokio::process;
 
 use crate::{
     error::{Error, ErrorInfo},
@@ -104,7 +104,9 @@ pub async fn execute_build_command(project: Arc<Project>, index: usize) -> Resul
     match process::Command::new(&command.program)
         .args(&command.args)
         .current_dir(&project.path)
+        .kill_on_drop(true)
         .status()
+        .await
     {
         Ok(_) => Ok(format!("Executed [{}]...", command)),
         Err(err) => Err(error!(Error::Run, command, err)),

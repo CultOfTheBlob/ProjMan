@@ -15,3 +15,4 @@ tokei = "14.0.0"
 bytesize = "2.3.1"
 askalono = "0.5.0"
 open = "5.3.3"
+tokio = { version = "1.50.0", features = ["process"] }
