@@ -33,21 +33,32 @@ impl AppState
             return Err(error!(Error::Clone, "project repo", err));
         }
 
-        if !project.path.join(".projman").exists()
+        if !project.path.join("projman.toml").exists()
         {
             let mut projman_file: fs::File =
-                match fs::File::create_new(project.path.join(".projman"))
+                match fs::File::create_new(project.path.join("projman.toml"))
                 {
                     Ok(file) => file,
                     Err(err) =>
                     {
-                        return Err(error!(Error::Create, ".projman file", err));
+                        return Err(error!(Error::Create, "projman.toml", err));
                     }
                 };
 
-            if let Err(err) = projman_file.write_all(project.template.to_string().as_bytes())
+            let project = Project {
+                exists: true,
+                ..project.clone()
+            };
+
+            let project_to_toml: String = match toml::to_string_pretty(&project)
             {
-                return Err(error!(Error::Write, ".projman file", err));
+                Ok(string) => string,
+                Err(err) => return Err(error!(Error::Parse, "project", err)),
+            };
+
+            if let Err(err) = projman_file.write_all(project_to_toml.as_bytes())
+            {
+                return Err(error!(Error::Write, "projman.toml", err));
             }
         }
 

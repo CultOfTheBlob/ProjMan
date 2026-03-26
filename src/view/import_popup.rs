@@ -56,15 +56,6 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .spacing(8),
     );
 
-    let project_name_widget = container(
-        row![
-            text("Project Name:"),
-            text_input("", &state.import_project_name).on_input(Message::ImportProjectNameChanged)
-        ]
-        .spacing(4)
-        .align_y(Alignment::Center),
-    );
-
     let cancel_widget = button("Cancel")
         .style(button::secondary)
         .on_press(Message::ImportCanceled);
@@ -94,7 +85,6 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let popup_content = container(column![
         title_bar,
         project_path_widget.padding(16),
-        project_name_widget.padding(16),
         row![cancel_widget, confirm_widget].padding(16).spacing(256)
     ])
     .width(Length::Shrink)

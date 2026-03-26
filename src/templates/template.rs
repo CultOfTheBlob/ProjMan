@@ -15,7 +15,7 @@ use crate::{
     templates::template_config::TemplateConfig,
 };
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 pub struct Template
 {
     name: String,

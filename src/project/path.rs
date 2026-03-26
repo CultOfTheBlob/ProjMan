@@ -59,7 +59,7 @@ impl Project
 
     pub fn is_project_path(path: PathBuf) -> bool
     {
-        if path.join(".projman").is_file()
+        if path.join("projman.toml").is_file()
         {
             return true;
         }

@@ -14,7 +14,7 @@ mod info;
 mod path;
 mod repo;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Project
 {
     pub exists: bool,

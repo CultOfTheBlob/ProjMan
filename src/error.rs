@@ -15,7 +15,6 @@ pub enum Error
     Read(ErrorInfo),
     Parse(ErrorInfo),
     Clone(ErrorInfo),
-    Fetch(ErrorInfo),
     Run(ErrorInfo),
     Open(ErrorInfo),
     Commit(ErrorInfo),
@@ -55,10 +54,6 @@ impl Error
             Error::Clone(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not clone {string} ({err})")
-            }
-            Error::Fetch(ErrorInfo { string, err }) =>
-            {
-                format!("Error: Could not fetch {string} ({err})")
             }
             Error::Run(ErrorInfo { string, err }) =>
             {

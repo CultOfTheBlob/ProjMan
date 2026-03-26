@@ -35,7 +35,34 @@ impl AppState
 
         for project in &mut projects
         {
-            project.exists = project.path.is_dir() && project.path.join(".projman").is_file();
+            if !project.path.is_dir()
+            {
+                project.exists = false;
+                continue;
+            }
+
+            if !project.path.join("projman.toml").is_file()
+            {
+                project.exists = false;
+                continue;
+            }
+
+            let projman_toml: String = match &read_to_string(project.path.join("projman.toml"))
+            {
+                Ok(string) => string.to_string(),
+                Err(err) =>
+                {
+                    return Err(error!(Error::Read, "projman.toml", err));
+                }
+            };
+
+            let project_from_toml: Project = match toml::from_str(&projman_toml)
+            {
+                Ok(project) => project,
+                Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
+            };
+
+            project.exists = *project == project_from_toml;
         }
 
         let projects_to_json: String = match serde_json::to_string_pretty(&projects)

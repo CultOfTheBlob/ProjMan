@@ -11,10 +11,7 @@ use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
-    templates::{
-        template::Template,
-        template_config::{Command, Folder},
-    },
+    templates::template_config::{Command, Folder},
 };
 
 pub const STEPS: f32 = 8.0;
@@ -42,25 +39,30 @@ pub async fn clone_project_repo(project: Project) -> Result<String, Error>
     }
 }
 
-pub async fn create_projman_file(project_path: PathBuf, template: Template)
--> Result<String, Error>
+pub async fn create_projman_file(project: Project) -> Result<String, Error>
 {
-    match fs::File::create_new(project_path.join(".projman"))
+    match fs::File::create_new(project.path.join("projman.toml"))
     {
         Ok(mut file) =>
         {
-            if let Err(err) = file.write_all(template.to_string().as_bytes())
+            let project_to_toml: String = match toml::to_string_pretty(&project)
             {
-                return Err(error!(Error::Write, ".projman file", err));
+                Ok(string) => string,
+                Err(err) => return Err(error!(Error::Parse, "project", err)),
+            };
+
+            if let Err(err) = file.write_all(project_to_toml.as_bytes())
+            {
+                return Err(error!(Error::Write, "projman.toml", err));
             }
         }
         Err(err) =>
         {
-            return Err(error!(Error::Create, ".projman file", err));
+            return Err(error!(Error::Create, "projman.toml", err));
         }
     };
 
-    Ok("Created .projman file...".to_string())
+    Ok("Created projman.toml...".to_string())
 }
 
 pub async fn create_dir_structure(

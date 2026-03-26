@@ -1,16 +1,12 @@
 use std::{
     fs::{read_to_string, write},
     path::PathBuf,
-    str::FromStr,
 };
-
-use askalono::{Store, TextData};
 
 use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
-    templates::template::Template,
 };
 
 impl AppState
@@ -22,64 +18,19 @@ impl AppState
         let path: PathBuf =
             PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
 
-        let name: String = self.import_project_name.to_string();
-
-        let template: Template = match &read_to_string(path.join(".projman"))
+        let project_from_toml: String = match &read_to_string(path.join("projman.toml"))
         {
-            Ok(string) => Template::from_str(string)?,
+            Ok(string) => string.to_string(),
             Err(err) =>
             {
-                return Err(error!(Error::Read, ".projman file", err));
+                return Err(error!(Error::Read, "projman.toml", err));
             }
         };
 
-        let repo: String = match Project::get_remote(&path)
+        let project: Project = match toml::from_str(&project_from_toml)
         {
-            Ok(url) => url,
-            Err(err) =>
-            {
-                return Err(error!(Error::Fetch, "remote origin", err));
-            }
-        };
-
-        let license: String = {
-            let store: Store = match Store::from_cache(
-                &include_bytes!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/cache/license.cache.zstd"
-                ))[..],
-            )
-            {
-                Ok(store) => store,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Fetch, "project license", err));
-                }
-            };
-
-            let license_path: PathBuf = path.join("LICENSE");
-            let license_contents: String = match read_to_string(&license_path)
-            {
-                Ok(contents) => contents,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Read, "LICENSE file", err));
-                }
-            };
-
-            store
-                .analyze(&TextData::from(license_contents.as_str()))
-                .name
-                .to_string()
-        };
-
-        let project: Project = Project {
-            exists: true,
-            name,
-            path,
-            template,
-            repo,
-            license,
+            Ok(project) => project,
+            Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
         };
 
         let projects_from_json: String = match read_to_string(&projects_path)

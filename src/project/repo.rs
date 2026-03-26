@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use git2::{
     Cred, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks, Repository, Signature,
     build::RepoBuilder,
@@ -9,27 +7,6 @@ use crate::project::Project;
 
 impl Project
 {
-    pub fn get_remote(path: &PathBuf) -> Result<String, git2::Error>
-    {
-        let project_repo: Repository = Repository::open(path)?;
-
-        match project_repo.find_remote("origin")
-        {
-            Ok(remote) =>
-            {
-                if let Some(url) = remote.url()
-                {
-                    Ok(url.to_string())
-                }
-                else
-                {
-                    Ok(String::new())
-                }
-            }
-            Err(err) => Err(err),
-        }
-    }
-
     pub fn clone_repo(&self) -> Result<(), git2::Error>
     {
         let mut callbacks = RemoteCallbacks::new();
