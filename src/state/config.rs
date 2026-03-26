@@ -34,18 +34,17 @@ impl Config
             }
         };
 
-        match AppState::get_config_dir(String::from("config.toml"), Some(default_toml))
+        let config_path: PathBuf =
+            AppState::get_config_dir(String::from("config.toml"), Some(default_toml))?;
+
+        match &read_to_string(&config_path)
         {
-            Ok(config_path) => match &read_to_string(&config_path)
+            Ok(string) => match toml::from_str(string)
             {
-                Ok(string) => match toml::from_str(string)
-                {
-                    Ok(config) => Ok(config),
-                    Err(err) => Err(error!(Error::Parse, "config", err)),
-                },
-                Err(err) => Err(error!(Error::Parse, "config", err)),
+                Ok(config) => return Ok(config),
+                Err(err) => return Err(error!(Error::Parse, "config", err)),
             },
-            Err(err) => Err(err),
+            Err(err) => return Err(error!(Error::Parse, "config", err)),
         }
     }
 
