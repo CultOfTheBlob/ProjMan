@@ -1,6 +1,7 @@
 use std::{
     fs::{create_dir_all, write},
     path::PathBuf,
+    sync::Arc,
 };
 
 use directories::ProjectDirs;
@@ -25,7 +26,7 @@ pub struct AppState
 {
     pub config: Config,
     pub project_list: Vec<Project>,
-    pub new_project: Project,
+    pub new_project: Arc<Project>,
     pub new_project_path_changed: bool,
     pub project_templates: combo_box::State<Template>,
     pub selected_project: Option<usize>,
@@ -65,7 +66,7 @@ impl Default for AppState
             config: Config::default(),
             project_list,
             notifications,
-            new_project: Project::default(&Config::default()),
+            new_project: Arc::new(Project::default(&Config::default())),
             project_templates: combo_box::State::new(Templates::default().templates().to_vec()),
             project_creation_status: ProjectCreationStatus {
                 creating: false,
@@ -100,7 +101,7 @@ impl AppState
     pub fn config(self, config: Config) -> Self
     {
         Self {
-            new_project: Project::default(&config),
+            new_project: Arc::new(Project::default(&config)),
             delete_project_folder: config.general.delete_project_folder,
             config,
             ..self

@@ -3,6 +3,7 @@ use std::{
     io::Write,
     path::PathBuf,
     process::{self},
+    sync::Arc,
 };
 
 use askalono::{Store, TextData};
@@ -11,21 +12,21 @@ use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
-    templates::template_config::{Command, Folder},
+    templates::template_config::Command,
 };
 
 pub const STEPS: f32 = 8.0;
 
-pub async fn create_project_dir(project_path: PathBuf) -> Result<String, Error>
+pub async fn create_project_dir(project: Arc<Project>) -> Result<String, Error>
 {
-    match create_dir_all(&project_path)
+    match create_dir_all(&project.path)
     {
         Ok(_) => Ok("Created project dir...".to_string()),
         Err(err) => Err(error!(Error::Create, "project dir", err)),
     }
 }
 
-pub async fn clone_project_repo(project: Project) -> Result<String, Error>
+pub async fn clone_project_repo(project: Arc<Project>) -> Result<String, Error>
 {
     match project.clone_repo()
     {
@@ -39,7 +40,7 @@ pub async fn clone_project_repo(project: Project) -> Result<String, Error>
     }
 }
 
-pub async fn create_projman_file(project: Project) -> Result<String, Error>
+pub async fn create_projman_file(project: Arc<Project>) -> Result<String, Error>
 {
     match fs::File::create_new(project.path.join("projman.toml"))
     {
@@ -65,14 +66,11 @@ pub async fn create_projman_file(project: Project) -> Result<String, Error>
     Ok("Created projman.toml...".to_string())
 }
 
-pub async fn create_dir_structure(
-    project_dir_structure: Vec<Folder>,
-    project_path: PathBuf,
-) -> Result<String, Error>
+pub async fn create_dir_structure(project: Arc<Project>) -> Result<String, Error>
 {
-    for dir in &project_dir_structure
+    for dir in &project.template.config().dir_structure
     {
-        let dirs: Vec<PathBuf> = dir.parse(&project_path);
+        let dirs: Vec<PathBuf> = dir.parse(&project.path);
 
         for dir in &dirs
         {
@@ -86,14 +84,11 @@ pub async fn create_dir_structure(
     Ok("Created project directory structure...".to_string())
 }
 
-pub async fn create_project_files(
-    project_files: Vec<crate::templates::template_config::File>,
-    project_path: PathBuf,
-) -> Result<String, Error>
+pub async fn create_project_files(project: Arc<Project>) -> Result<String, Error>
 {
-    for file in &project_files
+    for file in &project.template.config().files
     {
-        if let Err(err) = write(project_path.join(&file.path), &file.content)
+        if let Err(err) = write(project.path.join(&file.path), &file.content)
         {
             return Err(error!(Error::Create, "project files", err));
         };
@@ -102,12 +97,13 @@ pub async fn create_project_files(
     Ok("Created project files...".to_string())
 }
 
-pub async fn execute_build_command(command: Command, project_path: PathBuf)
--> Result<String, Error>
+pub async fn execute_build_command(project: Arc<Project>, index: usize) -> Result<String, Error>
 {
+    let command: Command = project.template.config().build[index].clone();
+
     match process::Command::new(&command.program)
         .args(&command.args)
-        .current_dir(&project_path)
+        .current_dir(&project.path)
         .status()
     {
         Ok(_) => Ok(format!("Executed [{}]...", command)),
@@ -115,7 +111,7 @@ pub async fn execute_build_command(command: Command, project_path: PathBuf)
     }
 }
 
-pub async fn commit_projman_init(project: Project) -> Result<String, Error>
+pub async fn commit_projman_init(project: Arc<Project>) -> Result<String, Error>
 {
     match project.init_commit()
     {
@@ -129,84 +125,80 @@ pub async fn commit_projman_init(project: Project) -> Result<String, Error>
     }
 }
 
-pub async fn add_project_to_json(project: Project) -> Result<Vec<Project>, Error>
+pub async fn add_project_to_json(project: Arc<Project>) -> Result<Vec<Project>, Error>
 {
-    match AppState::get_config_dir(String::from("projects.json"), None)
+    let config_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
+
+    let projects_from_json: String = match read_to_string(&config_path)
     {
-        Ok(config_path) =>
+        Ok(json) => json,
+        Err(err) =>
         {
-            let projects_from_json: String = match read_to_string(&config_path)
-            {
-                Ok(json) => json,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Read, "projects.json", err));
-                }
-            };
-
-            let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-            {
-                Ok(projects) => projects,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Parse, "projects.json", err));
-                }
-            };
-
-            let project: Project = {
-                let license: String = {
-                    let store: Store = match Store::from_cache(
-                        &include_bytes!(concat!(
-                            env!("CARGO_MANIFEST_DIR"),
-                            "/cache/license.cache.zstd"
-                        ))[..],
-                    )
-                    {
-                        Ok(store) => store,
-                        Err(err) =>
-                        {
-                            return Err(error!(Error::Parse, "project license", err));
-                        }
-                    };
-
-                    let license_path: PathBuf = project.path.join("LICENSE");
-
-                    let license_contents: String = match read_to_string(&license_path)
-                    {
-                        Ok(contents) => contents,
-                        Err(err) =>
-                        {
-                            return Err(error!(Error::Read, "LICENSE file", err));
-                        }
-                    };
-
-                    store
-                        .analyze(&TextData::from(license_contents.as_str()))
-                        .name
-                        .to_string()
-                };
-
-                Project { license, ..project }
-            };
-
-            projects.push(project);
-
-            let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-            {
-                Ok(json) => json,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Parse, "projects.json", err));
-                }
-            };
-
-            if let Err(err) = write(&config_path, projects_to_json.as_bytes())
-            {
-                return Err(error!(Error::Write, "projects.json", err));
-            };
-
-            Ok(projects)
+            return Err(error!(Error::Read, "projects.json", err));
         }
-        Err(err) => Err(err),
-    }
+    };
+
+    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
+    {
+        Ok(projects) => projects,
+        Err(err) =>
+        {
+            return Err(error!(Error::Parse, "projects.json", err));
+        }
+    };
+
+    let project: Project = {
+        let license: String = {
+            let store: Store = match Store::from_cache(
+                &include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/cache/license.cache.zstd"
+                ))[..],
+            )
+            {
+                Ok(store) => store,
+                Err(err) =>
+                {
+                    return Err(error!(Error::Parse, "project license", err));
+                }
+            };
+
+            let license_path: PathBuf = project.path.join("LICENSE");
+
+            let license_contents: String = match read_to_string(&license_path)
+            {
+                Ok(contents) => contents,
+                Err(err) =>
+                {
+                    return Err(error!(Error::Read, "LICENSE file", err));
+                }
+            };
+
+            store
+                .analyze(&TextData::from(license_contents.as_str()))
+                .name
+                .to_string()
+        };
+
+        let project: Project = (*project).clone();
+        Project { license, ..project }
+    };
+
+    projects.push(project);
+
+    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+    {
+        Ok(json) => json,
+        Err(err) =>
+        {
+            return Err(error!(Error::Parse, "projects.json", err));
+        }
+    };
+
+    if let Err(err) = write(&config_path, projects_to_json.as_bytes())
+    {
+        return Err(error!(Error::Write, "projects.json", err));
+    };
+
+    Ok(projects)
 }

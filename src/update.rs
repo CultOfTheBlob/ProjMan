@@ -1,4 +1,4 @@
-use std::{path::PathBuf, thread::sleep, time::Duration};
+use std::{path::PathBuf, sync::Arc, thread::sleep, time::Duration};
 
 use iced::{Task, clipboard};
 
@@ -7,7 +7,6 @@ use crate::{
     message::Message,
     project::{Project, project_creator},
     state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
-    templates::{template_config::Command, template_config::TemplateConfig},
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
@@ -208,7 +207,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             };
 
             Task::perform(
-                project_creator::create_project_dir(state.new_project.path.clone()),
+                project_creator::create_project_dir(Arc::clone(&state.new_project)),
                 Message::ProjectDirCreated,
             )
         }
@@ -223,7 +222,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::clone_project_repo(state.new_project.clone()),
+                    project_creator::clone_project_repo(Arc::clone(&state.new_project)),
                     Message::ProjectRepoCloned,
                 )
             }
@@ -240,127 +239,98 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::create_projman_file(state.new_project.clone()),
+                    project_creator::create_projman_file(Arc::clone(&state.new_project)),
                     Message::ProjmanFileCreated,
                 )
             }
             Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
-        Message::ProjmanFileCreated(result) =>
+        Message::ProjmanFileCreated(result) => match result
         {
-            let project_template: &TemplateConfig = state.new_project.template.config();
-
-            match result
+            Ok(log) =>
             {
-                Ok(log) =>
+                state.project_creation_status.log.push(log);
+
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
+
+                Task::perform(
+                    project_creator::create_dir_structure(Arc::clone(&state.new_project)),
+                    Message::DirStructureCreated,
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
+        Message::DirStructureCreated(result) => match result
+        {
+            Ok(log) =>
+            {
+                state.project_creation_status.log.push(log);
+
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
+
+                Task::perform(
+                    project_creator::create_project_files(Arc::clone(&state.new_project)),
+                    Message::ProjectFilesCreated,
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
+        Message::ProjectFilesCreated(result) => match result
+        {
+            Ok(log) =>
+            {
+                state.project_creation_status.log.push(log);
+
+                state.project_creation_status.step += 1.0;
+
+                sleep(Duration::from_millis(100));
+
+                Task::perform(
+                    project_creator::execute_build_command(Arc::clone(&state.new_project), 0),
+                    |result: Result<String, Error>| Message::BuildCommandExecuted(0, result),
+                )
+            }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
+        Message::BuildCommandExecuted(index, result) => match result
+        {
+            Ok(log) =>
+            {
+                state.project_creation_status.log.push(log);
+
+                if index >= state.new_project.template.config().build.len() - 1
                 {
-                    state.project_creation_status.log.push(log);
+                    state
+                        .project_creation_status
+                        .log
+                        .push(String::from("Executed build commands..."));
 
                     state.project_creation_status.step += 1.0;
 
                     sleep(Duration::from_millis(100));
 
-                    Task::perform(
-                        project_creator::create_dir_structure(
-                            project_template.dir_structure.clone(),
-                            state.new_project.path.clone(),
-                        ),
-                        Message::DirStructureCreated,
-                    )
+                    return Task::perform(
+                        project_creator::commit_projman_init(Arc::clone(&state.new_project)),
+                        Message::CommitedProjmanInit,
+                    );
                 }
-                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+
+                Task::perform(
+                    project_creator::execute_build_command(
+                        Arc::clone(&state.new_project),
+                        index + 1,
+                    ),
+                    move |result: Result<String, Error>| {
+                        Message::BuildCommandExecuted(index + 1, result)
+                    },
+                )
             }
-        }
-        Message::DirStructureCreated(result) =>
-        {
-            let project_template: &TemplateConfig = state.new_project.template.config();
-
-            match result
-            {
-                Ok(log) =>
-                {
-                    state.project_creation_status.log.push(log);
-
-                    state.project_creation_status.step += 1.0;
-
-                    sleep(Duration::from_millis(100));
-
-                    Task::perform(
-                        project_creator::create_project_files(
-                            project_template.files.clone(),
-                            state.new_project.path.clone(),
-                        ),
-                        Message::ProjectFilesCreated,
-                    )
-                }
-                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
-            }
-        }
-        Message::ProjectFilesCreated(result) =>
-        {
-            let project_template: &TemplateConfig = state.new_project.template.config();
-
-            match result
-            {
-                Ok(log) =>
-                {
-                    state.project_creation_status.log.push(log);
-
-                    state.project_creation_status.step += 1.0;
-
-                    sleep(Duration::from_millis(100));
-
-                    Task::perform(
-                        project_creator::execute_build_command(
-                            project_template.build[0].clone(),
-                            state.new_project.path.clone(),
-                        ),
-                        |result: Result<String, Error>| Message::BuildCommandExecuted(0, result),
-                    )
-                }
-                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
-            }
-        }
-        Message::BuildCommandExecuted(index, result) =>
-        {
-            let commands: &Vec<Command> = &state.new_project.template.config().build;
-
-            match result
-            {
-                Ok(log) =>
-                {
-                    state.project_creation_status.log.push(log);
-
-                    if index >= commands.len() - 1
-                    {
-                        state
-                            .project_creation_status
-                            .log
-                            .push(String::from("Executed build commands..."));
-
-                        state.project_creation_status.step += 1.0;
-
-                        sleep(Duration::from_millis(100));
-
-                        return Task::perform(
-                            project_creator::commit_projman_init(state.new_project.clone()),
-                            Message::CommitedProjmanInit,
-                        );
-                    }
-
-                    Task::perform(
-                        project_creator::execute_build_command(
-                            commands[index + 1].clone(),
-                            state.new_project.path.clone(),
-                        ),
-                        move |result: Result<String, Error>| {
-                            Message::BuildCommandExecuted(index + 1, result)
-                        },
-                    )
-                }
-                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
-            }
-        }
+            Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+        },
         Message::CommitedProjmanInit(result) => match result
         {
             Ok(log) =>
@@ -372,7 +342,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::add_project_to_json(state.new_project.clone()),
+                    project_creator::add_project_to_json(Arc::clone(&state.new_project)),
                     Message::ProjectAddedToJson,
                 )
             }
@@ -407,7 +377,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                         step: 0.0,
                         log: vec![String::new()],
                     };
-                    state.new_project = Project::default(&state.config);
+                    state.new_project = Arc::new(Project::default(&state.config));
                     state.selected_project = Some(state.project_list.len() - 1);
 
                     state.pending = None;
@@ -431,7 +401,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 step: 0.0,
                 log: vec![String::new()],
             };
-            state.new_project = Project::default(&state.config);
+            state.new_project = Arc::new(Project::default(&state.config));
             state.pending = None;
             state.new_project_path_changed = false;
 
@@ -439,31 +409,36 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::NewProjectNameChanged(name) =>
         {
+            let project = Arc::make_mut(&mut state.new_project);
+
             if !state.new_project_path_changed
             {
-                state.new_project.path =
-                    PathBuf::from(&state.config.general.projects_dir).join(&name);
+                project.path = PathBuf::from(&state.config.general.projects_dir).join(&name);
             }
-
-            state.new_project.name = name;
-
+            project.name = name;
             Task::none()
         }
         Message::NewProjectTemplateChanged(template) =>
         {
-            state.new_project.template = template;
+            let project = Arc::make_mut(&mut state.new_project);
+
+            project.template = template;
 
             Task::none()
         }
         Message::NewProjectRepoChanged(repo) =>
         {
-            state.new_project.repo = repo;
+            let project = Arc::make_mut(&mut state.new_project);
+
+            project.repo = repo;
 
             Task::none()
         }
         Message::NewProjectPathChanged(path) =>
         {
-            state.new_project.path = path;
+            let project = Arc::make_mut(&mut state.new_project);
+
+            project.path = path;
 
             state.new_project_path_changed = true;
 
