@@ -1,5 +1,5 @@
 use std::{
-    fs::{create_dir_all, read_to_string, write},
+    fs::{create_dir_all, write},
     path::PathBuf,
 };
 
@@ -9,16 +9,16 @@ use iced::widget::combo_box;
 use crate::{
     error::{Error, ErrorInfo},
     project::Project,
-    state::{
-        config::Config,
-        project_utils::{
-            edit_project::edit_project, import_project::import_project,
-            remove_project::remove_project, restore_project::restore_project,
-            update_project::update_project,
-        },
-    },
+    state::config::Config,
     templates::{Templates, template::Template},
 };
+
+mod edit_project;
+mod import_project;
+mod load_projects;
+mod remove_project;
+mod restore_project;
+mod update_project;
 
 #[derive(Debug)]
 pub struct AppState
@@ -49,7 +49,7 @@ impl Default for AppState
     {
         let mut notifications = vec![];
 
-        let project_list: Vec<Project> = match AppState::create_project_list_from_json()
+        let project_list: Vec<Project> = match AppState::load_projects()
         {
             Ok(projects) => projects,
             Err(err) =>
@@ -124,39 +124,6 @@ impl AppState
         self.notifications.push(Notification { text, kind });
     }
 
-    pub fn remove_project(&mut self) -> Result<(), Error>
-    {
-        remove_project(self)
-    }
-
-    pub fn import_project(&mut self) -> Result<(), Error>
-    {
-        import_project(self)
-    }
-
-    pub fn update_project(&mut self) -> Result<(), Error>
-    {
-        update_project(self)
-    }
-
-    pub fn edit_project(&mut self) -> Result<(), Error>
-    {
-        edit_project(self)
-    }
-
-    pub async fn restore_project(
-        selected_project: Option<usize>,
-        project_list: Vec<Project>,
-    ) -> Result<usize, Error>
-    {
-        if let Some(index) = selected_project
-        {
-            return restore_project(index, project_list).await;
-        }
-
-        Err(Error::Other(String::from("Error: No prject selected")))
-    }
-
     pub fn get_config_dir(
         sub_dir: String,
         create_if_missing: Option<String>,
@@ -188,61 +155,6 @@ impl AppState
         }
 
         Err(error!(Error::Find, "config dir", ""))
-    }
-
-    pub fn create_project_list_from_json() -> Result<Vec<Project>, Error>
-    {
-        match AppState::get_config_dir(String::from("projects.json"), Some(String::from("[]")))
-        {
-            Ok(projects_path) =>
-            {
-                let projects_from_json: String = match read_to_string(&projects_path)
-                {
-                    Ok(json) => json,
-                    Err(err) =>
-                    {
-                        return Err(error!(Error::Read, "projects.json", err));
-                    }
-                };
-
-                let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-                {
-                    Ok(projects) => projects,
-                    Err(err) =>
-                    {
-                        return Err(error!(Error::Parse, "projects.json", err));
-                    }
-                };
-
-                for project in &mut projects
-                {
-                    project.exists =
-                        project.path.is_dir() && project.path.join(".projman").is_file();
-                }
-
-                let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-                {
-                    Ok(json) => json,
-                    Err(err) =>
-                    {
-                        return Err(error!(Error::Parse, "projects.json", err));
-                    }
-                };
-
-                if projects_to_json == projects_from_json
-                {
-                    return Ok(projects);
-                }
-
-                if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
-                {
-                    return Err(error!(Error::Write, "projects.json", err));
-                };
-
-                Ok(projects)
-            }
-            Err(err) => Err(err),
-        }
     }
 }
 

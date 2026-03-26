@@ -16,7 +16,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
     {
         Message::Tick =>
         {
-            match AppState::create_project_list_from_json()
+            match AppState::load_projects()
             {
                 Ok(projects) => state.project_list = projects,
                 Err(err) => state.push_notification(err.get_message(), NotifKind::Error),

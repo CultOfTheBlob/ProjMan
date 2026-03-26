@@ -7,11 +7,17 @@ use crate::{
 
 use std::fs::write;
 
-pub fn update_project(state: &mut AppState) -> Result<(), Error>
+impl AppState
 {
-    if let Some(index) = state.selected_project
+    pub fn update_project(&mut self) -> Result<(), Error>
     {
-        let project: &Project = &state.project_list[index];
+        let index = match self.selected_project
+        {
+            Some(selected) => selected,
+            None => return Err(Error::Other(String::from("Error: No prject selected"))),
+        };
+
+        let project: &Project = &self.project_list[index];
 
         let project_files: &Vec<File> = &project.template.config().files;
 
@@ -23,8 +29,6 @@ pub fn update_project(state: &mut AppState) -> Result<(), Error>
             };
         }
 
-        return Ok(());
+        Ok(())
     }
-
-    Ok(())
 }
