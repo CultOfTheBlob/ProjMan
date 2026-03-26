@@ -1,0 +1,63 @@
+use std::{
+    fmt::{self, Display},
+    path::{Path, PathBuf},
+};
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct TemplateConfig
+{
+    pub dir_structure: Vec<Folder>,
+    pub files: Vec<File>,
+    pub build: Vec<Command>,
+    pub run: Vec<Command>,
+    pub included_paths: Vec<String>,
+    pub excluded_paths: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Folder
+{
+    pub name: String,
+    pub sub_dirs: Vec<Folder>,
+}
+
+impl Folder
+{
+    pub fn parse(&self, root: &Path) -> Vec<PathBuf>
+    {
+        let mut dirs: Vec<PathBuf> = vec![root.join(&self.name)];
+
+        for dir in &self.sub_dirs
+        {
+            let mut sub_dirs = dir.parse(&root.join(&self.name));
+
+            dirs.append(&mut sub_dirs);
+        }
+
+        dirs
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct File
+{
+    pub path: String,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Command
+{
+    pub program: String,
+    pub args: Vec<String>,
+}
+
+impl Display for Command
+{
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
+    {
+        write!(formatter, "{} {}", self.program, &self.args.join(" "))
+    }
+}

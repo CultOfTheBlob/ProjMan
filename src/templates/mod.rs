@@ -1,112 +1,56 @@
-use std::{
-    fmt::{self, Display},
-    fs::read_to_string,
-    path::{Path, PathBuf},
-};
-
-use serde::{Deserialize, Serialize};
+use std::{fs::ReadDir, path::PathBuf};
 
 use crate::{
     error::{Error, ErrorInfo},
     state::app_state::AppState,
+    templates::template::Template,
 };
 
-pub mod base;
+pub mod template;
+pub mod template_config;
 
-pub trait Template
+#[derive(Debug, Clone, Default)]
+pub struct Templates
 {
-    const TEMPLATE_PATH: &str;
+    templates: Vec<Template>,
+}
 
-    fn template(&self) -> Result<TemplateConfig, Error>
+impl Templates
+{
+    pub fn generate(&self) -> Result<Self, Error>
     {
-        let default_template =
-            Some(serde_json::to_string_pretty(&self.default()).unwrap_or(String::from("{}")));
-
-        match AppState::get_config_dir(String::from(Self::TEMPLATE_PATH), default_template)
+        let templates_path: PathBuf = AppState::get_config_dir("templates".to_string(), None)?;
+        let templates_dir: ReadDir = match templates_path.read_dir()
         {
-            Ok(template_path) =>
+            Ok(sub_dirs) => sub_dirs,
+            Err(err) => return Err(error!(Error::Read, "templates dir", err)),
+        };
+
+        let mut templates: Vec<Template> = vec![];
+        for entry in templates_dir
+        {
+            let template_path: PathBuf = match entry
             {
-                let template: TemplateConfig = match read_to_string(template_path)
-                {
-                    Ok(string) => match serde_json::from_str(&string)
-                    {
-                        Ok(it) => it,
-                        Err(err) =>
-                        {
-                            return Err(error!(Error::Parse, "template", err));
-                        }
-                    },
-                    Err(err) =>
-                    {
-                        return Err(error!(Error::Read, "template", err));
-                    }
-                };
+                Ok(entry) => entry.path(),
+                Err(err) => return Err(error!(Error::Read, "templates dir", err)),
+            };
 
-                Ok(template)
-            }
-            Err(err) => Err(err),
-        }
-    }
+            let template_name: String = match template_path.with_extension("").iter().next_back()
+            {
+                Some(component) => component.to_string_lossy().to_string(),
+                None => return Err(error!(Error::Read, "template name", "")),
+            };
 
-    fn default(&self) -> TemplateConfig;
+            let template: Template = Template::new(template_name)?;
 
-    fn included_paths(&self) -> &'static [&'static str];
-    fn excluded_paths(&self) -> &'static [&'static str];
-
-    fn icon_path(&self) -> &'static str;
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct TemplateConfig
-{
-    pub dir_structure: Vec<Folder>,
-    pub files: Vec<File>,
-    pub build: Vec<Command>,
-    pub run: Vec<Command>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Folder
-{
-    pub name: String,
-    pub sub_dirs: Vec<Folder>,
-}
-
-impl Folder
-{
-    pub fn parse(&self, root: &Path) -> Vec<PathBuf>
-    {
-        let mut dirs: Vec<PathBuf> = vec![root.join(&self.name)];
-
-        for dir in &self.sub_dirs
-        {
-            let mut sub_dirs = dir.parse(&root.join(&self.name));
-
-            dirs.append(&mut sub_dirs);
+            templates.push(template);
         }
 
-        dirs
+        Ok(Templates { templates })
     }
-}
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct File
-{
-    pub path: String,
-    pub content: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Command
-{
-    pub program: String,
-    pub args: Vec<String>,
-}
-
-impl Display for Command
-{
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
+    pub fn templates(&self) -> &Vec<Template>
     {
-        write!(formatter, "{} {}", self.program, &self.args.join(" "))
+        &self.templates
     }
 }

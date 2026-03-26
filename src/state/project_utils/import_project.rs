@@ -8,8 +8,9 @@ use askalono::{Store, TextData};
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::{Project, project_type::ProjectType},
+    project::Project,
     state::app_state::AppState,
+    templates::template::Template,
 };
 
 pub fn import_project(state: &mut AppState) -> Result<(), Error>
@@ -23,9 +24,9 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
 
             let name: String = state.import_project_name.to_string();
 
-            let project_type: ProjectType = match &read_to_string(path.join(".projman"))
+            let project_type: Template = match &read_to_string(path.join(".projman"))
             {
-                Ok(string) => ProjectType::from_str(string)?,
+                Ok(string) => Template::from_str(string)?,
                 Err(err) =>
                 {
                     return Err(error!(Error::Read, ".projman file", err));
@@ -76,7 +77,7 @@ pub fn import_project(state: &mut AppState) -> Result<(), Error>
                 exists: true,
                 name,
                 path,
-                project_type,
+                template: project_type,
                 repo,
                 license,
             };

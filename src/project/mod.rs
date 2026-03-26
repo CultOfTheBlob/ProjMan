@@ -12,11 +12,13 @@ use git2::{
 use serde::{Deserialize, Serialize};
 use tokei::{LanguageType, Languages};
 
-use crate::{error::Error, state::config::Config};
-use crate::{project::project_type::ProjectType, templates::File};
+use crate::{
+    error::Error,
+    state::config::Config,
+    templates::{template::Template, template_config::File},
+};
 
 pub mod project_creator;
-pub mod project_type;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project
@@ -24,7 +26,7 @@ pub struct Project
     pub exists: bool,
     pub name: String,
     pub path: PathBuf,
-    pub project_type: ProjectType,
+    pub template: Template,
     pub repo: String,
     pub license: String,
 }
@@ -33,12 +35,12 @@ impl Project
 {
     pub fn run(&self) -> Result<(), Error>
     {
-        self.project_type.run(self)
+        self.template.run(self)
     }
 
     pub fn icon(&self) -> PathBuf
     {
-        self.project_type.icon()
+        self.template.icon_path().to_path_buf()
     }
 
     pub fn default(config: &Config) -> Self
@@ -49,7 +51,7 @@ impl Project
             exists: true,
             name: String::from(name),
             path: PathBuf::from(&config.general.projects_dir).join(name),
-            project_type: ProjectType::default(),
+            template: Template::default(),
             repo: String::new(),
             license: String::new(),
         }
@@ -65,8 +67,8 @@ impl Project
 
         let mut languages: Languages = Languages::new();
         languages.get_statistics(
-            &self.project_type.included_paths(&self.path),
-            self.project_type.excluded_paths(),
+            &self.template.included_paths(&self.path),
+            &self.template.excluded_paths(),
             &tokei::Config::default(),
         );
 
@@ -320,13 +322,9 @@ impl Project
 
     pub fn is_outdated(&self) -> bool
     {
-        let project_files: Vec<File> = match self.project_type.template_config()
-        {
-            Ok(template) => template.files,
-            Err(_) => return false,
-        };
+        let project_files: &Vec<File> = &self.template.config().files;
 
-        for file in &project_files
+        for file in project_files
         {
             let path: PathBuf = PathBuf::from(&self.path).join(&file.path);
 

@@ -8,7 +8,7 @@ use iced::widget::combo_box;
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::{Project, project_type::ProjectType},
+    project::Project,
     state::{
         config::Config,
         project_utils::{
@@ -17,6 +17,7 @@ use crate::{
             update_project::update_project,
         },
     },
+    templates::{Templates, template::Template},
 };
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ pub struct AppState
     pub project_list: Vec<Project>,
     pub new_project: Project,
     pub new_project_path_changed: bool,
-    pub project_types: combo_box::State<ProjectType>,
+    pub project_templates: combo_box::State<Template>,
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
@@ -67,7 +68,7 @@ impl Default for AppState
             project_list,
             notifications,
             new_project: Project::default(&Config::default()),
-            project_types: combo_box::State::new(ProjectType::ALL.to_vec()),
+            project_templates: combo_box::State::new(Templates::default().templates().to_vec()),
             project_creation_status: ProjectCreationStatus {
                 creating: false,
                 failed: false,
@@ -92,16 +93,20 @@ impl Default for AppState
 
 impl AppState
 {
-    pub fn with_config(self, config: Config) -> Self
-    {
-        Self { config, ..self }
-    }
-
-    pub fn apply_config(self) -> Self
+    pub fn templates(self, templates: Vec<Template>) -> Self
     {
         Self {
-            new_project: Project::default(&self.config),
-            delete_project_folder: self.config.general.delete_project_folder,
+            project_templates: combo_box::State::new(templates),
+            ..self
+        }
+    }
+
+    pub fn config(self, config: Config) -> Self
+    {
+        Self {
+            new_project: Project::default(&config),
+            delete_project_folder: config.general.delete_project_folder,
+            config,
             ..self
         }
     }

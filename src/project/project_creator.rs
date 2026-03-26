@@ -9,9 +9,12 @@ use askalono::{Store, TextData};
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::{Project, project_type::ProjectType},
+    project::Project,
     state::app_state::AppState,
-    templates::{Command, File, Folder},
+    templates::{
+        template::Template,
+        template_config::{Command, Folder},
+    },
 };
 
 pub const STEPS: f32 = 8.0;
@@ -39,16 +42,14 @@ pub async fn clone_project_repo(project: Project) -> Result<String, Error>
     }
 }
 
-pub async fn create_projman_file(
-    project_path: PathBuf,
-    project_type: ProjectType,
-) -> Result<String, Error>
+pub async fn create_projman_file(project_path: PathBuf, template: Template)
+-> Result<String, Error>
 {
     match fs::File::create_new(project_path.join(".projman"))
     {
         Ok(mut file) =>
         {
-            if let Err(err) = file.write_all(project_type.to_string().as_bytes())
+            if let Err(err) = file.write_all(template.to_string().as_bytes())
             {
                 return Err(error!(Error::Write, ".projman file", err));
             }
@@ -84,7 +85,7 @@ pub async fn create_dir_structure(
 }
 
 pub async fn create_project_files(
-    project_files: Vec<File>,
+    project_files: Vec<crate::templates::template_config::File>,
     project_path: PathBuf,
 ) -> Result<String, Error>
 {

@@ -176,6 +176,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 
                         let connector: &str = match index
                         {
+                            0 if project_info.branches.len() == 1 => "──",
                             0 => "╭─",
                             i if i == project_info.branches.len() - 1 => "╰─",
                             _ => "├─",

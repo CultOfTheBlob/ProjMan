@@ -2,7 +2,7 @@ use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
-    templates::File,
+    templates::template_config::File,
 };
 
 use std::fs::write;
@@ -13,9 +13,9 @@ pub fn update_project(state: &mut AppState) -> Result<(), Error>
     {
         let project: &Project = &state.project_list[index];
 
-        let project_files: Vec<File> = project.project_type.template_config()?.files;
+        let project_files: &Vec<File> = &project.template.config().files;
 
-        for file in &project_files
+        for file in project_files
         {
             if let Err(err) = write(project.path.join(&file.path), &file.content)
             {

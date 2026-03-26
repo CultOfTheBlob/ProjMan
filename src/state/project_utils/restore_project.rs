@@ -35,8 +35,7 @@ pub async fn restore_project(index: usize, project_list: Vec<Project>) -> Result
                         }
                     };
 
-                if let Err(err) =
-                    projman_file.write_all(project.project_type.to_string().as_bytes())
+                if let Err(err) = projman_file.write_all(project.template.to_string().as_bytes())
                 {
                     return Err(error!(Error::Write, ".projman file", err));
                 }

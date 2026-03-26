@@ -7,7 +7,7 @@ use crate::{
     message::Message,
     project::{Project, project_creator},
     state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
-    templates::{Command, TemplateConfig},
+    templates::{template_config::Command, template_config::TemplateConfig},
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
@@ -242,7 +242,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Task::perform(
                     project_creator::create_projman_file(
                         state.new_project.path.clone(),
-                        state.new_project.project_type.clone(),
+                        state.new_project.template.clone(),
                     ),
                     Message::ProjmanFileCreated,
                 )
@@ -251,15 +251,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         },
         Message::ProjmanFileCreated(result) =>
         {
-            let project_template: TemplateConfig =
-                match state.new_project.project_type.template_config()
-                {
-                    Ok(template) => template,
-                    Err(err) =>
-                    {
-                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                    }
-                };
+            let project_template: &TemplateConfig = state.new_project.template.config();
 
             match result
             {
@@ -273,7 +265,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                     Task::perform(
                         project_creator::create_dir_structure(
-                            project_template.dir_structure,
+                            project_template.dir_structure.clone(),
                             state.new_project.path.clone(),
                         ),
                         Message::DirStructureCreated,
@@ -284,15 +276,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::DirStructureCreated(result) =>
         {
-            let project_template: TemplateConfig =
-                match state.new_project.project_type.template_config()
-                {
-                    Ok(template) => template,
-                    Err(err) =>
-                    {
-                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                    }
-                };
+            let project_template: &TemplateConfig = state.new_project.template.config();
 
             match result
             {
@@ -306,7 +290,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                     Task::perform(
                         project_creator::create_project_files(
-                            project_template.files,
+                            project_template.files.clone(),
                             state.new_project.path.clone(),
                         ),
                         Message::ProjectFilesCreated,
@@ -317,15 +301,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::ProjectFilesCreated(result) =>
         {
-            let project_template: TemplateConfig =
-                match state.new_project.project_type.template_config()
-                {
-                    Ok(template) => template,
-                    Err(err) =>
-                    {
-                        return Task::perform(async move { Err(err) }, Message::CreateFinished);
-                    }
-                };
+            let project_template: &TemplateConfig = state.new_project.template.config();
 
             match result
             {
@@ -350,48 +326,43 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::BuildCommandExecuted(index, result) =>
         {
-            if let Ok(project_template) = state.new_project.project_type.template_config()
+            let commands: &Vec<Command> = &state.new_project.template.config().build;
+
+            match result
             {
-                let commands: Vec<Command> = project_template.build;
-
-                match result
+                Ok(log) =>
                 {
-                    Ok(log) =>
+                    state.project_creation_status.log.push(log);
+
+                    if index >= commands.len() - 1
                     {
-                        state.project_creation_status.log.push(log);
+                        state
+                            .project_creation_status
+                            .log
+                            .push(String::from("Executed build commands..."));
 
-                        if index >= commands.len() - 1
-                        {
-                            state
-                                .project_creation_status
-                                .log
-                                .push(String::from("Executed build commands..."));
+                        state.project_creation_status.step += 1.0;
 
-                            state.project_creation_status.step += 1.0;
-
-                            sleep(Duration::from_millis(100));
-
-                            return Task::perform(
-                                project_creator::commit_projman_init(state.new_project.clone()),
-                                Message::CommitedProjmanInit,
-                            );
-                        }
+                        sleep(Duration::from_millis(100));
 
                         return Task::perform(
-                            project_creator::execute_build_command(
-                                commands[index + 1].clone(),
-                                state.new_project.path.clone(),
-                            ),
-                            move |result: Result<String, Error>| {
-                                Message::BuildCommandExecuted(index + 1, result)
-                            },
+                            project_creator::commit_projman_init(state.new_project.clone()),
+                            Message::CommitedProjmanInit,
                         );
                     }
-                    Err(err) => return Task::perform(async { Err(err) }, Message::CreateFinished),
-                }
-            };
 
-            Task::none()
+                    Task::perform(
+                        project_creator::execute_build_command(
+                            commands[index + 1].clone(),
+                            state.new_project.path.clone(),
+                        ),
+                        move |result: Result<String, Error>| {
+                            Message::BuildCommandExecuted(index + 1, result)
+                        },
+                    )
+                }
+                Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
+            }
         }
         Message::CommitedProjmanInit(result) => match result
         {
@@ -483,7 +454,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::NewProjectTypeChanged(project_type) =>
         {
-            state.new_project.project_type = project_type;
+            state.new_project.template = project_type;
 
             Task::none()
         }
