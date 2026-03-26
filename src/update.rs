@@ -452,9 +452,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::NewProjectTypeChanged(project_type) =>
+        Message::NewProjectTemplateChanged(template) =>
         {
-            state.new_project.template = project_type;
+            state.new_project.template = template;
 
             Task::none()
         }

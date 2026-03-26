@@ -24,7 +24,7 @@ impl AppState
 
         let name: String = self.import_project_name.to_string();
 
-        let project_type: Template = match &read_to_string(path.join(".projman"))
+        let template: Template = match &read_to_string(path.join(".projman"))
         {
             Ok(string) => Template::from_str(string)?,
             Err(err) =>
@@ -77,7 +77,7 @@ impl AppState
             exists: true,
             name,
             path,
-            template: project_type,
+            template,
             repo,
             license,
         };

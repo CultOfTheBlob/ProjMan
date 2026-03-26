@@ -53,7 +53,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .spacing(4),
     );
 
-    let project_type_widget = if !state.project_creation_status.creating
+    let project_template_widget = if !state.project_creation_status.creating
     {
         container(
             column![
@@ -62,7 +62,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     &state.project_templates,
                     "",
                     Some(&state.new_project.template),
-                    Message::NewProjectTypeChanged
+                    Message::NewProjectTemplateChanged
                 )
             ]
             .spacing(4),
@@ -291,7 +291,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let popup_content = container(column![
         title_bar,
         project_name_widget.padding(16),
-        project_type_widget.padding(16),
+        project_template_widget.padding(16),
         project_repo_widget.padding(16),
         project_path_widget.padding(16),
         progress_widget.padding(16),

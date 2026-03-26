@@ -33,7 +33,7 @@ pub enum Message
     CreateFinished(Result<(), Error>),
     CreateCanceled,
     NewProjectNameChanged(String),
-    NewProjectTypeChanged(Template),
+    NewProjectTemplateChanged(Template),
     NewProjectRepoChanged(String),
     NewProjectPathChanged(PathBuf),
     CreationErrorCopied,
