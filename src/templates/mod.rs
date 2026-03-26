@@ -1,4 +1,4 @@
-use std::{fs::ReadDir, path::PathBuf};
+use std::{ffi::OsStr, fs::ReadDir, path::PathBuf};
 
 use crate::{
     error::{Error, ErrorInfo},
@@ -34,6 +34,11 @@ impl Templates
                 Ok(entry) => entry.path(),
                 Err(err) => return Err(error!(Error::Read, "templates dir", err)),
             };
+
+            if !template_path.is_file() || template_path.extension() != Some(OsStr::new("json"))
+            {
+                continue;
+            }
 
             let template_name: String = match template_path.with_extension("").iter().next_back()
             {
