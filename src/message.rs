@@ -6,7 +6,7 @@ use crate::{error::Error, project::Project, templates::template::Template};
 pub enum Message
 {
     Tick,
-    Opened(Project),
+    Opened(usize),
     Selected(usize),
     Deselected,
     Updated,

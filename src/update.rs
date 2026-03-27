@@ -23,14 +23,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
-        Message::Opened(project) =>
+        Message::Opened(index) =>
         {
             if state.pending.is_some()
             {
                 return Task::none();
             }
 
-            if let Err(err) = project.run()
+            if let Err(err) = state.project_list[index].run()
             {
                 state.push_notification(err.get_message(), NotifKind::Error);
             }

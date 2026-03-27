@@ -99,7 +99,7 @@ pub async fn create_project_files(project: Arc<Project>) -> Result<String, Error
 
 pub async fn execute_build_command(project: Arc<Project>, index: usize) -> Result<String, Error>
 {
-    let command: Command = project.template.config().build[index].clone();
+    let command: &Command = &project.template.config().build[index];
 
     match process::Command::new(&command.program)
         .args(&command.args)

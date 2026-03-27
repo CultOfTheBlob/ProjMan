@@ -31,7 +31,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
             && let Some(index) = state.selected_project
             && state.project_list[index].exists
         {
-            Some(Message::Opened(state.project_list[index].clone()))
+            Some(Message::Opened(index))
         }
         else
         {

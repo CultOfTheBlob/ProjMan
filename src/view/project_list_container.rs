@@ -120,7 +120,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
 
         let select_area = mouse_area(row_container)
             .on_press(Message::Selected(index))
-            .on_double_click(Message::Opened(project.clone()));
+            .on_double_click(Message::Opened(index));
 
         project_list_content = project_list_content.push(select_area);
     }
