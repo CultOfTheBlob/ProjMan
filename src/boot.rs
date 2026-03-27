@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use iced::Task;
 
 use crate::{
@@ -35,8 +37,13 @@ pub fn boot() -> (AppState, Task<Message>)
         }
     };
 
-    (
-        AppState::default().templates(templates).config(config),
-        Task::none(),
-    )
+    let mut state: AppState = AppState::default().templates(templates).config(config);
+
+    match state.load_projects()
+    {
+        Ok(projects) => state.project_list = Arc::new(projects),
+        Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+    };
+
+    (state, Task::none())
 }
