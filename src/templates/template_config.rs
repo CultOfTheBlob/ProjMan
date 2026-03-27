@@ -45,6 +45,7 @@ pub struct File
 {
     pub path: String,
     pub content: String,
+    pub tracked: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

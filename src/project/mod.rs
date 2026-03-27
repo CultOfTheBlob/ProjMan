@@ -60,20 +60,25 @@ impl Project
 
         for file in project_files
         {
+            if !file.tracked
+            {
+                continue;
+            }
+
             let path: PathBuf = PathBuf::from(&self.path).join(&file.path);
 
             let Ok(file_contents) = read(&path)
             else
             {
-                return false;
+                return true;
             };
 
-            if file.content.as_bytes() == file_contents
+            if file.content.as_bytes() != file_contents
             {
-                return false;
+                return true;
             }
         }
 
-        true
+        false
     }
 }
