@@ -23,7 +23,10 @@ impl AppState
 
         for file in project_files
         {
-            if let Err(err) = write(project.path.join(&file.path), &file.content)
+            if let Err(err) = write(
+                project.path.join(&file.path),
+                file.formatted(&project.name, &project.repo),
+            )
             {
                 return Err(error!(Error::Create, "project files", err));
             };

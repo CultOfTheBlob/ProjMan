@@ -48,6 +48,16 @@ pub struct File
     pub tracked: bool,
 }
 
+impl File
+{
+    pub fn formatted(&self, name: &str, repo: &str) -> String
+    {
+        self.content
+            .replace("#{name}", name)
+            .replace("#{repo}", repo)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Command
 {

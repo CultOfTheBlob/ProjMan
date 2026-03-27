@@ -88,7 +88,10 @@ pub async fn create_project_files(project: Arc<Project>) -> Result<String, Error
 {
     for file in &project.template.config().files
     {
-        if let Err(err) = write(project.path.join(&file.path), &file.content)
+        if let Err(err) = write(
+            project.path.join(&file.path),
+            file.formatted(&project.name, &project.repo),
+        )
         {
             return Err(error!(Error::Create, "project files", err));
         };
