@@ -7,7 +7,7 @@ use crate::{
     message::Message,
     project::{Project, project_creator},
     state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
-    templates::template::Template,
+    templates::{Templates, template::Template},
 };
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
@@ -21,6 +21,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 Ok(projects) => state.project_list = Arc::new(projects),
                 Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
             };
+
+            match Templates::generate()
+            {
+                Ok(templates) => state.templates = templates,
+                Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+            }
 
             Task::none()
         }

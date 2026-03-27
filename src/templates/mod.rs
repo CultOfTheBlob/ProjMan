@@ -17,7 +17,7 @@ pub struct Templates
 
 impl Templates
 {
-    pub fn generate(&self) -> Result<Self, Error>
+    pub fn generate() -> Result<Self, Error>
     {
         let templates_path: PathBuf = AppState::get_config_dir("templates".to_string(), None)?;
         let templates_dir: ReadDir = match templates_path.read_dir()

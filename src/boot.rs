@@ -23,7 +23,7 @@ pub fn boot() -> (AppState, Task<Message>)
         }
     };
 
-    let templates: Templates = match Templates::default().generate()
+    let templates: Templates = match Templates::generate()
     {
         Ok(templates) => templates,
         Err(err) =>
