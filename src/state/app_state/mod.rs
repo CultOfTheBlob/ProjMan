@@ -25,7 +25,7 @@ mod update_project;
 pub struct AppState
 {
     pub config: Config,
-    pub project_list: Vec<Project>,
+    pub project_list: Arc<Vec<Project>>,
     pub new_project: Arc<Project>,
     pub new_project_path_changed: bool,
     pub project_templates: combo_box::State<Template>,
@@ -48,9 +48,9 @@ impl Default for AppState
     {
         let mut notifications = vec![];
 
-        let project_list: Vec<Project> = match AppState::load_projects()
+        let project_list: Arc<Vec<Project>> = match AppState::load_projects()
         {
-            Ok(projects) => projects,
+            Ok(projects) => Arc::new(projects),
             Err(err) =>
             {
                 notifications.push(Notification {
@@ -58,7 +58,7 @@ impl Default for AppState
                     kind: NotifKind::Error,
                 });
 
-                vec![]
+                Arc::new(vec![])
             }
         };
 

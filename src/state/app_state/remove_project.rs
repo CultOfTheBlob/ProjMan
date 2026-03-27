@@ -6,6 +6,7 @@ use crate::{
 use std::{
     fs::{read_to_string, remove_dir_all, remove_file, write},
     path::PathBuf,
+    sync::Arc,
 };
 
 impl AppState
@@ -73,7 +74,7 @@ impl AppState
 
         if let Some(index) = self.selected_project
         {
-            self.project_list.remove(index);
+            Arc::make_mut(&mut self.project_list).remove(index);
         }
 
         Ok(())

@@ -2,6 +2,7 @@ use std::{
     fs::{self, read_to_string, write},
     io::Write,
     path::PathBuf,
+    sync::Arc,
 };
 
 use crate::{
@@ -14,7 +15,7 @@ impl AppState
 {
     pub async fn restore_project(
         selected_project: Option<usize>,
-        project_list: Vec<Project>,
+        project_list: Arc<Vec<Project>>,
     ) -> Result<usize, Error>
     {
         let projects_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;

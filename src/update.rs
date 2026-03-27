@@ -17,7 +17,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             match AppState::load_projects()
             {
-                Ok(projects) => state.project_list = projects,
+                Ok(projects) => state.project_list = Arc::new(projects),
                 Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
             };
 
@@ -357,7 +357,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                     .log
                     .push(String::from("Project Created!"));
                 state.project_creation_status.step += 1.0;
-                state.project_list = project_list;
+                state.project_list = Arc::new(project_list);
 
                 sleep(Duration::from_millis(1000));
 
@@ -502,7 +502,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.restoring_project = true;
 
             Task::perform(
-                AppState::restore_project(state.selected_project, state.project_list.clone()),
+                AppState::restore_project(state.selected_project, Arc::clone(&state.project_list)),
                 Message::RemoveNonexistantFinished,
             )
         }
@@ -512,7 +512,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             match restore_result
             {
-                Ok(index) => state.project_list[index].exists = true,
+                Ok(index) => Arc::make_mut(&mut state.project_list)[index].exists = true,
                 Err(err) =>
                 {
                     state.project_restoration_failed = true;
