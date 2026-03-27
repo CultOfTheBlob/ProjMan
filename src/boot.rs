@@ -6,7 +6,7 @@ use crate::{
         app_state::{AppState, NotifKind},
         config::Config,
     },
-    templates::{Templates, template::Template},
+    templates::Templates,
 };
 
 pub fn boot() -> (AppState, Task<Message>)
@@ -23,9 +23,9 @@ pub fn boot() -> (AppState, Task<Message>)
         }
     };
 
-    let templates: Vec<Template> = match Templates::default().generate()
+    let templates: Templates = match Templates::default().generate()
     {
-        Ok(templates) => templates.templates().to_vec(),
+        Ok(templates) => templates,
         Err(err) =>
         {
             let mut app_state: AppState = AppState::default();

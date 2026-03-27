@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{error::Error, project::Project, templates::template::Template};
+use crate::{error::Error, project::Project};
 
 #[derive(Debug, Clone)]
 pub enum Message
@@ -33,7 +33,7 @@ pub enum Message
     CreateFinished(Result<(), Error>),
     CreateCanceled,
     NewProjectNameChanged(String),
-    NewProjectTemplateChanged(Template),
+    NewProjectTemplateChanged(String),
     NewProjectRepoChanged(String),
     NewProjectPathChanged(PathBuf),
     CreationErrorCopied,

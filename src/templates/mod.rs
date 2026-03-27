@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs::ReadDir, path::PathBuf};
+use std::{collections::HashMap, ffi::OsStr, fs::ReadDir, path::PathBuf, sync::Arc};
 
 use crate::{
     error::{Error, ErrorInfo},
@@ -12,7 +12,7 @@ pub mod template_config;
 #[derive(Debug, Clone, Default)]
 pub struct Templates
 {
-    templates: Vec<Template>,
+    templates: HashMap<String, Arc<Template>>,
 }
 
 impl Templates
@@ -26,7 +26,7 @@ impl Templates
             Err(err) => return Err(error!(Error::Read, "templates dir", err)),
         };
 
-        let mut templates: Vec<Template> = vec![];
+        let mut templates: HashMap<String, Arc<Template>> = HashMap::new();
         for entry in templates_dir
         {
             let template_path: PathBuf = match entry
@@ -46,16 +46,25 @@ impl Templates
                 None => return Err(error!(Error::Read, "template name", "")),
             };
 
-            let template: Template = Template::new(template_name)?;
+            let template: Template = Template::new(template_name.clone())?;
 
-            templates.push(template);
+            templates.insert(template_name, Arc::new(template));
         }
 
         Ok(Templates { templates })
     }
 
-    pub fn templates(&self) -> &Vec<Template>
+    pub fn template_names(&self) -> Vec<String>
     {
-        &self.templates
+        self.templates.keys().cloned().collect()
+    }
+
+    pub fn get(&self, name: &str) -> Result<Arc<Template>, Error>
+    {
+        match self.templates.get(name).cloned()
+        {
+            Some(template) => Ok(template),
+            None => Err(error!(Error::Find, "template", "")),
+        }
     }
 }

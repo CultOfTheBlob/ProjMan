@@ -1,4 +1,4 @@
-use std::{fs::read, path::PathBuf};
+use std::{fs::read, path::PathBuf, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +20,9 @@ pub struct Project
     pub exists: bool,
     pub name: String,
     pub path: PathBuf,
-    pub template: Template,
+    pub template_name: String,
+    #[serde(skip)]
+    pub template: Arc<Template>,
     pub repo: String,
     pub license: String,
 }
@@ -45,7 +47,8 @@ impl Project
             exists: true,
             name: String::from(name),
             path: PathBuf::from(&config.general.projects_dir).join(name),
-            template: Template::default(),
+            template_name: String::default(),
+            template: Arc::new(Template::default()),
             repo: String::new(),
             license: String::new(),
         }

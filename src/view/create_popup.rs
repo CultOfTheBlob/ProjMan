@@ -59,9 +59,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             column![
                 text("Project Template:"),
                 combo_box(
-                    &state.project_templates,
+                    &state.template_names,
                     "",
-                    Some(&state.new_project.template),
+                    Some(&state.new_project.template_name),
                     Message::NewProjectTemplateChanged
                 )
             ]
@@ -73,7 +73,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         container(
             column![
                 text("Project Template:"),
-                text_input(&state.new_project.template.to_string(), "")
+                text_input(&state.new_project.template_name, "")
             ]
             .spacing(4),
         )

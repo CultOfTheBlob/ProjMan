@@ -1,5 +1,4 @@
 use std::{
-    fmt::{self, Display},
     fs::read_to_string,
     path::{Path, PathBuf},
     process,
@@ -18,7 +17,6 @@ use crate::{
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 pub struct Template
 {
-    name: String,
     config: TemplateConfig,
     template_path: PathBuf,
     icon_path: PathBuf,
@@ -46,7 +44,6 @@ impl Template
         };
 
         Ok(Template {
-            name,
             config,
             template_path,
             icon_path,
@@ -87,11 +84,6 @@ impl Template
             .collect()
     }
 
-    pub fn name(&self) -> &str
-    {
-        &self.name
-    }
-
     pub fn config(&self) -> &TemplateConfig
     {
         &self.config
@@ -100,14 +92,6 @@ impl Template
     pub fn icon_path(&self) -> &PathBuf
     {
         &self.icon_path
-    }
-}
-
-impl Display for Template
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
-    {
-        write!(f, "{}", self.name)
     }
 }
 

@@ -11,7 +11,7 @@ use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::config::Config,
-    templates::{Templates, template::Template},
+    templates::Templates,
 };
 
 mod edit_project;
@@ -28,7 +28,8 @@ pub struct AppState
     pub project_list: Arc<Vec<Project>>,
     pub new_project: Arc<Project>,
     pub new_project_path_changed: bool,
-    pub project_templates: combo_box::State<Template>,
+    pub templates: Templates,
+    pub template_names: combo_box::State<String>,
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
@@ -46,28 +47,13 @@ impl Default for AppState
 {
     fn default() -> Self
     {
-        let mut notifications = vec![];
-
-        let project_list: Arc<Vec<Project>> = match AppState::load_projects()
-        {
-            Ok(projects) => Arc::new(projects),
-            Err(err) =>
-            {
-                notifications.push(Notification {
-                    text: err.get_message(),
-                    kind: NotifKind::Error,
-                });
-
-                Arc::new(vec![])
-            }
-        };
-
         Self {
             config: Config::default(),
-            project_list,
-            notifications,
+            project_list: Arc::new(vec![]),
+            notifications: vec![],
+            templates: Templates::default(),
             new_project: Arc::new(Project::default(&Config::default())),
-            project_templates: combo_box::State::new(Templates::default().templates().to_vec()),
+            template_names: combo_box::State::new(Templates::default().template_names()),
             project_creation_status: ProjectCreationStatus {
                 creating: false,
                 failed: false,
@@ -90,10 +76,11 @@ impl Default for AppState
 
 impl AppState
 {
-    pub fn templates(self, templates: Vec<Template>) -> Self
+    pub fn templates(self, templates: Templates) -> Self
     {
         Self {
-            project_templates: combo_box::State::new(templates),
+            template_names: combo_box::State::new(templates.template_names()),
+            templates,
             ..self
         }
     }

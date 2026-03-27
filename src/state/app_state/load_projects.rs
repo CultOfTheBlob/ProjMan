@@ -10,7 +10,7 @@ use std::{
 
 impl AppState
 {
-    pub fn load_projects() -> Result<Vec<Project>, Error>
+    pub fn load_projects(&self) -> Result<Vec<Project>, Error>
     {
         let projects_path: PathBuf =
             AppState::get_config_dir(String::from("projects.json"), Some(String::from("[]")))?;
@@ -35,34 +35,13 @@ impl AppState
 
         for project in &mut projects
         {
-            if !project.path.is_dir()
-            {
-                project.exists = false;
-                continue;
-            }
+            project.template = self.templates.get(&project.template_name)?;
 
-            if !project.path.join("projman.toml").is_file()
-            {
-                project.exists = false;
-                continue;
-            }
+            let is_dir = project.path.is_dir();
 
-            let projman_toml: String = match &read_to_string(project.path.join("projman.toml"))
-            {
-                Ok(string) => string.to_string(),
-                Err(err) =>
-                {
-                    return Err(error!(Error::Read, "projman.toml", err));
-                }
-            };
+            let has_projman_file = project.path.join("projman.toml").is_file();
 
-            let project_from_toml: Project = match toml::from_str(&projman_toml)
-            {
-                Ok(project) => project,
-                Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
-            };
-
-            project.exists = *project == project_from_toml;
+            project.exists = is_dir && has_projman_file;
         }
 
         let projects_to_json: String = match serde_json::to_string_pretty(&projects)

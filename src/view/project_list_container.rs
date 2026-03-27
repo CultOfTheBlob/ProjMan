@@ -20,7 +20,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             column![
                 text(&project.name).style(text::primary),
                 row![
-                    text(project.template.name()).style(text::secondary),
+                    text(&project.template_name).style(text::secondary),
                     text(project.path.display().to_string()).style(text::secondary)
                 ]
                 .spacing(32)
