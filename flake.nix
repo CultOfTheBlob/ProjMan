@@ -97,13 +97,47 @@
       }: let
         cfg = config.programs.projman;
         package = self.packages.${pkgs.system}.default;
+        tomlFormat = pkgs.formats.toml {};
       in {
         options.programs.projman = {
           enable = lib.mkEnableOption "projman";
+
+          settings = {
+            general = {
+              projects_dir = lib.mkOption {
+                type = lib.types.str;
+                default = "${config.home.homeDirectory}/Projects/";
+                description = "Path to the projects directory.";
+              };
+              delete_project_folder = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Whether to delete the project folder when removing a project.";
+              };
+            };
+            theme = {
+              theme = lib.mkOption {
+                type = lib.types.str;
+                default = "Dark";
+                description = "Theme to use.";
+              };
+            };
+          };
         };
 
         config = lib.mkIf cfg.enable {
           home.packages = [package];
+          xdg.configFile.projman = {
+            target = "projman/config.toml";
+            source = tomlFormat.generate "config.toml" {
+              general = {
+                inherit (cfg.settings.general) projects_dir delete_project_folder;
+              };
+              theme = {
+                inherit (cfg.settings.theme) theme;
+              };
+            };
+          };
         };
       };
     };
