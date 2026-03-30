@@ -96,7 +96,7 @@
         ...
       }: let
         cfg = config.programs.projman;
-        package = self.packages.${pkgs.system}.default;
+        package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         tomlFormat = pkgs.formats.toml {};
       in {
         options.programs.projman = {
@@ -195,7 +195,13 @@
               };
             });
             default = {};
-            description = "";
+            description = "Definitons for templates. Each attribute maps to a json file of the same name.";
+          };
+
+          icons = lib.mkOption {
+            type = lib.types.attrsOf lib.types.path;
+            default = {};
+            description = "Icons for templates. Attribute name should match the template name.";
           };
         };
 
@@ -215,11 +221,25 @@
                 };
               };
             }
-            // lib.mapAttrs (name: template: {
-              target = "projman/templates/${name}.json";
-              text = builtins.toJSON template;
-            })
-            cfg.templates;
+            // (lib.mapAttrs' (
+                name: template:
+                  lib.nameValuePair "projman-template-${name}" {
+                    target = "projman/templates/${name}.json";
+                    text = builtins.toJSON template;
+                  }
+              )
+              cfg.templates)
+            // (lib.mapAttrs' (
+                name: icon: let
+                  filename = baseNameOf (toString icon);
+                  ext = builtins.head (builtins.match ".*(\\..*)" filename);
+                in
+                  lib.nameValuePair "projman-icon-${name}" {
+                    target = "projman/icons/${name}${ext}";
+                    source = icon;
+                  }
+              )
+              cfg.icons);
         };
       };
     };
