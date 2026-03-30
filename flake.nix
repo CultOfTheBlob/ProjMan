@@ -87,5 +87,24 @@
           '';
         };
       }
-    );
+    )
+    // {
+      homeManagerModules.default = {
+        config,
+        lib,
+        pkgs,
+        ...
+      }: let
+        cfg = config.programs.projman;
+        package = self.packages.${pkgs.system}.default;
+      in {
+        options.programs.projman = {
+          enable = lib.mkEnableOption "projman";
+        };
+
+        config = lib.mkIf cfg.enable {
+          home.packages = [package];
+        };
+      };
+    };
 }
