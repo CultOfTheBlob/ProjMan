@@ -123,21 +123,103 @@
               };
             };
           };
+
+          templates = lib.mkOption {
+            type = lib.types.attrsOf (lib.types.submodule {
+              options = {
+                dir_structure = lib.mkOption {
+                  type = lib.types.listOf (lib.types.submodule {
+                    options = {
+                      name = lib.mkOption {type = lib.types.str;};
+                      sub_dirs = lib.mkOption {
+                        type = lib.types.listOf lib.types.attrs;
+                        default = [];
+                      };
+                    };
+                  });
+                  default = [];
+                };
+
+                files = lib.mkOption {
+                  type = lib.types.listOf (lib.types.submodule {
+                    options = {
+                      path = lib.mkOption {type = lib.types.str;};
+                      content = lib.mkOption {
+                        type = lib.types.str;
+                        default = "";
+                      };
+                      tracked = lib.mkOption {
+                        type = lib.types.bool;
+                        default = true;
+                      };
+                    };
+                  });
+                  default = [];
+                };
+
+                build = lib.mkOption {
+                  type = lib.types.listOf (lib.types.submodule {
+                    options = {
+                      program = lib.mkOption {type = lib.types.str;};
+                      args = lib.mkOption {
+                        type = lib.types.listOf lib.types.str;
+                        default = [];
+                      };
+                    };
+                  });
+                  default = [];
+                };
+
+                run = lib.mkOption {
+                  type = lib.types.listOf (lib.types.submodule {
+                    options = {
+                      program = lib.mkOption {type = lib.types.str;};
+                      args = lib.mkOption {
+                        type = lib.types.listOf lib.types.str;
+                        default = [];
+                      };
+                    };
+                  });
+                  default = [];
+                };
+
+                included_paths = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [];
+                };
+
+                excluded_paths = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [];
+                };
+              };
+            });
+            default = {};
+            description = "";
+          };
         };
 
         config = lib.mkIf cfg.enable {
           home.packages = [package];
-          xdg.configFile.projman = {
-            target = "projman/config.toml";
-            source = tomlFormat.generate "config.toml" {
-              general = {
-                inherit (cfg.settings.general) projects_dir delete_project_folder;
+          xdg.configFile =
+            {
+              projman = {
+                target = "projman/config.toml";
+                source = tomlFormat.generate "config.toml" {
+                  general = {
+                    inherit (cfg.settings.general) projects_dir delete_project_folder;
+                  };
+                  theme = {
+                    inherit (cfg.settings.theme) theme;
+                  };
+                };
               };
-              theme = {
-                inherit (cfg.settings.theme) theme;
-              };
-            };
-          };
+            }
+            // lib.mapAttrs (name: template: {
+              target = "projman/templates/${name}.json";
+              text = builtins.toJSON template;
+            })
+            cfg.templates;
         };
       };
     };
