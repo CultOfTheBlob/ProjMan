@@ -203,6 +203,29 @@
             default = {};
             description = "Icons for templates. Attribute name should match the template name.";
           };
+
+          projects = lib.mkOption {
+            type = lib.types.listOf (lib.types.submodule {
+              options = {
+                name = lib.mkOption {type = lib.types.str;};
+                path = lib.mkOption {type = lib.types.str;};
+                template_name = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                };
+                repo = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                };
+                license = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                };
+              };
+            });
+            default = [];
+            description = "List of projects in the projects.json file.";
+          };
         };
 
         config = lib.mkIf cfg.enable {
@@ -240,6 +263,12 @@
                   }
               )
               cfg.icons);
+
+          home.activation.projmanProjects = lib.hm.dag.entryAfter ["writeBoundary"] ''
+            if [ ! -f "$HOME/.config/projman/projects.json" ]; then
+              echo '${builtins.toJSON (map (p: p // {exists = true;}) cfg.projects)}' > "$HOME/.config/projman/projects.json"
+            fi
+          '';
         };
       };
     };
