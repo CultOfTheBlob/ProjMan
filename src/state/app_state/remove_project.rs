@@ -23,9 +23,9 @@ impl AppState
         if let Some(index) = self.selected_project
             && self.project_list[index].exists
         {
-            if let Err(err) = remove_file(self.project_list[index].path.join(".projman"))
+            if let Err(err) = remove_file(self.project_list[index].path.join("projman.toml"))
             {
-                return Err(error!(Error::Remove, ".projman file", err));
+                return Err(error!(Error::Remove, "projman.toml", err));
             }
 
             if self.delete_project_folder
