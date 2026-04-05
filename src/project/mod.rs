@@ -82,3 +82,12 @@ impl Project
         false
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProjmanFile
+{
+    pub name: String,
+    pub template_name: String,
+    pub repo: String,
+    pub license: String,
+}

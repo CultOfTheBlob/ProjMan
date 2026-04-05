@@ -41,10 +41,10 @@ impl Config
         {
             Ok(string) => match toml::from_str(string)
             {
-                Ok(config) => return Ok(config),
-                Err(err) => return Err(error!(Error::Parse, "config", err)),
+                Ok(config) => Ok(config),
+                Err(err) => Err(error!(Error::Parse, "config", err)),
             },
-            Err(err) => return Err(error!(Error::Parse, "config", err)),
+            Err(err) => Err(error!(Error::Parse, "config", err)),
         }
     }
 

@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
+    project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
 
@@ -33,11 +33,10 @@ impl AppState
         {
             return Err(error!(Error::Clone, "project repo", err));
         }
-
-        if !project.path.join("projman.toml").exists()
+        else
         {
             let mut projman_file: fs::File =
-                match fs::File::create_new(project.path.join("projman.toml"))
+                match fs::File::create(project.path.join("projman.toml"))
                 {
                     Ok(file) => file,
                     Err(err) =>
@@ -46,12 +45,14 @@ impl AppState
                     }
                 };
 
-            let project = Project {
-                exists: true,
-                ..project.clone()
+            let projman_content = ProjmanFile {
+                name: project.name.to_string(),
+                template_name: project.template_name.to_string(),
+                repo: project.repo.to_string(),
+                license: project.license.to_string(),
             };
 
-            let project_to_toml: String = match toml::to_string_pretty(&project)
+            let project_to_toml: String = match toml::to_string_pretty(&projman_content)
             {
                 Ok(string) => string,
                 Err(err) => return Err(error!(Error::Parse, "project", err)),

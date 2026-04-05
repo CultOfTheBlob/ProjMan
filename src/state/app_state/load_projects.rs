@@ -1,6 +1,6 @@
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
+    project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
 use std::{
@@ -37,11 +37,42 @@ impl AppState
         {
             project.template = self.templates.get(&project.template_name)?;
 
-            let is_dir = project.path.is_dir();
+            if !project.path.is_dir()
+            {
+                project.exists = false;
+                continue;
+            }
 
-            let has_projman_file = project.path.join("projman.toml").is_file();
+            if !project.path.join("projman.toml").is_file()
+            {
+                project.exists = false;
+                continue;
+            }
 
-            project.exists = is_dir && has_projman_file;
+            let projman_file_is_correct: bool = {
+                let project_from_toml: String =
+                    match &read_to_string(project.path.join("projman.toml"))
+                    {
+                        Ok(string) => string.to_string(),
+                        Err(err) =>
+                        {
+                            return Err(error!(Error::Read, "projman.toml", err));
+                        }
+                    };
+
+                let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
+                {
+                    Ok(projman_file) => projman_file,
+                    Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
+                };
+
+                projman_file.name == project.name
+                    && projman_file.template_name == project.template_name
+                    && projman_file.repo == project.repo
+                    && projman_file.license == project.license
+            };
+
+            project.exists = projman_file_is_correct;
         }
 
         let projects_to_json: String = match serde_json::to_string_pretty(&projects)

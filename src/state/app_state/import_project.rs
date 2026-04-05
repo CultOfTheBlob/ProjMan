@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
+    project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
 
@@ -27,10 +27,20 @@ impl AppState
             }
         };
 
-        let project: Project = match toml::from_str(&project_from_toml)
+        let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
         {
-            Ok(project) => project,
+            Ok(projman_file) => projman_file,
             Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
+        };
+
+        let project: Project = Project {
+            exists: true,
+            name: projman_file.name,
+            path,
+            template: self.templates.get(&projman_file.template_name)?,
+            template_name: projman_file.template_name,
+            repo: projman_file.repo,
+            license: projman_file.license,
         };
 
         let projects_from_json: String = match read_to_string(&projects_path)
