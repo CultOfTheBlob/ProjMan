@@ -159,42 +159,7 @@ pub async fn add_project_to_json(project: Arc<Project>) -> Result<Vec<Project>, 
         }
     };
 
-    let project: Project = {
-        let license: String = {
-            let store: Store = match Store::from_cache(
-                &include_bytes!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/cache/license.cache.zstd"
-                ))[..],
-            )
-            {
-                Ok(store) => store,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Parse, "project license", err));
-                }
-            };
-
-            let license_path: PathBuf = project.path.join("LICENSE");
-
-            let license_contents: String = match read_to_string(&license_path)
-            {
-                Ok(contents) => contents,
-                Err(err) =>
-                {
-                    return Err(error!(Error::Read, "LICENSE file", err));
-                }
-            };
-
-            store
-                .analyze(&TextData::from(license_contents.as_str()))
-                .name
-                .to_string()
-        };
-
-        let project: Project = (*project).clone();
-        Project { license, ..project }
-    };
+    let project: Project = (*project).clone();
 
     projects.push(project);
 

@@ -245,6 +245,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 sleep(Duration::from_millis(100));
 
+                let project = (*state.new_project).clone().license();
+                state.new_project = Arc::new(project);
+
                 Task::perform(
                     project_creator::create_projman_file(Arc::clone(&state.new_project)),
                     Message::ProjmanFileCreated,

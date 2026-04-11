@@ -1,5 +1,11 @@
-use std::{fs::read, path::PathBuf, sync::Arc};
+use crate::error::ErrorInfo;
+use std::{
+    fs::{read, read_to_string},
+    path::PathBuf,
+    sync::Arc,
+};
 
+use askalono::{Store, TextData};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -52,6 +58,43 @@ impl Project
             repo: String::new(),
             license: String::new(),
         }
+    }
+
+    pub fn license(self) -> Self
+    {
+        let license: String = {
+            let store: Store = match Store::from_cache(
+                &include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/cache/license.cache.zstd"
+                ))[..],
+            )
+            {
+                Ok(store) => store,
+                Err(_) =>
+                {
+                    return self;
+                }
+            };
+
+            let license_path: PathBuf = self.path.join("LICENSE");
+
+            let license_contents: String = match read_to_string(&license_path)
+            {
+                Ok(contents) => contents,
+                Err(_) =>
+                {
+                    return self;
+                }
+            };
+
+            store
+                .analyze(&TextData::from(license_contents.as_str()))
+                .name
+                .to_string()
+        };
+
+        Project { license, ..self }
     }
 
     pub fn is_outdated(&self) -> bool
