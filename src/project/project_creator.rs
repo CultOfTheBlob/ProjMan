@@ -10,7 +10,7 @@ use tokio::process;
 
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
+    project::{Project, ProjmanFile},
     state::app_state::AppState,
     templates::template_config::Command,
 };
@@ -46,7 +46,14 @@ pub async fn create_projman_file(project: Arc<Project>) -> Result<String, Error>
     {
         Ok(mut file) =>
         {
-            let project_to_toml: String = match toml::to_string_pretty(&project)
+            let projman_file: ProjmanFile = ProjmanFile {
+                name: project.name.to_string(),
+                template_name: project.template_name.to_string(),
+                repo: project.repo.to_string(),
+                license: project.license.to_string(),
+            };
+
+            let project_to_toml: String = match toml::to_string_pretty(&projman_file)
             {
                 Ok(string) => string,
                 Err(err) => return Err(error!(Error::Parse, "project", err)),
