@@ -50,11 +50,12 @@ pub struct File
 
 impl File
 {
-    pub fn formatted(&self, name: &str, repo: &str) -> String
+    pub fn formatted(&self, name: &str, repo: &str, license: &str) -> String
     {
         self.content
             .replace("#{name}", name)
             .replace("#{repo}", repo)
+            .replace("#{license}", license)
     }
 }
 
