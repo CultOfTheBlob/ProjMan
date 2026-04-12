@@ -1,0 +1,4 @@
+name = "ProjMan"
+template_name = "rustWithIced"
+repo = "https://github.com/CultOfTheBlob/ProjMan.git"
+license = "MIT"

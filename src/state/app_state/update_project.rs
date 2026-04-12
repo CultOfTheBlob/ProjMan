@@ -23,6 +23,11 @@ impl AppState
 
         for file in project_files
         {
+            if !file.tracked
+            {
+                continue;
+            }
+
             if let Err(err) = write(
                 project.path.join(&file.path),
                 file.formatted(&project.name, &project.repo, &project.license),

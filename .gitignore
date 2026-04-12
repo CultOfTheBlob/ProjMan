@@ -5,3 +5,4 @@ target
 **/mutants.out*/
 /target
 /result
+.direnv
