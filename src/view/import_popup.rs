@@ -1,17 +1,15 @@
-use std::path::PathBuf;
-
+use crate::{
+    message::Message,
+    project::Project,
+    state::app_state::{AppState, Popup},
+};
 use iced::{
     Alignment,
     Background::Color,
     Border, Element, Length, Theme,
     widget::{button, column, container, row, stack, text, text_input},
 };
-
-use crate::{
-    message::Message,
-    project::Project,
-    state::app_state::{AppState, Popup},
-};
+use std::path::PathBuf;
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
@@ -43,7 +41,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .spacing(4)
             .align_y(Alignment::Center),
             if !Project::is_project_path(
-                PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
+                &PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
             )
             {
                 container(text(" This path is not a valid project!").style(text::danger))
@@ -71,7 +69,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         })
         .on_press_maybe(
             if Project::is_project_path(
-                PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path),
+                &PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path),
             )
             {
                 Some(Message::ImportConfirmed)

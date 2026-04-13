@@ -1,181 +1,179 @@
-use std::{
-    fs::{self, create_dir, create_dir_all, read_to_string, remove_dir, write},
-    io::Write,
-    path::PathBuf,
-    sync::Arc,
-};
-
-use askalono::{Store, TextData};
-use tokio::process;
-
 use crate::{
     error::{Error, ErrorInfo},
     project::{Project, ProjmanFile},
     state::app_state::AppState,
-    templates::template_config::Command,
 };
+use iced::futures::future::{self, Ready};
+use std::{
+    fs::{self, File as FsFile},
+    io::Write as _,
+    sync::Arc,
+};
+use tokio::process::Command as TokioCommand;
 
 pub const STEPS: f32 = 8.0;
 
-pub async fn create_project_dir(project: Arc<Project>) -> Result<String, Error>
+pub fn create_project_dir(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
-    match create_dir_all(&project.path)
+    future::ready(match fs::create_dir_all(&project.path)
     {
-        Ok(_) => Ok("Created project dir...".to_string()),
+        Ok(()) => Ok(String::from("Created project dir...")),
         Err(err) => Err(error!(Error::Create, "project dir", err)),
-    }
+    })
 }
 
-pub async fn clone_project_repo(project: Arc<Project>) -> Result<String, Error>
+pub fn clone_project_repo(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
-    match project.clone_repo()
+    future::ready(match project.clone_repo()
     {
-        Ok(_) => Ok("Cloned project repo...".to_string()),
+        Ok(()) => Ok(String::from("Cloned project repo...")),
 
         Err(err) =>
         {
-            let _ = remove_dir(&project.path);
+            let _ = fs::remove_dir(&project.path);
             Err(error!(Error::Clone, "project repo", err))
         }
-    }
+    })
 }
 
-pub async fn create_projman_file(project: Arc<Project>) -> Result<String, Error>
+pub fn create_projman_file(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
-    match fs::File::create_new(project.path.join("projman.toml"))
+    match FsFile::create_new(project.path.join("projman.toml"))
     {
         Ok(mut file) =>
         {
-            let projman_file: ProjmanFile = ProjmanFile {
-                name: project.name.to_string(),
-                template_name: project.template_name.to_string(),
-                repo: project.repo.to_string(),
-                license: project.license.to_string(),
+            let projman_file = ProjmanFile {
+                name: project.name.clone(),
+                template_name: project.template_name.clone(),
+                repo: project.repo.clone(),
+                license: project.license.clone(),
             };
 
-            let project_to_toml: String = match toml::to_string_pretty(&projman_file)
+            let project_to_toml = match toml::to_string_pretty(&projman_file)
             {
                 Ok(string) => string,
-                Err(err) => return Err(error!(Error::Parse, "project", err)),
+                Err(err) => return future::ready(Err(error!(Error::Parse, "project", err))),
             };
 
             if let Err(err) = file.write_all(project_to_toml.as_bytes())
             {
-                return Err(error!(Error::Write, "projman.toml", err));
+                return future::ready(Err(error!(Error::Write, "projman.toml", err)));
             }
         }
         Err(err) =>
         {
-            return Err(error!(Error::Create, "projman.toml", err));
+            return future::ready(Err(error!(Error::Create, "projman.toml", err)));
         }
-    };
+    }
 
-    Ok("Created projman.toml...".to_string())
+    future::ready(Ok(String::from("Created projman.toml...")))
 }
 
-pub async fn create_dir_structure(project: Arc<Project>) -> Result<String, Error>
+pub fn create_dir_structure(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
     for dir in &project.template.config().dir_structure
     {
-        let dirs: Vec<PathBuf> = dir.parse(&project.path);
+        let dirs = dir.parse(&project.path);
 
         for dir in &dirs
         {
-            if let Err(err) = create_dir(dir)
+            if let Err(err) = fs::create_dir_all(dir)
             {
-                return Err(error!(Error::Create, "directory structure", err));
+                return future::ready(Err(error!(Error::Create, "directory structure", err)));
             }
         }
     }
 
-    Ok("Created project directory structure...".to_string())
+    future::ready(Ok(String::from("Created project directory structure...")))
 }
 
-pub async fn create_project_files(project: Arc<Project>) -> Result<String, Error>
+pub fn create_project_files(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
     for file in &project.template.config().files
     {
-        if let Err(err) = write(
+        if let Err(err) = fs::write(
             project.path.join(&file.path),
             file.formatted(&project.name, &project.repo, &project.license),
         )
         {
-            return Err(error!(Error::Create, "project files", err));
-        };
+            return future::ready(Err(error!(Error::Create, "project files", err)));
+        }
     }
 
-    Ok("Created project files...".to_string())
+    future::ready(Ok(String::from("Created project files...")))
 }
 
 pub async fn execute_build_command(project: Arc<Project>, index: usize) -> Result<String, Error>
 {
-    let command: &Command = &project.template.config().build[index];
+    let command = &project.template.config().build[index];
 
-    match process::Command::new(&command.program)
+    match TokioCommand::new(&command.program)
         .args(&command.args)
         .current_dir(&project.path)
         .kill_on_drop(true)
         .status()
         .await
     {
-        Ok(_) => Ok(format!("Executed [{}]...", command)),
+        Ok(_) => Ok(format!("Executed [{command}]...")),
         Err(err) => Err(error!(Error::Run, command, err)),
     }
 }
 
-pub async fn commit_projman_init(project: Arc<Project>) -> Result<String, Error>
+pub fn commit_projman_init(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
     match project.init_commit()
     {
-        Ok(_) => Ok("Committed ProjMan init...".to_string()),
+        Ok(()) => future::ready(Ok(String::from("Committed ProjMan init..."))),
 
         Err(err) =>
         {
-            let _ = remove_dir(&project.path);
-            Err(error!(Error::Commit, "ProjMan init", err))
+            let _ = fs::remove_dir(&project.path);
+            future::ready(Err(error!(Error::Commit, "ProjMan init", err)))
         }
     }
 }
 
-pub async fn add_project_to_json(project: Arc<Project>) -> Result<Vec<Project>, Error>
+pub fn add_project_to_json(project: &Arc<Project>) -> Ready<Result<Vec<Project>, Error>>
 {
-    let config_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
+    future::ready((|| {
+        let config_path = AppState::get_config_dir("projects.json", None)?;
 
-    let projects_from_json: String = match read_to_string(&config_path)
-    {
-        Ok(json) => json,
-        Err(err) =>
+        let projects_from_json = match fs::read_to_string(&config_path)
         {
-            return Err(error!(Error::Read, "projects.json", err));
-        }
-    };
+            Ok(json) => json,
+            Err(err) =>
+            {
+                return Err(error!(Error::Read, "projects.json", err));
+            }
+        };
 
-    let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-    {
-        Ok(projects) => projects,
-        Err(err) =>
+        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
         {
-            return Err(error!(Error::Parse, "projects.json", err));
-        }
-    };
+            Ok(projects) => projects,
+            Err(err) =>
+            {
+                return Err(error!(Error::Parse, "projects.json", err));
+            }
+        };
 
-    let project: Project = (*project).clone();
+        let project = (*Arc::clone(project)).clone();
 
-    projects.push(project);
+        projects.push(project);
 
-    let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-    {
-        Ok(json) => json,
-        Err(err) =>
+        let projects_to_json = match serde_json::to_string_pretty(&projects)
         {
-            return Err(error!(Error::Parse, "projects.json", err));
+            Ok(json) => json,
+            Err(err) =>
+            {
+                return Err(error!(Error::Parse, "projects.json", err));
+            }
+        };
+
+        if let Err(err) = fs::write(&config_path, projects_to_json.as_bytes())
+        {
+            return Err(error!(Error::Write, "projects.json", err));
         }
-    };
 
-    if let Err(err) = write(&config_path, projects_to_json.as_bytes())
-    {
-        return Err(error!(Error::Write, "projects.json", err));
-    };
-
-    Ok(projects)
+        Ok(projects)
+    })())
 }

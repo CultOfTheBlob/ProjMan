@@ -8,15 +8,14 @@ mod templates;
 mod update;
 mod view;
 
+use crate::{message::Message, state::config::Config};
+use color_eyre::owo_colors::OwoColorize as _;
+use iced::Result as IcedResult;
 use std::time::Duration;
 
-use color_eyre::owo_colors::OwoColorize;
-use iced::application;
-
-use crate::{boot::boot, message::Message, state::config::Config, update::update, view::view};
-
-fn main() -> iced::Result
+fn main() -> IcedResult
 {
+    #[expect(clippy::print_stderr)]
     let config = match Config::read_config_file()
     {
         Ok(config) => config,
@@ -27,16 +26,20 @@ fn main() -> iced::Result
         }
     };
 
+    #[expect(clippy::print_stderr)]
     if let Err(err) = config.is_valid()
     {
         eprintln!("{:?}", err.red());
         return Ok(());
     }
 
-    application(boot, update, view)
+    #[expect(clippy::large_include_file)]
+    let font = include_bytes!("../fonts/JetBrainsMonoNerdFontMono-Regular.ttf");
+
+    iced::application(boot::boot, update::update, view::view)
         .title("ProjMan")
         .theme(config.theme.theme.convert_to_iced_theme())
-        .font(include_bytes!("../fonts/JetBrainsMonoNerdFontMono-Regular.ttf").as_slice())
+        .font(font.as_slice())
         .subscription(|_| iced::time::every(Duration::from_millis(1000)).map(|_| Message::Tick))
         .run()
 }

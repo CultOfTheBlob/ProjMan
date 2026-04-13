@@ -1,17 +1,15 @@
-use std::{
-    fs::read_to_string,
-    path::{Path, PathBuf},
-    process,
-    str::FromStr,
-};
-
-use serde::{Deserialize, Serialize};
-
 use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
     templates::template_config::TemplateConfig,
+};
+use serde::{Deserialize, Serialize};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command as StdCommand,
+    str::FromStr,
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
@@ -24,14 +22,13 @@ pub struct Template
 
 impl Template
 {
-    pub fn new(name: String) -> Result<Self, Error>
+    pub fn new(name: &str) -> Result<Self, Error>
     {
-        let template_path: PathBuf =
-            AppState::get_config_dir(format!("templates/{name}.json"), None)?;
+        let template_path = AppState::get_config_dir(&format!("templates/{name}.json"), None)?;
 
-        let icon_path: PathBuf = AppState::get_config_dir(format!("icons/{name}.svg"), None)?;
+        let icon_path = AppState::get_config_dir(&format!("icons/{name}.svg"), None)?;
 
-        let template_string: String = match read_to_string(&template_path)
+        let template_string = match fs::read_to_string(&template_path)
         {
             Ok(string) => string,
             Err(err) => return Err(error!(Error::Read, format!("{name} template"), err)),
@@ -43,7 +40,7 @@ impl Template
             Err(err) => return Err(error!(Error::Parse, format!("{name} template"), err)),
         };
 
-        Ok(Template {
+        Ok(Self {
             config,
             template_path,
             icon_path,
@@ -54,7 +51,7 @@ impl Template
     {
         for command in &self.config.run
         {
-            if let Err(err) = process::Command::new(&command.program)
+            if let Err(err) = StdCommand::new(&command.program)
                 .args(&command.args)
                 .current_dir(&project.path)
                 .spawn()
@@ -101,6 +98,6 @@ impl FromStr for Template
 
     fn from_str(s: &str) -> Result<Self, Self::Err>
     {
-        Template::new(s.to_string())
+        Self::new(s)
     }
 }

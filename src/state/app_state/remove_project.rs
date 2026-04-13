@@ -3,11 +3,7 @@ use crate::{
     project::Project,
     state::app_state::AppState,
 };
-use std::{
-    fs::{read_to_string, remove_dir_all, remove_file, write},
-    path::PathBuf,
-    sync::Arc,
-};
+use std::{fs, sync::Arc};
 
 impl AppState
 {
@@ -18,24 +14,24 @@ impl AppState
             return Ok(());
         }
 
-        let projects_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
+        let projects_path = Self::get_config_dir("projects.json", None)?;
 
         if let Some(index) = self.selected_project
             && self.project_list[index].exists
         {
-            if let Err(err) = remove_file(self.project_list[index].path.join("projman.toml"))
+            if let Err(err) = fs::remove_file(self.project_list[index].path.join("projman.toml"))
             {
                 return Err(error!(Error::Remove, "projman.toml", err));
             }
 
             if self.delete_project_folder
-                && let Err(err) = remove_dir_all(&self.project_list[index].path)
+                && let Err(err) = fs::remove_dir_all(&self.project_list[index].path)
             {
                 return Err(error!(Error::Remove, "project folder", err));
             }
         }
 
-        let projects_from_json: String = match read_to_string(&projects_path)
+        let projects_from_json = match fs::read_to_string(&projects_path)
         {
             Ok(json) => json,
             Err(err) =>
@@ -58,7 +54,7 @@ impl AppState
             projects.remove(index);
         }
 
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+        let projects_to_json = match serde_json::to_string_pretty(&projects)
         {
             Ok(string) => string,
             Err(err) =>
@@ -67,10 +63,10 @@ impl AppState
             }
         };
 
-        if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
         {
             return Err(error!(Error::Write, "projects.json", err));
-        };
+        }
 
         if let Some(index) = self.selected_project
         {

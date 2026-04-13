@@ -7,9 +7,8 @@ mod remove_popup;
 mod side_bar_container;
 mod top_bar_container;
 
-use iced::{Element, widget::container};
-
 use crate::{message::Message, state::app_state::AppState};
+use iced::{Element, widget::container};
 
 pub fn view(state: &AppState) -> Element<'_, Message>
 {

@@ -1,15 +1,11 @@
-use std::{
-    fs::{metadata, read_dir},
-    path::PathBuf,
-};
-
 use crate::project::Project;
+use std::{fs, path::Path};
 
 impl Project
 {
     pub fn path_is_valid(&self, projects_dir: &str) -> Result<(), String>
     {
-        let error_message: &str = "Cannot create project in this directory!\n";
+        let error_message = "Cannot create project in this directory!\n";
 
         if !self.path.has_root()
         {
@@ -23,7 +19,7 @@ impl Project
 
         if self.path.exists()
         {
-            match read_dir(&self.path)
+            match fs::read_dir(&self.path)
             {
                 Ok(mut entries) =>
                 {
@@ -43,7 +39,7 @@ impl Project
 
         for p in path.ancestors()
         {
-            match metadata(p)
+            match fs::metadata(p)
             {
                 Ok(metadata) if metadata.permissions().readonly() =>
                 {
@@ -57,7 +53,7 @@ impl Project
         Ok(())
     }
 
-    pub fn is_project_path(path: PathBuf) -> bool
+    pub fn is_project_path(path: &Path) -> bool
     {
         if path.join("projman.toml").is_file()
         {

@@ -1,14 +1,12 @@
-use std::{path::PathBuf, sync::Arc, thread::sleep, time::Duration};
-
-use iced::{Task, clipboard};
-
 use crate::{
     error::{Error, ErrorInfo},
     message::Message,
     project::{Project, project_creator},
     state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
-    templates::{Templates, template::Template},
+    templates::Templates,
 };
+use iced::{Task, clipboard};
+use std::{path::PathBuf, sync::Arc, thread, time::Duration};
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 {
@@ -20,7 +18,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 Ok(projects) => state.project_list = Arc::new(projects),
                 Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
-            };
+            }
 
             match Templates::generate()
             {
@@ -70,7 +68,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.update_project()
             {
-                state.push_notification(err.get_message(), NotifKind::Error)
+                state.push_notification(err.get_message(), NotifKind::Error);
             }
 
             Task::none()
@@ -79,20 +77,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             state.pending = Some(Popup::Edit);
 
-            let project: &Project = &state.project_list[index];
+            let project = &state.project_list[index];
 
-            state.edit_project_name = project.name.to_string();
-            state.edit_project_repo = project.repo.to_string();
+            state.edit_project_name = project.name.clone();
+            state.edit_project_repo = project.repo.clone();
 
             Task::none()
         }
         Message::EditConfirmed =>
         {
-            if let Some(Popup::Edit) = state.pending
+            if matches!(state.pending, Some(Popup::Edit))
             {
                 match state.edit_project()
                 {
-                    Ok(_) =>
+                    Ok(()) =>
                     {
                         state.pending = None;
                     }
@@ -124,7 +122,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Some(index) = state.selected_project
             {
-                let project: &Project = &state.project_list[index];
+                let project = &state.project_list[index];
 
                 if let Err(err) = open::that(&project.repo)
                 {
@@ -151,7 +149,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::NotificationCopied(index) =>
         {
-            clipboard::write::<Message>(state.notifications[index].text.to_string())
+            clipboard::write::<Message>(state.notifications[index].text.clone())
         }
         Message::Removed =>
         {
@@ -161,11 +159,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         }
         Message::RemoveConfirmed =>
         {
-            if let Some(Popup::Remove) = state.pending
+            if matches!(state.pending, Some(Popup::Remove))
             {
                 match state.remove_project()
                 {
-                    Ok(_) =>
+                    Ok(()) =>
                     {
                         state.selected_project = None;
                         state.pending = None;
@@ -214,7 +212,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             };
 
             Task::perform(
-                project_creator::create_project_dir(Arc::clone(&state.new_project)),
+                project_creator::create_project_dir(&Arc::clone(&state.new_project)),
                 Message::ProjectDirCreated,
             )
         }
@@ -226,10 +224,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::clone_project_repo(Arc::clone(&state.new_project)),
+                    project_creator::clone_project_repo(&Arc::clone(&state.new_project)),
                     Message::ProjectRepoCloned,
                 )
             }
@@ -243,13 +241,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 let project = (*state.new_project).clone().license();
                 state.new_project = Arc::new(project);
 
                 Task::perform(
-                    project_creator::create_projman_file(Arc::clone(&state.new_project)),
+                    project_creator::create_projman_file(&Arc::clone(&state.new_project)),
                     Message::ProjmanFileCreated,
                 )
             }
@@ -263,10 +261,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::create_dir_structure(Arc::clone(&state.new_project)),
+                    project_creator::create_dir_structure(&Arc::clone(&state.new_project)),
                     Message::DirStructureCreated,
                 )
             }
@@ -280,10 +278,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::create_project_files(Arc::clone(&state.new_project)),
+                    project_creator::create_project_files(&Arc::clone(&state.new_project)),
                     Message::ProjectFilesCreated,
                 )
             }
@@ -297,7 +295,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 Task::perform(
                     project_creator::execute_build_command(Arc::clone(&state.new_project), 0),
@@ -321,10 +319,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                     state.project_creation_status.step += 1.0;
 
-                    sleep(Duration::from_millis(100));
+                    thread::sleep(Duration::from_millis(100));
 
                     return Task::perform(
-                        project_creator::commit_projman_init(Arc::clone(&state.new_project)),
+                        project_creator::commit_projman_init(&Arc::clone(&state.new_project)),
                         Message::CommitedProjmanInit,
                     );
                 }
@@ -349,10 +347,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 state.project_creation_status.step += 1.0;
 
-                sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(100));
 
                 Task::perform(
-                    project_creator::add_project_to_json(Arc::clone(&state.new_project)),
+                    project_creator::add_project_to_json(&Arc::clone(&state.new_project)),
                     Message::ProjectAddedToJson,
                 )
             }
@@ -369,7 +367,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
                 state.project_creation_status.step += 1.0;
                 state.project_list = Arc::new(project_list);
 
-                sleep(Duration::from_millis(1000));
+                thread::sleep(Duration::from_millis(1000));
 
                 Task::perform(async { Ok(()) }, Message::CreateFinished)
             }
@@ -379,7 +377,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             match result
             {
-                Ok(_) =>
+                Ok(()) =>
                 {
                     state.project_creation_status = ProjectCreationStatus {
                         creating: false,
@@ -432,7 +430,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             let project = Arc::make_mut(&mut state.new_project);
 
-            let template: Arc<Template> = match state.templates.get(&template_name)
+            let template = match state.templates.get(&template_name)
             {
                 Ok(template) => template,
                 Err(err) =>
@@ -470,7 +468,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Some(error) = state.project_creation_status.log.last()
             {
-                return clipboard::write::<Message>(error.to_string());
+                return clipboard::write::<Message>(error.clone());
             }
 
             Task::none()
@@ -485,7 +483,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             match state.import_project()
             {
-                Ok(_) =>
+                Ok(()) =>
                 {
                     state.pending = None;
                     state.import_project_path = String::new();
@@ -512,7 +510,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
         {
             if let Err(err) = state.remove_project()
             {
-                state.push_notification(err.get_message(), NotifKind::Error)
+                state.push_notification(err.get_message(), NotifKind::Error);
             }
 
             state.selected_project = None;
@@ -524,7 +522,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             state.restoring_project = true;
 
             Task::perform(
-                AppState::restore_project(state.selected_project, Arc::clone(&state.project_list)),
+                AppState::restore_project(state.selected_project, &Arc::clone(&state.project_list)),
                 Message::RemoveNonexistantFinished,
             )
         }

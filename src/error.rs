@@ -26,44 +26,44 @@ impl Error
     {
         match self
         {
-            Error::Other(message) => format!("Error: {message}"),
-            Error::Create(ErrorInfo { string, err }) =>
+            Self::Other(message) => format!("Error: {message}"),
+            Self::Create(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not create {string} ({err})")
             }
-            Error::Write(ErrorInfo { string, err }) =>
+            Self::Write(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not write to {string} ({err})")
             }
-            Error::Find(ErrorInfo { string, err }) =>
+            Self::Find(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not find {string} ({err})")
             }
-            Error::Remove(ErrorInfo { string, err }) =>
+            Self::Remove(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not remove {string} file ({err})")
             }
-            Error::Read(ErrorInfo { string, err }) =>
+            Self::Read(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not read {string} ({err})")
             }
-            Error::Parse(ErrorInfo { string, err }) =>
+            Self::Parse(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not parse {string} ({err})")
             }
-            Error::Clone(ErrorInfo { string, err }) =>
+            Self::Clone(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not clone {string} ({err})")
             }
-            Error::Run(ErrorInfo { string, err }) =>
+            Self::Run(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not run [{string}] ({err})")
             }
-            Error::Open(ErrorInfo { string, err }) =>
+            Self::Open(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not open {string} ({err})")
             }
-            Error::Commit(ErrorInfo { string, err }) =>
+            Self::Commit(ErrorInfo { string, err }) =>
             {
                 format!("Error: Could not commit {string} ({err})")
             }
@@ -81,6 +81,6 @@ impl ErrorInfo
 {
     pub fn new(string: String, err: String) -> Self
     {
-        ErrorInfo { string, err }
+        Self { string, err }
     }
 }

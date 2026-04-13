@@ -3,19 +3,15 @@ use crate::{
     project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
-use std::{
-    fs::{read_to_string, write},
-    path::PathBuf,
-};
+use std::fs;
 
 impl AppState
 {
     pub fn load_projects(&self) -> Result<Vec<Project>, Error>
     {
-        let projects_path: PathBuf =
-            AppState::get_config_dir(String::from("projects.json"), Some(String::from("[]")))?;
+        let projects_path = Self::get_config_dir("projects.json", Some(String::from("[]")))?;
 
-        let projects_from_json: String = match read_to_string(&projects_path)
+        let projects_from_json = match fs::read_to_string(&projects_path)
         {
             Ok(json) => json,
             Err(err) =>
@@ -50,15 +46,14 @@ impl AppState
             }
 
             let projman_file_is_correct: bool = {
-                let project_from_toml: String =
-                    match &read_to_string(project.path.join("projman.toml"))
+                let project_from_toml = match &fs::read_to_string(project.path.join("projman.toml"))
+                {
+                    Ok(string) => string.clone(),
+                    Err(err) =>
                     {
-                        Ok(string) => string.to_string(),
-                        Err(err) =>
-                        {
-                            return Err(error!(Error::Read, "projman.toml", err));
-                        }
-                    };
+                        return Err(error!(Error::Read, "projman.toml", err));
+                    }
+                };
 
                 let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
                 {
@@ -75,7 +70,7 @@ impl AppState
             project.exists = projman_file_is_correct;
         }
 
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+        let projects_to_json = match serde_json::to_string_pretty(&projects)
         {
             Ok(json) => json,
             Err(err) =>
@@ -89,10 +84,10 @@ impl AppState
             return Ok(projects);
         }
 
-        if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
         {
             return Err(error!(Error::Write, "projects.json", err));
-        };
+        }
 
         Ok(projects)
     }

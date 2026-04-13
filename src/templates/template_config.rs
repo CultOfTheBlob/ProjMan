@@ -1,9 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::{
-    fmt::{self, Display},
+    fmt::{Display, Formatter, Result as FmtResult},
     path::{Path, PathBuf},
 };
-
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 pub struct TemplateConfig
@@ -20,14 +19,14 @@ pub struct TemplateConfig
 pub struct Folder
 {
     pub name: String,
-    pub sub_dirs: Vec<Folder>,
+    pub sub_dirs: Vec<Self>,
 }
 
 impl Folder
 {
     pub fn parse(&self, root: &Path) -> Vec<PathBuf>
     {
-        let mut dirs: Vec<PathBuf> = vec![root.join(&self.name)];
+        let mut dirs = vec![root.join(&self.name)];
 
         for dir in &self.sub_dirs
         {
@@ -40,7 +39,7 @@ impl Folder
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct File
 {
     pub path: String,
@@ -50,6 +49,7 @@ pub struct File
 
 impl File
 {
+    #[expect(clippy::literal_string_with_formatting_args)]
     pub fn formatted(&self, name: &str, repo: &str, license: &str) -> String
     {
         self.content
@@ -59,7 +59,7 @@ impl File
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub struct Command
 {
     pub program: String,
@@ -68,7 +68,7 @@ pub struct Command
 
 impl Display for Command
 {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> fmt::Result
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult
     {
         write!(formatter, "{} {}", self.program, &self.args.join(" "))
     }

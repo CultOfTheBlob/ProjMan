@@ -1,13 +1,12 @@
+use crate::{
+    message::Message,
+    state::app_state::{AppState, NotifKind},
+};
 use iced::{
     Alignment,
     Background::Color,
     Border, Element, Length, Theme,
     widget::{button, column, container, row, stack, text},
-};
-
-use crate::{
-    message::Message,
-    state::app_state::{AppState, NotifKind},
 };
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>

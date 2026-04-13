@@ -1,103 +1,79 @@
-use std::{
-    fs::{self, read_to_string, write},
-    io::Write,
-    path::PathBuf,
-    sync::Arc,
-};
-
 use crate::{
     error::{Error, ErrorInfo},
     project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
+use iced::futures::future::{self, Ready};
+use std::{
+    fs::{self, File as FsFile},
+    io::Write as _,
+    sync::Arc,
+};
 
 impl AppState
 {
-    pub async fn restore_project(
+    pub fn restore_project(
         selected_project: Option<usize>,
-        project_list: Arc<Vec<Project>>,
-    ) -> Result<usize, Error>
+        project_list: &Arc<Vec<Project>>,
+    ) -> Ready<Result<usize, Error>>
     {
-        let projects_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
-
-        let index: usize = match selected_project
-        {
-            Some(selected) => selected,
-            None => return Err(Error::Other(String::from("Error: No prject selected"))),
-        };
-
-        let project = &project_list[index];
-
-        if !project.path.exists()
-            && let Err(err) = project.clone_repo()
-        {
-            return Err(error!(Error::Clone, "project repo", err));
-        }
-        else
-        {
-            let mut projman_file: fs::File =
-                match fs::File::create(project.path.join("projman.toml"))
+        future::ready((|| {
+            let projects_path = Self::get_config_dir("projects.json", None)?;
+            let Some(index) = selected_project
+            else
+            {
+                return Err(Error::Other(String::from("Error: No project selected")));
+            };
+            let project = &project_list[index];
+            if !project.path.exists()
+                && let Err(err) = project.clone_repo()
+            {
+                return Err(error!(Error::Clone, "project repo", err));
+            }
+            else
+            {
+                let mut projman_file = match FsFile::create(project.path.join("projman.toml"))
                 {
                     Ok(file) => file,
-                    Err(err) =>
-                    {
-                        return Err(error!(Error::Create, "projman.toml", err));
-                    }
+                    Err(err) => return Err(error!(Error::Create, "projman.toml", err)),
                 };
-
-            let projman_content = ProjmanFile {
-                name: project.name.to_string(),
-                template_name: project.template_name.to_string(),
-                repo: project.repo.to_string(),
-                license: project.license.to_string(),
+                let projman_content = ProjmanFile {
+                    name: project.name.clone(),
+                    template_name: project.template_name.clone(),
+                    repo: project.repo.clone(),
+                    license: project.license.clone(),
+                };
+                let project_to_toml = match toml::to_string_pretty(&projman_content)
+                {
+                    Ok(string) => string,
+                    Err(err) => return Err(error!(Error::Parse, "project", err)),
+                };
+                if let Err(err) = projman_file.write_all(project_to_toml.as_bytes())
+                {
+                    return Err(error!(Error::Write, "projman.toml", err));
+                }
+            }
+            let projects_from_json = match fs::read_to_string(&projects_path)
+            {
+                Ok(json) => json,
+                Err(err) => return Err(error!(Error::Read, "projects.json", err)),
             };
-
-            let project_to_toml: String = match toml::to_string_pretty(&projman_content)
+            let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
             {
-                Ok(string) => string,
-                Err(err) => return Err(error!(Error::Parse, "project", err)),
+                Ok(projects) => projects,
+                Err(err) => return Err(error!(Error::Parse, "projects.json", err)),
             };
-
-            if let Err(err) = projman_file.write_all(project_to_toml.as_bytes())
+            projects[index].exists = true;
+            let projects_to_json = match serde_json::to_string_pretty(&projects)
             {
-                return Err(error!(Error::Write, "projman.toml", err));
-            }
-        }
-
-        let projects_from_json: String = match read_to_string(&projects_path)
-        {
-            Ok(json) => json,
-            Err(err) =>
+                Ok(json) => json,
+                Err(err) => return Err(error!(Error::Parse, "projects.json", err)),
+            };
+            if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
             {
-                return Err(error!(Error::Read, "projects.json", err));
+                return Err(error!(Error::Write, "projects.json", err));
             }
-        };
-
-        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-        {
-            Ok(projects) => projects,
-            Err(err) =>
-            {
-                return Err(error!(Error::Parse, "projects.json", err));
-            }
-        };
-
-        projects[index].exists = true;
-
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
-        {
-            Ok(json) => json,
-            Err(err) =>
-            {
-                return Err(error!(Error::Parse, "projects.json", err));
-            }
-        };
-
-        if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
-        {
-            return Err(error!(Error::Write, "projects.json", err));
-        };
-
-        Ok(index)
+            Ok(index)
+        })())
     }
 }

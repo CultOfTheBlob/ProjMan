@@ -1,10 +1,9 @@
-use std::{collections::HashMap, ffi::OsStr, fs::ReadDir, path::PathBuf, sync::Arc};
-
 use crate::{
     error::{Error, ErrorInfo},
     state::app_state::AppState,
     templates::template::Template,
 };
+use std::{collections::HashMap, ffi::OsStr, sync::Arc};
 
 pub mod template;
 pub mod template_config;
@@ -19,8 +18,8 @@ impl Templates
 {
     pub fn generate() -> Result<Self, Error>
     {
-        let templates_path: PathBuf = AppState::get_config_dir("templates".to_string(), None)?;
-        let templates_dir: ReadDir = match templates_path.read_dir()
+        let templates_path = AppState::get_config_dir("templates", None)?;
+        let templates_dir = match templates_path.read_dir()
         {
             Ok(sub_dirs) => sub_dirs,
             Err(err) => return Err(error!(Error::Read, "templates dir", err)),
@@ -29,7 +28,7 @@ impl Templates
         let mut templates: HashMap<String, Arc<Template>> = HashMap::new();
         for entry in templates_dir
         {
-            let template_path: PathBuf = match entry
+            let template_path = match entry
             {
                 Ok(entry) => entry.path(),
                 Err(err) => return Err(error!(Error::Read, "templates dir", err)),
@@ -40,18 +39,18 @@ impl Templates
                 continue;
             }
 
-            let template_name: String = match template_path.with_extension("").iter().next_back()
+            let template_name = match template_path.with_extension("").iter().next_back()
             {
                 Some(component) => component.to_string_lossy().to_string(),
                 None => return Err(error!(Error::Read, "template name", "")),
             };
 
-            let template: Template = Template::new(template_name.clone())?;
+            let template = Template::new(&template_name)?;
 
             templates.insert(template_name, Arc::new(template));
         }
 
-        Ok(Templates { templates })
+        Ok(Self { templates })
     }
 
     pub fn template_names(&self) -> Vec<String>

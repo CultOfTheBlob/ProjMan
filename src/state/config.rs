@@ -1,12 +1,11 @@
-use std::{fs::read_to_string, path::PathBuf};
-
-use color_eyre::owo_colors::OwoColorize;
-use serde::{Deserialize, Serialize};
-
 use crate::{
     error::{Error, ErrorInfo},
     state::app_state::AppState,
 };
+use color_eyre::owo_colors::OwoColorize as _;
+use iced::Theme as BuiltinIcedTheme;
+use serde::{Deserialize, Serialize};
+use std::{fs, path::PathBuf};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields)]
@@ -18,9 +17,9 @@ pub struct Config
 
 impl Config
 {
-    pub fn read_config_file() -> Result<Config, Error>
+    pub fn read_config_file() -> Result<Self, Error>
     {
-        let default_toml: String = match toml::to_string_pretty(&Config::default())
+        let default_toml = match toml::to_string_pretty(&Self::default())
         {
             Ok(toml) => toml,
             Err(err) =>
@@ -34,10 +33,9 @@ impl Config
             }
         };
 
-        let config_path: PathBuf =
-            AppState::get_config_dir(String::from("config.toml"), Some(default_toml))?;
+        let config_path = AppState::get_config_dir("config.toml", Some(default_toml))?;
 
-        match &read_to_string(&config_path)
+        match &fs::read_to_string(&config_path)
         {
             Ok(string) => match toml::from_str(string)
             {
@@ -50,7 +48,7 @@ impl Config
 
     pub fn is_valid(&self) -> Result<(), String>
     {
-        let projects_dir: &String = &self.general.projects_dir;
+        let projects_dir = &self.general.projects_dir;
         if projects_dir.is_empty()
             || !PathBuf::from(&projects_dir).is_dir()
             || !projects_dir.ends_with('/')
@@ -112,32 +110,32 @@ pub enum IcedTheme
 
 impl IcedTheme
 {
-    pub fn convert_to_iced_theme(&self) -> iced::Theme
+    pub fn convert_to_iced_theme(&self) -> BuiltinIcedTheme
     {
         match self
         {
-            IcedTheme::Dark => iced::Theme::Dark,
-            IcedTheme::Light => iced::Theme::Light,
-            IcedTheme::Dracula => iced::Theme::Dracula,
-            IcedTheme::Nord => iced::Theme::Nord,
-            IcedTheme::SolarizedLight => iced::Theme::SolarizedLight,
-            IcedTheme::SolarizedDark => iced::Theme::SolarizedDark,
-            IcedTheme::GruvboxLight => iced::Theme::GruvboxLight,
-            IcedTheme::GruvboxDark => iced::Theme::GruvboxDark,
-            IcedTheme::CatppuccinLatte => iced::Theme::CatppuccinLatte,
-            IcedTheme::CatppuccinFrappe => iced::Theme::CatppuccinFrappe,
-            IcedTheme::CatppuccinMacchiato => iced::Theme::CatppuccinMacchiato,
-            IcedTheme::CatppuccinMocha => iced::Theme::CatppuccinMocha,
-            IcedTheme::TokyoNight => iced::Theme::TokyoNight,
-            IcedTheme::TokyoNightStorm => iced::Theme::TokyoNightStorm,
-            IcedTheme::TokyoNightLight => iced::Theme::TokyoNightLight,
-            IcedTheme::KanagawaWave => iced::Theme::KanagawaWave,
-            IcedTheme::KanagawaDragon => iced::Theme::KanagawaDragon,
-            IcedTheme::KanagawaLotus => iced::Theme::KanagawaLotus,
-            IcedTheme::Moonfly => iced::Theme::Moonfly,
-            IcedTheme::Nightfly => iced::Theme::Nightfly,
-            IcedTheme::Oxocarbon => iced::Theme::Oxocarbon,
-            IcedTheme::Ferra => iced::Theme::Ferra,
+            Self::Dark => BuiltinIcedTheme::Dark,
+            Self::Light => BuiltinIcedTheme::Light,
+            Self::Dracula => BuiltinIcedTheme::Dracula,
+            Self::Nord => BuiltinIcedTheme::Nord,
+            Self::SolarizedLight => BuiltinIcedTheme::SolarizedLight,
+            Self::SolarizedDark => BuiltinIcedTheme::SolarizedDark,
+            Self::GruvboxLight => BuiltinIcedTheme::GruvboxLight,
+            Self::GruvboxDark => BuiltinIcedTheme::GruvboxDark,
+            Self::CatppuccinLatte => BuiltinIcedTheme::CatppuccinLatte,
+            Self::CatppuccinFrappe => BuiltinIcedTheme::CatppuccinFrappe,
+            Self::CatppuccinMacchiato => BuiltinIcedTheme::CatppuccinMacchiato,
+            Self::CatppuccinMocha => BuiltinIcedTheme::CatppuccinMocha,
+            Self::TokyoNight => BuiltinIcedTheme::TokyoNight,
+            Self::TokyoNightStorm => BuiltinIcedTheme::TokyoNightStorm,
+            Self::TokyoNightLight => BuiltinIcedTheme::TokyoNightLight,
+            Self::KanagawaWave => BuiltinIcedTheme::KanagawaWave,
+            Self::KanagawaDragon => BuiltinIcedTheme::KanagawaDragon,
+            Self::KanagawaLotus => BuiltinIcedTheme::KanagawaLotus,
+            Self::Moonfly => BuiltinIcedTheme::Moonfly,
+            Self::Nightfly => BuiltinIcedTheme::Nightfly,
+            Self::Oxocarbon => BuiltinIcedTheme::Oxocarbon,
+            Self::Ferra => BuiltinIcedTheme::Ferra,
         }
     }
 }

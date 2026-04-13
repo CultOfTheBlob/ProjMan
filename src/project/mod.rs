@@ -1,18 +1,7 @@
-use crate::error::ErrorInfo;
-use std::{
-    fs::{read, read_to_string},
-    path::PathBuf,
-    sync::Arc,
-};
-
+use crate::{error::Error, state::config::Config, templates::template::Template};
 use askalono::{Store, TextData};
 use serde::{Deserialize, Serialize};
-
-use crate::{
-    error::Error,
-    state::config::Config,
-    templates::{template::Template, template_config::File},
-};
+use std::{fs, path::PathBuf, sync::Arc};
 
 pub mod project_creator;
 
@@ -42,12 +31,12 @@ impl Project
 
     pub fn icon(&self) -> PathBuf
     {
-        self.template.icon_path().to_path_buf()
+        self.template.icon_path().clone()
     }
 
     pub fn default(config: &Config) -> Self
     {
-        let name: &str = "NewProject";
+        let name = "NewProject";
 
         Self {
             exists: true,
@@ -62,44 +51,37 @@ impl Project
 
     pub fn license(self) -> Self
     {
-        let license: String = {
-            let store: Store = match Store::from_cache(
-                &include_bytes!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/cache/license.cache.zstd"
-                ))[..],
-            )
+        let license = {
+            #[expect(clippy::large_include_file)]
+            let cache = &include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/cache/license.cache.zstd"
+            ))[..];
+
+            let Ok(store) = Store::from_cache(cache)
+            else
             {
-                Ok(store) => store,
-                Err(_) =>
-                {
-                    return self;
-                }
+                return self;
             };
 
-            let license_path: PathBuf = self.path.join("LICENSE");
-
-            let license_contents: String = match read_to_string(&license_path)
+            let license_path = self.path.join("LICENSE");
+            let Ok(license_contents) = fs::read_to_string(&license_path)
+            else
             {
-                Ok(contents) => contents,
-                Err(_) =>
-                {
-                    return self;
-                }
+                return self;
             };
-
             store
                 .analyze(&TextData::from(license_contents.as_str()))
                 .name
-                .to_string()
+                .to_owned()
         };
 
-        Project { license, ..self }
+        Self { license, ..self }
     }
 
     pub fn is_outdated(&self) -> bool
     {
-        let project_files: &Vec<File> = &self.template.config().files;
+        let project_files = &self.template.config().files;
 
         for file in project_files
         {
@@ -108,9 +90,9 @@ impl Project
                 continue;
             }
 
-            let path: PathBuf = PathBuf::from(&self.path).join(&file.path);
+            let path = PathBuf::from(&self.path).join(&file.path);
 
-            let Ok(file_contents) = read(&path)
+            let Ok(file_contents) = fs::read(&path)
             else
             {
                 return true;
@@ -126,7 +108,7 @@ impl Project
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ProjmanFile
 {
     pub name: String,

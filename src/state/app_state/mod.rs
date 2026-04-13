@@ -1,18 +1,12 @@
-use std::{
-    fs::{create_dir_all, write},
-    path::PathBuf,
-    sync::Arc,
-};
-
-use directories::ProjectDirs;
-use iced::widget::combo_box;
-
 use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::config::Config,
     templates::Templates,
 };
+use directories::ProjectDirs;
+use iced::widget::combo_box::State as ComboBoxState;
+use std::{fs, path::PathBuf, sync::Arc};
 
 mod edit_project;
 mod import_project;
@@ -29,7 +23,7 @@ pub struct AppState
     pub new_project: Arc<Project>,
     pub new_project_path_changed: bool,
     pub templates: Templates,
-    pub template_names: combo_box::State<String>,
+    pub template_names: ComboBoxState<String>,
     pub selected_project: Option<usize>,
     pub delete_project_folder: bool,
     pub pending: Option<Popup>,
@@ -53,7 +47,7 @@ impl Default for AppState
             notifications: vec![],
             templates: Templates::default(),
             new_project: Arc::new(Project::default(&Config::default())),
-            template_names: combo_box::State::new(Templates::default().template_names()),
+            template_names: ComboBoxState::new(Templates::default().template_names()),
             project_creation_status: ProjectCreationStatus {
                 creating: false,
                 failed: false,
@@ -79,7 +73,7 @@ impl AppState
     pub fn templates(self, templates: Templates) -> Self
     {
         Self {
-            template_names: combo_box::State::new(templates.template_names()),
+            template_names: ComboBoxState::new(templates.template_names()),
             templates,
             ..self
         }
@@ -109,20 +103,20 @@ impl AppState
     }
 
     pub fn get_config_dir(
-        sub_dir: String,
+        sub_dir: &str,
         create_if_missing: Option<String>,
     ) -> Result<PathBuf, Error>
     {
         if let Some(proj_dirs) = ProjectDirs::from("", "", "projman")
         {
-            let config_path: PathBuf = proj_dirs.config_dir().to_path_buf();
+            let config_path = proj_dirs.config_dir().to_path_buf();
 
-            if let Err(err) = create_dir_all(&config_path)
+            if let Err(err) = fs::create_dir_all(&config_path)
             {
                 return Err(error!(Error::Create, "config dir", err));
-            };
+            }
 
-            let path: PathBuf = config_path.join(&sub_dir);
+            let path = config_path.join(sub_dir);
 
             if path.exists()
             {
@@ -130,7 +124,7 @@ impl AppState
             }
 
             if let Some(content) = create_if_missing
-                && let Err(err) = write(&path, content.as_bytes())
+                && let Err(err) = fs::write(&path, content.as_bytes())
             {
                 return Err(error!(Error::Write, sub_dir, err));
             }

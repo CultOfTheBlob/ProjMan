@@ -1,11 +1,10 @@
+use crate::{message::Message, state::app_state::AppState};
 use iced::{
     Alignment,
     Background::Color,
     Border, Element, Length, Theme,
     widget::{button, column, container, mouse_area, row, scrollable, space, svg, text},
 };
-
-use crate::{message::Message, state::app_state::AppState};
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {

@@ -1,26 +1,21 @@
-use std::{
-    fs::{read_to_string, write},
-    path::PathBuf,
-};
-
 use crate::{
     error::{Error, ErrorInfo},
     project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
+use std::{fs, path::PathBuf};
 
 impl AppState
 {
-    pub fn import_project(&mut self) -> Result<(), Error>
+    pub fn import_project(&self) -> Result<(), Error>
     {
-        let projects_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
+        let projects_path = Self::get_config_dir("projects.json", None)?;
 
-        let path: PathBuf =
-            PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
+        let path = PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
 
-        let project_from_toml: String = match &read_to_string(path.join("projman.toml"))
+        let project_from_toml = match &fs::read_to_string(path.join("projman.toml"))
         {
-            Ok(string) => string.to_string(),
+            Ok(string) => string.clone(),
             Err(err) =>
             {
                 return Err(error!(Error::Read, "projman.toml", err));
@@ -33,7 +28,7 @@ impl AppState
             Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
         };
 
-        let project: Project = Project {
+        let project = Project {
             exists: true,
             name: projman_file.name,
             path,
@@ -43,7 +38,7 @@ impl AppState
             license: projman_file.license,
         };
 
-        let projects_from_json: String = match read_to_string(&projects_path)
+        let projects_from_json = match fs::read_to_string(&projects_path)
         {
             Ok(json) => json,
             Err(err) =>
@@ -63,7 +58,7 @@ impl AppState
 
         projects.push(project);
 
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+        let projects_to_json = match serde_json::to_string_pretty(&projects)
         {
             Ok(json) => json,
             Err(err) =>
@@ -72,10 +67,10 @@ impl AppState
             }
         };
 
-        if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
         {
             return Err(error!(Error::Write, "projects.json", err));
-        };
+        }
 
         Ok(())
     }

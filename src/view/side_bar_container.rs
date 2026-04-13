@@ -1,11 +1,10 @@
+use crate::{message::Message, state::app_state::AppState};
 use iced::{
     Alignment,
     Background::Color,
     Border, Element, Length, Theme,
     widget::{button, column, container, row, space, text},
 };
-
-use crate::{message::Message, project::Project, state::app_state::AppState};
 
 pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
@@ -131,7 +130,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 
         if let Some(index) = state.selected_project
         {
-            let project: &Project = &state.project_list[index];
+            let project = &state.project_list[index];
 
             if let Some(project_info) = project.info()
             {
@@ -139,7 +138,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                     text("Repo:").style(|theme: &Theme| text::Style {
                         color: Some(theme.extended_palette().secondary.strong.color)
                     }),
-                    button(text(project.repo.to_string()))
+                    button(text(project.repo.clone()))
                         .style(button::text)
                         .on_press_maybe(
                             if state.pending.is_none()
@@ -160,7 +159,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 
                     for (index, branch) in project_info.branches.iter().enumerate()
                     {
-                        let is_current: bool = project_info.current_branch == index;
+                        let is_current = project_info.current_branch == index;
 
                         let style_text = |s: String| {
                             let text = text(s);
@@ -174,7 +173,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                             }
                         };
 
-                        let connector: &str = match index
+                        let connector = match index
                         {
                             0 if project_info.branches.len() == 1 => "──",
                             0 => "╭─",
@@ -182,14 +181,14 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                             _ => "├─",
                         };
 
-                        let dot: &str = { if is_current { "" } else { "" } };
+                        let dot = { if is_current { "" } else { "" } };
 
                         branch_column_widget = branch_column_widget.push(
                             row![
-                                style_text(connector.to_string()),
-                                style_text(dot.to_string()),
+                                style_text(connector.to_owned()),
+                                style_text(dot.to_owned()),
                                 space().width(12),
-                                style_text(branch.to_string())
+                                style_text(branch.clone())
                             ]
                             .align_y(Alignment::Center),
                         );
@@ -201,10 +200,10 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                 let languages_widget = {
                     let mut language_column_widget = column![].spacing(8).padding(8);
 
-                    let max_label_len: usize = project_info
+                    let max_label_len = project_info
                         .language_percentage
                         .iter()
-                        .map(|(l, p)| l.name().len() + format!("({:.1}%)", p).len())
+                        .map(|(l, p)| l.name().len() + format!("({p:.1}%)").len())
                         .max()
                         .unwrap_or(0);
 
@@ -222,10 +221,8 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                                 .width(Length::Fixed(max_label_len as f32 * 10.0))
                                 .spacing(4)
                                 .align_y(Alignment::Center),
-                                container("")
-                                    .height(10)
-                                    .width(*percentage as f32 * 2.0)
-                                    .style(|theme: &Theme| {
+                                container("").height(10).width(*percentage * 2.0).style(
+                                    |theme: &Theme| {
                                         container::Style {
                                             background: Some(Color(
                                                 theme.extended_palette().primary.base.color,
@@ -238,7 +235,8 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
 
                                             ..container::transparent(theme)
                                         }
-                                    })
+                                    }
+                                )
                             ]
                             .spacing(16)
                             .align_y(Alignment::Center),
@@ -372,7 +370,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                         project_size_widget
                     ]
                     .padding(4),
-                )
+                );
             }
         }
 

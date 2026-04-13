@@ -1,25 +1,22 @@
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
     state::app_state::AppState,
-    templates::template_config::File,
 };
-
 use std::fs::write;
 
 impl AppState
 {
-    pub fn update_project(&mut self) -> Result<(), Error>
+    pub fn update_project(&self) -> Result<(), Error>
     {
-        let index = match self.selected_project
+        let Some(index) = self.selected_project
+        else
         {
-            Some(selected) => selected,
-            None => return Err(Error::Other(String::from("Error: No prject selected"))),
+            return Err(Error::Other(String::from("Error: No prject selected")));
         };
 
-        let project: &Project = &self.project_list[index];
+        let project = &self.project_list[index];
 
-        let project_files: &Vec<File> = &project.template.config().files;
+        let project_files = &project.template.config().files;
 
         for file in project_files
         {
@@ -34,7 +31,7 @@ impl AppState
             )
             {
                 return Err(error!(Error::Create, "project files", err));
-            };
+            }
         }
 
         Ok(())

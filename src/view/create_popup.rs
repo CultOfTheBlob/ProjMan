@@ -1,5 +1,8 @@
-use std::path::PathBuf;
-
+use crate::{
+    message::Message,
+    project::project_creator,
+    state::app_state::{AppState, Popup},
+};
 use iced::{
     Background::Color,
     Border, Element, Length, Shadow, Theme, Vector,
@@ -9,12 +12,7 @@ use iced::{
         stack, text, text_input,
     },
 };
-
-use crate::{
-    message::Message,
-    project::project_creator,
-    state::app_state::{AppState, Popup},
-};
+use std::path::PathBuf;
 
 pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
@@ -124,7 +122,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                                 .path_is_valid(&state.config.general.projects_dir)
                                 .is_err()
                         {
-                            style.border.color = theme.extended_palette().danger.base.color
+                            style.border.color = theme.extended_palette().danger.base.color;
                         }
 
                         style
@@ -135,7 +133,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                             .new_project
                             .path_is_valid(&state.config.general.projects_dir)
                     {
-                        String::from(" ") + &err
+                        format!(" {err}")
                     }
                     else
                     {

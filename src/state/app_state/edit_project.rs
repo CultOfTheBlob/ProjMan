@@ -1,26 +1,22 @@
-use std::{
-    fs::{read_to_string, write},
-    path::PathBuf,
-};
-
 use crate::{
     error::{Error, ErrorInfo},
     project::Project,
     state::app_state::AppState,
 };
+use std::fs;
 
 impl AppState
 {
-    pub fn edit_project(&mut self) -> Result<(), Error>
+    pub fn edit_project(&self) -> Result<(), Error>
     {
         if self.selected_project.is_none()
         {
             return Ok(());
         }
 
-        let projects_path: PathBuf = AppState::get_config_dir(String::from("projects.json"), None)?;
+        let projects_path = Self::get_config_dir("projects.json", None)?;
 
-        let projects_from_json: String = match read_to_string(&projects_path)
+        let projects_from_json = match fs::read_to_string(&projects_path)
         {
             Ok(json) => json,
             Err(err) =>
@@ -40,11 +36,11 @@ impl AppState
 
         if let Some(index) = self.selected_project
         {
-            projects[index].name = self.edit_project_name.to_string();
-            projects[index].repo = self.edit_project_repo.to_string();
+            projects[index].name = self.edit_project_name.clone();
+            projects[index].repo = self.edit_project_repo.clone();
         }
 
-        let projects_to_json: String = match serde_json::to_string_pretty(&projects)
+        let projects_to_json = match serde_json::to_string_pretty(&projects)
         {
             Ok(json) => json,
             Err(err) =>
@@ -53,10 +49,10 @@ impl AppState
             }
         };
 
-        if let Err(err) = write(&projects_path, projects_to_json.as_bytes())
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
         {
             return Err(error!(Error::Write, "projects.json", err));
-        };
+        }
 
         Ok(())
     }
