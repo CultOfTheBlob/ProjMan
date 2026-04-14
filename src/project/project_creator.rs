@@ -38,7 +38,7 @@ pub fn clone_project_repo(project: &Arc<Project>) -> Ready<Result<String, Error>
 
 pub fn create_projman_file(project: &Arc<Project>) -> Ready<Result<String, Error>>
 {
-    match FsFile::create_new(project.path.join("projman.toml"))
+    match FsFile::create_new(project.path.join(ProjmanFile::FILE_NAME))
     {
         Ok(mut file) =>
         {
@@ -57,16 +57,16 @@ pub fn create_projman_file(project: &Arc<Project>) -> Ready<Result<String, Error
 
             if let Err(err) = file.write_all(project_to_toml.as_bytes())
             {
-                return future::ready(Err(error!(Error::Write, "projman.toml", err)));
+                return future::ready(Err(error!(Error::Write, ProjmanFile::FILE_NAME, err)));
             }
         }
         Err(err) =>
         {
-            return future::ready(Err(error!(Error::Create, "projman.toml", err)));
+            return future::ready(Err(error!(Error::Create, ProjmanFile::FILE_NAME, err)));
         }
     }
 
-    future::ready(Ok(String::from("Created projman.toml...")))
+    future::ready(Ok(format!("Created {}...", ProjmanFile::FILE_NAME)))
 }
 
 pub fn create_dir_structure(project: &Arc<Project>) -> Ready<Result<String, Error>>

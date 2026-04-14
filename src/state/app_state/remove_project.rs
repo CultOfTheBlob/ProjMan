@@ -1,6 +1,6 @@
 use crate::{
     error::{Error, ErrorInfo},
-    project::Project,
+    project::{Project, ProjmanFile},
     state::app_state::AppState,
 };
 use std::{fs, sync::Arc};
@@ -19,9 +19,10 @@ impl AppState
         if let Some(index) = self.selected_project
             && self.project_list[index].exists
         {
-            if let Err(err) = fs::remove_file(self.project_list[index].path.join("projman.toml"))
+            if let Err(err) =
+                fs::remove_file(self.project_list[index].path.join(ProjmanFile::FILE_NAME))
             {
-                return Err(error!(Error::Remove, "projman.toml", err));
+                return Err(error!(Error::Remove, ProjmanFile::FILE_NAME, err));
             }
 
             if self.delete_project_folder

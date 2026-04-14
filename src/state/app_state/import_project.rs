@@ -13,19 +13,19 @@ impl AppState
 
         let path = PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
 
-        let project_from_toml = match &fs::read_to_string(path.join("projman.toml"))
+        let project_from_toml = match &fs::read_to_string(path.join(ProjmanFile::FILE_NAME))
         {
             Ok(string) => string.clone(),
             Err(err) =>
             {
-                return Err(error!(Error::Read, "projman.toml", err));
+                return Err(error!(Error::Read, ProjmanFile::FILE_NAME, err));
             }
         };
 
         let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
         {
             Ok(projman_file) => projman_file,
-            Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
+            Err(err) => return Err(error!(Error::Parse, ProjmanFile::FILE_NAME, err)),
         };
 
         let project = Project {

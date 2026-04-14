@@ -116,3 +116,8 @@ pub struct ProjmanFile
     pub repo: String,
     pub license: String,
 }
+
+impl ProjmanFile
+{
+    pub const FILE_NAME: &str = ".projman.toml";
+}

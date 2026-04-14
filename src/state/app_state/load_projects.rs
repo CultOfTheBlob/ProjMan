@@ -39,26 +39,27 @@ impl AppState
                 continue;
             }
 
-            if !project.path.join("projman.toml").is_file()
+            if !project.path.join(ProjmanFile::FILE_NAME).is_file()
             {
                 project.exists = false;
                 continue;
             }
 
             let projman_file_is_correct: bool = {
-                let project_from_toml = match &fs::read_to_string(project.path.join("projman.toml"))
-                {
-                    Ok(string) => string.clone(),
-                    Err(err) =>
+                let project_from_toml =
+                    match &fs::read_to_string(project.path.join(ProjmanFile::FILE_NAME))
                     {
-                        return Err(error!(Error::Read, "projman.toml", err));
-                    }
-                };
+                        Ok(string) => string.clone(),
+                        Err(err) =>
+                        {
+                            return Err(error!(Error::Read, ProjmanFile::FILE_NAME, err));
+                        }
+                    };
 
                 let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
                 {
                     Ok(projman_file) => projman_file,
-                    Err(err) => return Err(error!(Error::Parse, "projman.toml", err)),
+                    Err(err) => return Err(error!(Error::Parse, ProjmanFile::FILE_NAME, err)),
                 };
 
                 projman_file.name == project.name

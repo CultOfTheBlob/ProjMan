@@ -1,4 +1,4 @@
-use crate::project::Project;
+use crate::project::{Project, ProjmanFile};
 use std::{fs, path::Path};
 
 impl Project
@@ -55,7 +55,7 @@ impl Project
 
     pub fn is_project_path(path: &Path) -> bool
     {
-        if path.join("projman.toml").is_file()
+        if path.join(ProjmanFile::FILE_NAME).is_file()
         {
             return true;
         }

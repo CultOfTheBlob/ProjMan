@@ -32,11 +32,12 @@ impl AppState
             }
             else
             {
-                let mut projman_file = match FsFile::create(project.path.join("projman.toml"))
-                {
-                    Ok(file) => file,
-                    Err(err) => return Err(error!(Error::Create, "projman.toml", err)),
-                };
+                let mut projman_file =
+                    match FsFile::create(project.path.join(ProjmanFile::FILE_NAME))
+                    {
+                        Ok(file) => file,
+                        Err(err) => return Err(error!(Error::Create, ProjmanFile::FILE_NAME, err)),
+                    };
                 let projman_content = ProjmanFile {
                     name: project.name.clone(),
                     template_name: project.template_name.clone(),
@@ -50,7 +51,7 @@ impl AppState
                 };
                 if let Err(err) = projman_file.write_all(project_to_toml.as_bytes())
                 {
-                    return Err(error!(Error::Write, "projman.toml", err));
+                    return Err(error!(Error::Write, ProjmanFile::FILE_NAME, err));
                 }
             }
             let projects_from_json = match fs::read_to_string(&projects_path)
