@@ -48,12 +48,7 @@ impl Default for AppState
             templates: Templates::default(),
             new_project: Arc::new(Project::default(&Config::default())),
             template_names: ComboBoxState::new(Templates::default().template_names()),
-            project_creation_status: ProjectCreationStatus {
-                creating: false,
-                failed: false,
-                step: 0.0,
-                log: vec![],
-            },
+            project_creation_status: ProjectCreationStatus::default(),
             import_project_path: String::new(),
             edit_project_name: String::new(),
             edit_project_repo: String::new(),
@@ -99,7 +94,11 @@ impl AppState
             }
         }
 
-        self.notifications.push(Notification { text, kind });
+        self.notifications.push(Notification {
+            text,
+            kind,
+            time: 0,
+        });
     }
 
     pub fn get_config_dir(
@@ -145,7 +144,14 @@ pub enum Popup
     Edit,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum NotifKind
+{
+    Warning,
+    Error,
+}
+
+#[derive(Debug, Default)]
 pub struct ProjectCreationStatus
 {
     pub creating: bool,
@@ -154,16 +160,15 @@ pub struct ProjectCreationStatus
     pub log: Vec<String>,
 }
 
-#[derive(Debug)]
-pub enum NotifKind
-{
-    Warning,
-    Error,
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Notification
 {
     pub text: String,
     pub kind: NotifKind,
+    pub time: u16,
+}
+
+impl Notification
+{
+    pub const LIFETIME: u16 = 5;
 }

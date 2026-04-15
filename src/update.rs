@@ -2,7 +2,7 @@ use crate::{
     error::{Error, ErrorInfo},
     message::Message,
     project::{Project, project_creator},
-    state::app_state::{AppState, NotifKind, Popup, ProjectCreationStatus},
+    state::app_state::{AppState, NotifKind, Notification, Popup, ProjectCreationStatus},
     templates::Templates,
 };
 use iced::{Task, clipboard};
@@ -24,6 +24,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 Ok(templates) => state.templates = templates,
                 Err(err) => state.push_notification(err.get_message(), NotifKind::Error),
+            }
+
+            state
+                .notifications
+                .retain(|notification| notification.time != Notification::LIFETIME);
+
+            for notification in &mut state.notifications
+            {
+                notification.time += 1;
             }
 
             Task::none()
