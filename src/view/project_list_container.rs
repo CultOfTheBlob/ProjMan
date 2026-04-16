@@ -10,7 +10,15 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
 {
     let mut project_list_content = column![].width(Length::Fill).spacing(4);
 
-    for (index, project) in state.project_list.iter().enumerate()
+    for (index, project) in state
+        .project_list
+        .iter()
+        .filter(|p| {
+            p.name
+                .to_lowercase()
+                .contains(&state.project_list_filter.to_lowercase())
+        })
+        .enumerate()
     {
         let is_selected = state.selected_project == Some(index);
 

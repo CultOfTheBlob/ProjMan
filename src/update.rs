@@ -73,6 +73,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
             Task::none()
         }
+        Message::ProjectListFilterChanged(filter) =>
+        {
+            state.project_list_filter = filter;
+
+            Task::none()
+        }
         Message::Updated =>
         {
             if let Err(err) = state.update_project()

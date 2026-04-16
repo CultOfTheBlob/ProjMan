@@ -46,4 +46,5 @@ pub enum Message
     NotificationRemoved(usize),
     NotificationCopied(usize),
     SideBarToggled,
+    ProjectListFilterChanged(String),
 }

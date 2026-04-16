@@ -35,6 +35,7 @@ pub struct AppState
     pub edit_project_repo: String,
     pub notifications: Vec<Notification>,
     pub sidebar_expanded: bool,
+    pub project_list_filter: String,
 }
 
 impl Default for AppState
@@ -52,6 +53,7 @@ impl Default for AppState
             import_project_path: String::new(),
             edit_project_name: String::new(),
             edit_project_repo: String::new(),
+            project_list_filter: String::new(),
             project_restoration_failed: false,
             delete_project_folder: false,
             new_project_path_changed: false,
