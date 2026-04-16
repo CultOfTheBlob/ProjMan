@@ -6,7 +6,7 @@ use iced::{
     widget::{button, column, container, row, space, text},
 };
 
-pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
 {
     if !state.sidebar_expanded
     {
@@ -138,7 +138,7 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                     text("Repo:").style(|theme: &Theme| text::Style {
                         color: Some(theme.extended_palette().secondary.strong.color)
                     }),
-                    button(text(project.repo.clone()))
+                    button(text(&project.repo))
                         .style(button::text)
                         .on_press_maybe(
                             if state.pending.is_none()
@@ -173,20 +173,20 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                             }
                         };
 
-                        let connector = match index
+                        let connector = String::from(match index
                         {
                             0 if project_info.branches.len() == 1 => "──",
                             0 => "╭─",
                             i if i == project_info.branches.len() - 1 => "╰─",
                             _ => "├─",
-                        };
+                        });
 
-                        let dot = { if is_current { "" } else { "" } };
+                        let dot = String::from(if is_current { "" } else { "" });
 
                         branch_column_widget = branch_column_widget.push(
                             row![
-                                style_text(connector.to_owned()),
-                                style_text(dot.to_owned()),
+                                style_text(connector),
+                                style_text(dot),
                                 space().width(12),
                                 style_text(branch.clone())
                             ]
@@ -312,6 +312,15 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                 .spacing(4)
                 .padding(8);
 
+                let license_widget = row![
+                    text("License:").style(|theme: &Theme| text::Style {
+                        color: Some(theme.extended_palette().secondary.strong.color)
+                    }),
+                    text(&project.license)
+                ]
+                .spacing(4)
+                .padding(8);
+
                 let devider_line = |title: &'a str| {
                     row![
                         container("")
@@ -367,7 +376,8 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                         devider_line("<Metadata>"),
                         line_count_widget,
                         file_count_widget,
-                        project_size_widget
+                        project_size_widget,
+                        license_widget,
                     ]
                     .padding(4),
                 );
