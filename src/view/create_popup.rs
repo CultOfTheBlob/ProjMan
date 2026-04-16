@@ -183,6 +183,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .into()
             }),
     ))
+    .anchor_bottom()
     .width(Length::Fill)
     .height(96)
     .style(
