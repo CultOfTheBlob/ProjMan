@@ -2,8 +2,8 @@ use std::iter;
 
 use crate::project::Project;
 use git2::{
-    Config, Cred, Error as Git2Error, FetchOptions, IndexAddOption, PushOptions, RemoteCallbacks,
-    Repository, build::RepoBuilder,
+    Config, Cred, Error as Git2Error, FetchOptions, IndexAddOption, RemoteCallbacks, Repository,
+    build::RepoBuilder,
 };
 
 impl Project
@@ -54,29 +54,6 @@ impl Project
             &tree,
             &[&parent_commit],
         )?;
-
-        let head = project_repo.head()?;
-        let branch = head.shorthand().unwrap_or_default();
-        let refspec = format!("refs/heads/{branch}:refs/heads/{branch}");
-
-        let mut remote = project_repo.find_remote("origin")?;
-
-        let mut callbacks = RemoteCallbacks::new();
-
-        callbacks.credentials(|url, username_from_url, allowed| {
-            if allowed.is_ssh_key()
-            {
-                return Cred::ssh_key_from_agent(username_from_url.unwrap_or_default());
-            }
-
-            let config = Config::open_default()?;
-            Cred::credential_helper(&config, url, username_from_url)
-        });
-
-        let mut push_options = PushOptions::new();
-        push_options.remote_callbacks(callbacks);
-
-        remote.push(&[&refspec], Some(&mut push_options))?;
 
         Ok(())
     }
