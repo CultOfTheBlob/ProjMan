@@ -103,6 +103,19 @@ impl AppState
         });
     }
 
+    pub fn get_project(&self, name: &str) -> Result<&Project, Error>
+    {
+        for project in self.project_list.iter()
+        {
+            if project.name == name
+            {
+                return Ok(project);
+            }
+        }
+
+        Err(error!(Error::Find, name, ""))
+    }
+
     pub fn get_config_dir(
         sub_dir: &str,
         create_if_missing: Option<String>,

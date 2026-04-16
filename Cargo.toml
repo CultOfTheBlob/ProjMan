@@ -21,6 +21,7 @@ bytesize = "2.3.1"
 askalono = "0.5.0"
 open = "5.3.3"
 tokio = { version = "1.50.0", features = ["process"] }
+clap = {version = "4.6.1", features = ["derive"]}
 
 [lints.clippy]
 all = { level = "warn", priority = -1 }
@@ -141,8 +142,6 @@ or_fun_call = "warn"
 path_buf_push_overwrite = "warn"
 pathbuf_init_then_push = "warn"
 precedence_bits = "warn"
-print_stderr = "warn"
-print_stdout = "warn"
 ptr_as_ptr = "warn"
 ptr_cast_constness = "warn"
 pub_underscore_fields = "warn"
