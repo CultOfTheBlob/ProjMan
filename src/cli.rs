@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use clap::{Args, Parser, ValueEnum};
+use clap::{Parser, Subcommand};
 use color_eyre::owo_colors::OwoColorize as _;
 
 use crate::{
@@ -18,11 +18,8 @@ static ABOUT: &str = "ProjMan is a tool to manage different kinds of projects wi
 )]
 pub struct Cli
 {
-    #[command(flatten)]
-    project: ProjectArgs,
-
-    #[arg(short = 'L', long)]
-    list: bool,
+    #[command(subcommand)]
+    pub command: Option<Commands>,
 }
 impl Cli
 {
@@ -66,79 +63,99 @@ impl Cli
             }
         }
 
-        if self.list
+        let project = |name: &str| match state.get_project(name)
         {
-            for project in state.project_list.iter()
+            Ok(p) => Some(p),
+            Err(err) =>
             {
-                println!("{}", project.name);
+                eprintln!("{}", err.get_message().red());
+                None
             }
-        }
+        };
 
-        if let Some(name) = &self.project.name
+        match &self.command
         {
-            let project = match state.get_project(name)
+            Some(Commands::List) =>
             {
-                Ok(project) => project,
-                Err(err) =>
+                for p in state.project_list.iter()
+                {
+                    println!("{}", p.name);
+                }
+            }
+            Some(Commands::Info { name }) =>
+            {
+                if let Some(p) = project(name)
+                {
+                    println!("{:#?}", p.info());
+                }
+            }
+            Some(Commands::Path { name }) =>
+            {
+                if let Some(p) = project(name)
+                {
+                    println!("{}", p.path.display());
+                }
+            }
+            Some(Commands::Template { name }) =>
+            {
+                if let Some(p) = project(name)
+                {
+                    println!("{}", p.template_name);
+                }
+            }
+            Some(Commands::Repo { name }) =>
+            {
+                if let Some(p) = project(name)
+                {
+                    println!("{}", p.repo);
+                }
+            }
+            Some(Commands::License { name }) =>
+            {
+                if let Some(p) = project(name)
+                {
+                    println!("{}", p.license);
+                }
+            }
+            Some(Commands::Open { name }) =>
+            {
+                if let Some(p) = project(name)
+                    && let Err(err) = p.run()
                 {
                     eprintln!("{}", err.get_message().red());
-                    return;
                 }
-            };
-
-            match self.project.option
-            {
-                Some(ProjectOption::Info) =>
-                {
-                    println!("{:#?}", project.info());
-                }
-                Some(ProjectOption::Path) =>
-                {
-                    println!("{}", project.path.display());
-                }
-                Some(ProjectOption::Template) =>
-                {
-                    println!("{}", project.template_name);
-                }
-                Some(ProjectOption::Repo) =>
-                {
-                    println!("{}", project.repo);
-                }
-                Some(ProjectOption::License) =>
-                {
-                    println!("{}", project.license);
-                }
-                Some(ProjectOption::Open) =>
-                {
-                    if let Err(err) = project.run()
-                    {
-                        eprintln!("{}", err.get_message().red());
-                    }
-                }
-
-                None => (),
             }
+            None => (),
         }
     }
 }
 
-#[derive(Debug, Args)]
-struct ProjectArgs
+#[derive(Debug, Clone, Subcommand)]
+pub enum Commands
 {
-    #[arg(long = "project", requires = "option")]
-    name: Option<String>,
-
-    #[arg(requires = "name")]
-    option: Option<ProjectOption>,
-}
-
-#[derive(Debug, Clone, ValueEnum)]
-enum ProjectOption
-{
-    Info,
-    Path,
-    Template,
-    Repo,
-    License,
-    Open,
+    List,
+    Info
+    {
+        name: String,
+    },
+    Path
+    {
+        name: String,
+    },
+    Template
+    {
+        name: String,
+    },
+    Repo
+    {
+        name: String,
+    },
+    License
+    {
+        name: String,
+    },
+    Open
+    {
+        name: String,
+    },
 }

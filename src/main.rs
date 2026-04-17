@@ -10,7 +10,7 @@ mod update;
 mod view;
 
 use crate::{cli::Cli, message::Message, state::config::Config};
-use clap::{CommandFactory as _, Parser as _};
+use clap::Parser as _;
 use color_eyre::owo_colors::OwoColorize as _;
 use iced::Result as IcedResult;
 use std::time::Duration;
@@ -19,24 +19,8 @@ fn main() -> IcedResult
 {
     let cli = Cli::parse();
 
-    if Cli::command().get_matches().args_present()
+    if cli.command.is_some()
     {
-        let config = match Config::read_config_file()
-        {
-            Ok(config) => config,
-            Err(err) =>
-            {
-                eprintln!("{}", err.get_message().yellow());
-                return Ok(());
-            }
-        };
-
-        if let Err(err) = config.is_valid()
-        {
-            eprintln!("{:?}", err.red());
-            return Ok(());
-        }
-
         cli.parse_args();
         return Ok(());
     }
