@@ -86,7 +86,11 @@ impl Cli
             {
                 if let Some(p) = project(name)
                 {
-                    println!("{:#?}", p.info());
+                    match p.info()
+                    {
+                        Some(info) => println!("{info}"),
+                        None => println!(),
+                    }
                 }
             }
             Some(Commands::Path { name }) =>
