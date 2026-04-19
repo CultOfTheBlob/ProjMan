@@ -82,12 +82,20 @@ impl Cli
                     println!("{}", p.name);
                 }
             }
-            Some(Commands::Info { name }) =>
+            Some(Commands::Info { name, json }) =>
             {
                 if let Some(p) = project(name)
                 {
                     match p.info()
                     {
+                        Some(info) if *json =>
+                        {
+                            if let Ok(info_json) = serde_json::to_string_pretty(&info)
+                            {
+                                println!("{info_json}");
+                            }
+                        }
+
                         Some(info) => println!("{info}"),
                         None => println!(),
                     }
@@ -141,6 +149,9 @@ pub enum Commands
     Info
     {
         name: String,
+
+        #[arg(long, short, default_value_t = false)]
+        json: bool,
     },
     Path
     {

@@ -307,7 +307,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     text("Size:").style(|theme: &Theme| text::Style {
                         color: Some(theme.extended_palette().secondary.strong.color)
                     }),
-                    text(format!("{}", project_info.project_size.display().iec()))
+                    text(project_info.project_size)
                 ]
                 .spacing(4)
                 .padding(8);

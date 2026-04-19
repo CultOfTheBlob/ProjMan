@@ -6,16 +6,17 @@ use std::{
 use bytesize::ByteSize;
 use color_eyre::owo_colors::OwoColorize as _;
 use git2::{BranchType, Repository, Revwalk};
+use serde::{Deserialize, Serialize};
 use tokei::{Config as TokeiConfig, LanguageType, Languages};
 
 use crate::project::Project;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectInfo
 {
     pub line_count: usize,
     pub language_percentage: Vec<(LanguageType, f32)>,
-    pub project_size: ByteSize,
+    pub project_size: String,
     pub file_count: usize,
     pub branches: Vec<String>,
     pub current_branch: usize,
@@ -61,6 +62,7 @@ impl Project
         {
             project_size += ByteSize::b(entry.file_size as u64);
         }
+        let project_size = project_size.display().iec().to_string();
 
         let file_count = index.len();
 
@@ -323,7 +325,7 @@ impl Display for ProjectInfo
             let project_size = format!(
                 "{} {}",
                 "Size:         ".dimmed(),
-                self.project_size.to_string().bold().yellow()
+                self.project_size.clone().bold().yellow()
             );
 
             format!(
