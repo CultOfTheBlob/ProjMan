@@ -4,6 +4,15 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[expect(clippy::literal_string_with_formatting_args)]
+fn format_string(string: &str, name: &str, repo: &str, license: &str) -> String
+{
+    string
+        .replace("#{name}", name)
+        .replace("#{repo}", repo)
+        .replace("#{license}", license)
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
 pub struct TemplateConfig
 {
@@ -24,13 +33,26 @@ pub struct Folder
 
 impl Folder
 {
-    pub fn parse(&self, root: &Path) -> Vec<PathBuf>
+    pub fn parse(
+        &self,
+        root: &Path,
+        project_name: &str,
+        project_repo: &str,
+        project_license: &str,
+    ) -> Vec<PathBuf>
     {
-        let mut dirs = vec![root.join(&self.name)];
+        let formatted_name = format_string(&self.name, project_name, project_repo, project_license);
+
+        let mut dirs = vec![root.join(&formatted_name)];
 
         for dir in &self.sub_dirs
         {
-            let mut sub_dirs = dir.parse(&root.join(&self.name));
+            let mut sub_dirs = dir.parse(
+                &root.join(&formatted_name),
+                project_name,
+                project_repo,
+                project_license,
+            );
 
             dirs.append(&mut sub_dirs);
         }
@@ -49,13 +71,9 @@ pub struct File
 
 impl File
 {
-    #[expect(clippy::literal_string_with_formatting_args)]
     pub fn formatted(&self, name: &str, repo: &str, license: &str) -> String
     {
-        self.content
-            .replace("#{name}", name)
-            .replace("#{repo}", repo)
-            .replace("#{license}", license)
+        format_string(&self.content, name, repo, license)
     }
 }
 

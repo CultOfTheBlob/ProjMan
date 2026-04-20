@@ -73,7 +73,12 @@ pub fn create_dir_structure(project: &Arc<Project>) -> Ready<Result<String, Erro
 {
     for dir in &project.template.config().dir_structure
     {
-        let dirs = dir.parse(&project.path);
+        let dirs = dir.parse(
+            &project.path,
+            &project.name,
+            &project.repo,
+            &project.license,
+        );
 
         for dir in &dirs
         {
