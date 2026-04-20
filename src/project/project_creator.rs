@@ -96,10 +96,9 @@ pub fn create_project_files(project: &Arc<Project>) -> Ready<Result<String, Erro
 {
     for file in &project.template.config().files
     {
-        if let Err(err) = fs::write(
-            project.path.join(&file.path),
-            file.formatted(&project.name, &project.repo, &project.license),
-        )
+        let file = file.formatted(&project.name, &project.repo, &project.license);
+
+        if let Err(err) = fs::write(project.path.join(&file.path), &file.content)
         {
             return future::ready(Err(error!(Error::Create, "project files", err)));
         }

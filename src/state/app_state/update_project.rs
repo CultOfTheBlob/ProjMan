@@ -2,7 +2,7 @@ use crate::{
     error::{Error, ErrorInfo},
     state::app_state::AppState,
 };
-use std::fs::write;
+use std::fs;
 
 impl AppState
 {
@@ -25,10 +25,9 @@ impl AppState
                 continue;
             }
 
-            if let Err(err) = write(
-                project.path.join(&file.path),
-                file.formatted(&project.name, &project.repo, &project.license),
-            )
+            let file = file.formatted(&project.name, &project.repo, &project.license);
+
+            if let Err(err) = fs::write(project.path.join(&file.path), &file.content)
             {
                 return Err(error!(Error::Create, "project files", err));
             }

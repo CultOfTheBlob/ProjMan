@@ -71,9 +71,16 @@ pub struct File
 
 impl File
 {
-    pub fn formatted(&self, name: &str, repo: &str, license: &str) -> String
+    pub fn formatted(&self, name: &str, repo: &str, license: &str) -> Self
     {
-        format_string(&self.content, name, repo, license)
+        let path = format_string(&self.path, name, repo, license);
+        let content = format_string(&self.content, name, repo, license);
+
+        Self {
+            path,
+            content,
+            tracked: self.tracked,
+        }
     }
 }
 

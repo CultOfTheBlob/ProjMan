@@ -90,6 +90,7 @@ impl Project
                 continue;
             }
 
+            let file = file.formatted(&self.name, &self.repo, &self.license);
             let path = PathBuf::from(&self.path).join(&file.path);
 
             let Ok(file_contents) = fs::read(&path)
