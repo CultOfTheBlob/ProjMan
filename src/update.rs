@@ -312,10 +312,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
 
                 thread::sleep(Duration::from_millis(100));
 
-                Task::perform(
-                    project_creator::execute_build_command(Arc::clone(&state.new_project), 0),
-                    |result: Result<String, Error>| Message::BuildCommandExecuted(0, result),
-                )
+                if !state.new_project.template.config().build.is_empty()
+                {
+                    Task::perform(
+                        project_creator::execute_build_command(Arc::clone(&state.new_project), 0),
+                        |result: Result<String, Error>| Message::BuildCommandExecuted(0, result),
+                    )
+                }
+                else
+                {
+                    Task::perform(
+                        project_creator::commit_projman_init(&Arc::clone(&state.new_project)),
+                        Message::CommitedProjmanInit,
+                    )
+                }
             }
             Err(err) => Task::perform(async { Err(err) }, Message::CreateFinished),
         },
