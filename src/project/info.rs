@@ -36,11 +36,16 @@ impl Project
         let head = repo.head().ok()?;
 
         let mut languages = Languages::new();
-        languages.get_statistics(
-            &self.template.included_paths(&self.path),
-            &self.template.excluded_paths(),
-            &TokeiConfig::default(),
-        );
+
+        if let paths = self.template.included_paths(&self.path)
+            && !paths.is_empty()
+        {
+            languages.get_statistics(
+                &paths,
+                &self.template.excluded_paths(),
+                &TokeiConfig::default(),
+            );
+        }
 
         let mut line_count = 0;
         for language in languages.values()

@@ -232,3 +232,6 @@ wildcard_imports = "allow"
 cast_possible_wrap = "allow"
 comparison_chain = "allow"
 too_many_lines = "allow"
+
+[lints.rust]
+irrefutable_let_patterns = "allow"
