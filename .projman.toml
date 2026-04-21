@@ -1,4 +1,4 @@
-name = "ProjMan"
+name = "projman"
 template_name = "rustWithIced"
 repo = "https://github.com/CultOfTheBlob/ProjMan.git"
 license = "MIT"
