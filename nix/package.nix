@@ -1,9 +1,10 @@
 {
+  self,
   pkgs,
   naerskLib,
 }:
 naerskLib.buildPackage {
-  src = ../.;
+  src = self;
   buildInputs = with pkgs; [glib openssl];
   nativeBuildInputs = with pkgs; [pkg-config makeWrapper];
   OPENSSL_NO_VENDOR = 1;

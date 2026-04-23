@@ -27,7 +27,7 @@
       pkgs = import nixpkgs {inherit system overlays;};
       naerskLib = pkgs.callPackage naersk {};
     in {
-      packages.default = import ./nix/package.nix {inherit pkgs naerskLib;};
+      packages.default = import ./nix/package.nix {inherit self pkgs naerskLib;};
 
       devShells.default = import ./nix/shell.nix {inherit pkgs;};
     })
