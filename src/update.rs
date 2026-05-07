@@ -139,7 +139,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message>
             {
                 let project = &state.project_list[index];
 
-                if let Err(err) = open::that(&project.repo)
+                let repo = if project.repo.starts_with("git@")
+                {
+                    let repo = &project.repo.strip_prefix("git@").unwrap_or(&project.repo);
+                    let (host, path) = repo.split_once(':').unwrap_or_default();
+                    let path = path.trim_end_matches(".git");
+
+                    &format!("https://{host}/{path}")
+                }
+                else
+                {
+                    &project.repo
+                };
+
+                if let Err(err) = open::that(repo)
                 {
                     state.push_notification(
                         error!(Error::Open, "project repo", err).get_message(),
