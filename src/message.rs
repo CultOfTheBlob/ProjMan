@@ -2,8 +2,7 @@ use crate::{error::Error, project::Project};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
-pub enum Message
-{
+pub enum Message {
     Tick,
     Opened(usize),
     Selected(usize),

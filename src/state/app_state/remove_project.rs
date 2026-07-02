@@ -5,12 +5,9 @@ use crate::{
 };
 use std::{fs, sync::Arc};
 
-impl AppState
-{
-    pub fn remove_project(&mut self) -> Result<(), Error>
-    {
-        if self.selected_project.is_none()
-        {
+impl AppState {
+    pub fn remove_project(&mut self) -> Result<(), Error> {
+        if self.selected_project.is_none() {
             return Ok(());
         }
 
@@ -32,45 +29,36 @@ impl AppState
             }
         }
 
-        let projects_from_json = match fs::read_to_string(&projects_path)
-        {
+        let projects_from_json = match fs::read_to_string(&projects_path) {
             Ok(json) => json,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Read, "projects.json", err));
             }
         };
 
-        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-        {
+        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json) {
             Ok(projects) => projects,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Parse, "projects.json", err));
             }
         };
 
-        if let Some(index) = self.selected_project
-        {
+        if let Some(index) = self.selected_project {
             projects.remove(index);
         }
 
-        let projects_to_json = match serde_json::to_string_pretty(&projects)
-        {
+        let projects_to_json = match serde_json::to_string_pretty(&projects) {
             Ok(string) => string,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Read, "projects.json", err));
             }
         };
 
-        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
-        {
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes()) {
             return Err(error!(Error::Write, "projects.json", err));
         }
 
-        if let Some(index) = self.selected_project
-        {
+        if let Some(index) = self.selected_project {
             Arc::make_mut(&mut self.project_list).remove(index);
         }
 

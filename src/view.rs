@@ -10,8 +10,7 @@ mod top_bar_container;
 use crate::{message::Message, state::app_state::AppState};
 use iced::{Element, widget::container};
 
-pub fn view(state: &AppState) -> Element<'_, Message>
-{
+pub fn view(state: &AppState) -> Element<'_, Message> {
     let mut content = container("").width(0).height(0).into();
 
     content = top_bar_container::build(

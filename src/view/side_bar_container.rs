@@ -6,10 +6,8 @@ use iced::{
     widget::{button, column, container, row, space, text},
 };
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if !state.sidebar_expanded
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if !state.sidebar_expanded {
         return row![content].padding(4).into();
     }
 
@@ -19,8 +17,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .align_y(Alignment::Center),
     )
     .width(Length::Fill)
-    .style(|theme: &Theme, status: button::Status| match status
-    {
+    .style(|theme: &Theme, status: button::Status| match status {
         button::Status::Disabled => button::subtle(theme, status),
 
         _ => button::secondary(theme, status),
@@ -31,9 +28,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             && state.project_list[index].exists
         {
             Some(Message::Opened(index))
-        }
-        else
-        {
+        } else {
             None
         },
     );
@@ -44,8 +39,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .align_y(Alignment::Center),
     )
     .width(Length::Fill)
-    .style(|theme: &Theme, status: button::Status| match status
-    {
+    .style(|theme: &Theme, status: button::Status| match status {
         button::Status::Disabled => button::subtle(theme, status),
 
         _ => button::secondary(theme, status),
@@ -56,9 +50,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             && state.project_list[index].exists
         {
             Some(Message::Edited(index))
-        }
-        else
-        {
+        } else {
             None
         },
     );
@@ -69,8 +61,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .align_y(Alignment::Center),
     )
     .width(Length::Fill)
-    .style(|theme: &Theme, status: button::Status| match status
-    {
+    .style(|theme: &Theme, status: button::Status| match status {
         button::Status::Disabled => button::subtle(theme, status),
 
         _ => button::primary(theme, status),
@@ -82,9 +73,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             && state.project_list[index].is_outdated()
         {
             Some(Message::Updated)
-        }
-        else
-        {
+        } else {
             None
         },
     );
@@ -95,19 +84,15 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .align_y(Alignment::Center),
     )
     .width(Length::Fill)
-    .style(|theme: &Theme, status: button::Status| match status
-    {
+    .style(|theme: &Theme, status: button::Status| match status {
         button::Status::Disabled => button::subtle(theme, status),
 
         _ => button::warning(theme, status),
     })
     .on_press_maybe(
-        if state.pending.is_none() && state.selected_project.is_some()
-        {
+        if state.pending.is_none() && state.selected_project.is_some() {
             Some(Message::Removed)
-        }
-        else
-        {
+        } else {
             None
         },
     );
@@ -128,28 +113,21 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
 
         let mut info_column_widget = column![title_bar_widget];
 
-        if let Some(index) = state.selected_project
-        {
+        if let Some(index) = state.selected_project {
             let project = &state.project_list[index];
 
-            if let Some(project_info) = project.info()
-            {
+            if let Some(project_info) = project.info() {
                 let repo_widget = row![
                     text("Repo:").style(|theme: &Theme| text::Style {
                         color: Some(theme.extended_palette().secondary.strong.color)
                     }),
                     button(text(&project.repo))
                         .style(button::text)
-                        .on_press_maybe(
-                            if state.pending.is_none()
-                            {
-                                Some(Message::RepoOpened)
-                            }
-                            else
-                            {
-                                None
-                            }
-                        )
+                        .on_press_maybe(if state.pending.is_none() {
+                            Some(Message::RepoOpened)
+                        } else {
+                            None
+                        })
                 ]
                 .padding(8)
                 .align_y(Alignment::Center);
@@ -157,24 +135,19 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 let branch_widget = {
                     let mut branch_column_widget = column![].spacing(0).padding(8);
 
-                    for (index, branch) in project_info.branches.iter().enumerate()
-                    {
+                    for (index, branch) in project_info.branches.iter().enumerate() {
                         let is_current = project_info.current_branch == index;
 
                         let style_text = |s: String| {
                             let text = text(s);
-                            if is_current
-                            {
+                            if is_current {
                                 text.style(text::primary)
-                            }
-                            else
-                            {
+                            } else {
                                 text
                             }
                         };
 
-                        let connector = String::from(match index
-                        {
+                        let connector = String::from(match index {
                             0 if project_info.branches.len() == 1 => "──",
                             0 => "╭─",
                             i if i == project_info.branches.len() - 1 => "╰─",
@@ -207,8 +180,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                         .max()
                         .unwrap_or(0);
 
-                    for (language_type, percentage) in &project_info.language_percentage
-                    {
+                    for (language_type, percentage) in &project_info.language_percentage {
                         language_column_widget = language_column_widget.push(
                             row![
                                 row![
@@ -249,8 +221,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 let authors_widget = {
                     let mut authors_row_widget = row![].spacing(8).padding(8);
 
-                    for (author, percentage) in project_info.authors
-                    {
+                    for (author, percentage) in project_info.authors {
                         authors_row_widget = authors_row_widget.push(
                             row![
                                 text("").size(18).style(text::primary),

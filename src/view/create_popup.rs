@@ -14,10 +14,8 @@ use iced::{
 };
 use std::path::PathBuf;
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if !matches!(state.pending, Some(Popup::Create))
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if !matches!(state.pending, Some(Popup::Create)) {
         return content;
     }
 
@@ -38,12 +36,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         column![
             text("Project Name:"),
             text_input("", &state.new_project.name).on_input_maybe(
-                if !state.project_creation_status.creating
-                {
+                if !state.project_creation_status.creating {
                     Some(Message::NewProjectNameChanged)
-                }
-                else
-                {
+                } else {
                     None
                 }
             )
@@ -51,8 +46,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .spacing(4),
     );
 
-    let project_template_widget = if !state.project_creation_status.creating
-    {
+    let project_template_widget = if !state.project_creation_status.creating {
         container(
             column![
                 text("Project Template:"),
@@ -65,9 +59,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ]
             .spacing(4),
         )
-    }
-    else
-    {
+    } else {
         container(
             column![
                 text("Project Template:"),
@@ -84,16 +76,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 "https://github.com/Author/Project.git",
                 &state.new_project.repo
             )
-            .on_input_maybe(
-                if !state.project_creation_status.creating
-                {
-                    Some(Message::NewProjectRepoChanged)
-                }
-                else
-                {
-                    None
-                }
-            ),
+            .on_input_maybe(if !state.project_creation_status.creating {
+                Some(Message::NewProjectRepoChanged)
+            } else {
+                None
+            }),
         ]
         .spacing(4),
     );
@@ -103,16 +90,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             text("Project Path:"),
             column![
                 text_input("", &state.new_project.path.to_string_lossy())
-                    .on_input_maybe(
-                        if !state.project_creation_status.creating
-                        {
-                            Some(|path| Message::NewProjectPathChanged(PathBuf::from(path)))
-                        }
-                        else
-                        {
-                            None
-                        }
-                    )
+                    .on_input_maybe(if !state.project_creation_status.creating {
+                        Some(|path| Message::NewProjectPathChanged(PathBuf::from(path)))
+                    } else {
+                        None
+                    })
                     .style(|theme: &Theme, status| {
                         let mut style = text_input::default(theme, status);
 
@@ -134,9 +116,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                             .path_is_valid(&state.config.general.projects_dir)
                     {
                         format!(" {err}")
-                    }
-                    else
-                    {
+                    } else {
                         String::new()
                     }
                 )
@@ -148,9 +128,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                             .is_ok()
                     {
                         Length::from(0)
-                    }
-                    else
-                    {
+                    } else {
                         Length::Shrink
                     }
                 )
@@ -174,9 +152,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                             && i == state.project_creation_status.log.len() - 1
                         {
                             text::danger
-                        }
-                        else
-                        {
+                        } else {
                             text::success
                         },
                     )
@@ -204,17 +180,13 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     let copy_widget = container(
         button("")
             .on_press_maybe(
-                if state.project_creation_status.failed && !state.project_creation_status.creating
-                {
+                if state.project_creation_status.failed && !state.project_creation_status.creating {
                     Some(Message::CreationErrorCopied)
-                }
-                else
-                {
+                } else {
                     None
                 },
             )
-            .style(|theme: &Theme, status: button::Status| match status
-            {
+            .style(|theme: &Theme, status: button::Status| match status {
                 button::Status::Disabled => button::Style {
                     background: Some(Color(iced::Color::TRANSPARENT)),
                     text_color: iced::Color::TRANSPARENT,
@@ -253,19 +225,15 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
     );
 
     let cancel_widget = button("Cancel").style(button::secondary).on_press_maybe(
-        if !state.project_creation_status.creating
-        {
+        if !state.project_creation_status.creating {
             Some(Message::CreateCanceled)
-        }
-        else
-        {
+        } else {
             None
         },
     );
 
     let confirm_widget = button("Confirm")
-        .style(|theme: &Theme, status: button::Status| match status
-        {
+        .style(|theme: &Theme, status: button::Status| match status {
             button::Status::Disabled => button::Style {
                 background: Some(Color(theme.extended_palette().background.weak.color)),
                 ..button::primary(theme, status)
@@ -280,9 +248,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                     .is_ok()
             {
                 Some(Message::CreateConfirmed)
-            }
-            else
-            {
+            } else {
                 None
             },
         );

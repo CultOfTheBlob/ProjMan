@@ -15,28 +15,23 @@ use color_eyre::owo_colors::OwoColorize as _;
 use iced::Result as IcedResult;
 use std::time::Duration;
 
-fn main() -> IcedResult
-{
+fn main() -> IcedResult {
     let cli = Cli::parse();
 
-    if cli.command.is_some()
-    {
+    if cli.command.is_some() {
         cli.parse_args();
         return Ok(());
     }
 
-    let config = match Config::read_config_file()
-    {
+    let config = match Config::read_config_file() {
         Ok(config) => config,
-        Err(err) =>
-        {
+        Err(err) => {
             eprintln!("{}", err.get_message().yellow());
             return Ok(());
         }
     };
 
-    if let Err(err) = config.is_valid()
-    {
+    if let Err(err) = config.is_valid() {
         eprintln!("{:?}", err.red());
         return Ok(());
     }

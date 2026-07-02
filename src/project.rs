@@ -10,8 +10,7 @@ mod path;
 mod repo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Project
-{
+pub struct Project {
     pub exists: bool,
     pub name: String,
     pub path: PathBuf,
@@ -22,20 +21,16 @@ pub struct Project
     pub license: String,
 }
 
-impl Project
-{
-    pub fn run(&self) -> Result<(), Error>
-    {
+impl Project {
+    pub fn run(&self) -> Result<(), Error> {
         self.template.run(self)
     }
 
-    pub fn icon(&self) -> PathBuf
-    {
+    pub fn icon(&self) -> PathBuf {
         self.template.icon_path().clone()
     }
 
-    pub fn default(config: &Config) -> Self
-    {
+    pub fn default(config: &Config) -> Self {
         let name = "NewProject";
 
         Self {
@@ -49,8 +44,7 @@ impl Project
         }
     }
 
-    pub fn license(self) -> Self
-    {
+    pub fn license(self) -> Self {
         let license = {
             #[expect(clippy::large_include_file)]
             let cache = &include_bytes!(concat!(
@@ -58,16 +52,12 @@ impl Project
                 "/cache/license.cache.zstd"
             ))[..];
 
-            let Ok(store) = Store::from_cache(cache)
-            else
-            {
+            let Ok(store) = Store::from_cache(cache) else {
                 return self;
             };
 
             let license_path = self.path.join("LICENSE");
-            let Ok(license_contents) = fs::read_to_string(&license_path)
-            else
-            {
+            let Ok(license_contents) = fs::read_to_string(&license_path) else {
                 return self;
             };
             store
@@ -79,28 +69,22 @@ impl Project
         Self { license, ..self }
     }
 
-    pub fn is_outdated(&self) -> bool
-    {
+    pub fn is_outdated(&self) -> bool {
         let project_files = &self.template.config().files;
 
-        for file in project_files
-        {
-            if !file.tracked
-            {
+        for file in project_files {
+            if !file.tracked {
                 continue;
             }
 
             let file = file.formatted(&self.name, &self.repo, &self.license);
             let path = PathBuf::from(&self.path).join(&file.path);
 
-            let Ok(file_contents) = fs::read(&path)
-            else
-            {
+            let Ok(file_contents) = fs::read(&path) else {
                 return true;
             };
 
-            if file.content.as_bytes() != file_contents
-            {
+            if file.content.as_bytes() != file_contents {
                 return true;
             }
         }
@@ -110,15 +94,13 @@ impl Project
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ProjmanFile
-{
+pub struct ProjmanFile {
     pub name: String,
     pub template_name: String,
     pub repo: String,
     pub license: String,
 }
 
-impl ProjmanFile
-{
+impl ProjmanFile {
     pub const FILE_NAME: &str = ".projman.toml";
 }

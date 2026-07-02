@@ -5,25 +5,20 @@ use crate::{
 };
 use std::{fs, path::PathBuf};
 
-impl AppState
-{
-    pub fn import_project(&self) -> Result<(), Error>
-    {
+impl AppState {
+    pub fn import_project(&self) -> Result<(), Error> {
         let projects_path = Self::get_config_dir("projects.json", None)?;
 
         let path = PathBuf::from(&self.config.general.projects_dir).join(&self.import_project_path);
 
-        let project_from_toml = match &fs::read_to_string(path.join(ProjmanFile::FILE_NAME))
-        {
+        let project_from_toml = match &fs::read_to_string(path.join(ProjmanFile::FILE_NAME)) {
             Ok(string) => string.clone(),
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Read, ProjmanFile::FILE_NAME, err));
             }
         };
 
-        let projman_file: ProjmanFile = match toml::from_str(&project_from_toml)
-        {
+        let projman_file: ProjmanFile = match toml::from_str(&project_from_toml) {
             Ok(projman_file) => projman_file,
             Err(err) => return Err(error!(Error::Parse, ProjmanFile::FILE_NAME, err)),
         };
@@ -38,37 +33,30 @@ impl AppState
             license: projman_file.license,
         };
 
-        let projects_from_json = match fs::read_to_string(&projects_path)
-        {
+        let projects_from_json = match fs::read_to_string(&projects_path) {
             Ok(json) => json,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Read, "projects.json", err));
             }
         };
 
-        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json)
-        {
+        let mut projects: Vec<Project> = match serde_json::from_str(&projects_from_json) {
             Ok(projects) => projects,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Parse, "projects.json", err));
             }
         };
 
         projects.push(project);
 
-        let projects_to_json = match serde_json::to_string_pretty(&projects)
-        {
+        let projects_to_json = match serde_json::to_string_pretty(&projects) {
             Ok(json) => json,
-            Err(err) =>
-            {
+            Err(err) => {
                 return Err(error!(Error::Parse, "projects.json", err));
             }
         };
 
-        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes())
-        {
+        if let Err(err) = fs::write(&projects_path, projects_to_json.as_bytes()) {
             return Err(error!(Error::Write, "projects.json", err));
         }
 

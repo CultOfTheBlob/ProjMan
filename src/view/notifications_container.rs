@@ -9,27 +9,22 @@ use iced::{
     widget::{button, column, container, row, stack, text},
 };
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if state.notifications.is_empty()
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if state.notifications.is_empty() {
         return content;
     }
 
     let mut notif_widget = column![].spacing(16).padding(12);
 
-    for (index, notification) in state.notifications.iter().enumerate()
-    {
+    for (index, notification) in state.notifications.iter().enumerate() {
         let mut new_notif = text(&notification.text);
 
-        match &notification.kind
-        {
+        match &notification.kind {
             NotifKind::Warning => new_notif = new_notif.style(text::warning),
             NotifKind::Error => new_notif = new_notif.style(text::danger),
         }
 
-        let notif_icon = match &notification.kind
-        {
+        let notif_icon = match &notification.kind {
             NotifKind::Warning => text("").size(32).style(text::warning),
             NotifKind::Error => text("").size(32).style(text::danger),
         };

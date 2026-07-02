@@ -5,29 +5,24 @@ use iced::{
     widget::{button, column, container, row, space, text, text_input},
 };
 
-pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    let create_widget = button("Create").style(button::secondary).on_press_maybe(
-        if state.pending.is_none()
-        {
-            Some(Message::Created)
-        }
-        else
-        {
-            None
-        },
-    );
+pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    let create_widget =
+        button("Create")
+            .style(button::secondary)
+            .on_press_maybe(if state.pending.is_none() {
+                Some(Message::Created)
+            } else {
+                None
+            });
 
-    let import_widget = button("Import").style(button::secondary).on_press_maybe(
-        if state.pending.is_none()
-        {
-            Some(Message::Imported)
-        }
-        else
-        {
-            None
-        },
-    );
+    let import_widget =
+        button("Import")
+            .style(button::secondary)
+            .on_press_maybe(if state.pending.is_none() {
+                Some(Message::Imported)
+            } else {
+                None
+            });
 
     let filter_widget = container(
         text_input("Filter...", &state.project_list_filter)
@@ -35,15 +30,12 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                 |theme: &Theme, status: text_input::Status| text_input::Style {
                     background: Color(theme.extended_palette().background.weak.color),
                     border: Border {
-                        color: match status
-                        {
+                        color: match status {
                             text_input::Status::Hovered
-                            | text_input::Status::Focused { is_hovered: _ } =>
-                            {
+                            | text_input::Status::Focused { is_hovered: _ } => {
                                 theme.extended_palette().primary.weak.color
                             }
-                            text_input::Status::Disabled | text_input::Status::Active =>
-                            {
+                            text_input::Status::Disabled | text_input::Status::Active => {
                                 theme.extended_palette().secondary.strong.color
                             }
                         },
@@ -53,31 +45,21 @@ pub fn build<'a>(state: &AppState, content: Element<'a, Message>) -> Element<'a,
                     ..text_input::default(theme, status)
                 },
             )
-            .on_input_maybe(
-                if state.pending.is_none()
-                {
-                    Some(Message::ProjectListFilterChanged)
-                }
-                else
-                {
-                    None
-                },
-            ),
+            .on_input_maybe(if state.pending.is_none() {
+                Some(Message::ProjectListFilterChanged)
+            } else {
+                None
+            }),
     );
 
     let sidebar_expand_widget =
         button(text(if state.sidebar_expanded { "" } else { "" }).size(24))
             .style(button::subtle)
-            .on_press_maybe(
-                if state.pending.is_none()
-                {
-                    Some(Message::SideBarToggled)
-                }
-                else
-                {
-                    None
-                },
-            );
+            .on_press_maybe(if state.pending.is_none() {
+                Some(Message::SideBarToggled)
+            } else {
+                None
+            });
 
     let top_bar_content = row![
         create_widget,

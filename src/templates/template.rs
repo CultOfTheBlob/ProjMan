@@ -13,29 +13,24 @@ use std::{
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
-pub struct Template
-{
+pub struct Template {
     config: TemplateConfig,
     template_path: PathBuf,
     icon_path: PathBuf,
 }
 
-impl Template
-{
-    pub fn new(name: &str) -> Result<Self, Error>
-    {
+impl Template {
+    pub fn new(name: &str) -> Result<Self, Error> {
         let template_path = AppState::get_config_dir(&format!("templates/{name}.json"), None)?;
 
         let icon_path = AppState::get_config_dir(&format!("icons/{name}.svg"), None)?;
 
-        let template_string = match fs::read_to_string(&template_path)
-        {
+        let template_string = match fs::read_to_string(&template_path) {
             Ok(string) => string,
             Err(err) => return Err(error!(Error::Read, format!("{name} template"), err)),
         };
 
-        let config: TemplateConfig = match serde_json::from_str(&template_string)
-        {
+        let config: TemplateConfig = match serde_json::from_str(&template_string) {
             Ok(template_config) => template_config,
             Err(err) => return Err(error!(Error::Parse, format!("{name} template"), err)),
         };
@@ -47,10 +42,8 @@ impl Template
         })
     }
 
-    pub fn run(&self, project: &Project) -> Result<(), Error>
-    {
-        for command in &self.config.run
-        {
+    pub fn run(&self, project: &Project) -> Result<(), Error> {
+        for command in &self.config.run {
             if let Err(err) = StdCommand::new(&command.program)
                 .args(&command.args)
                 .current_dir(&project.path)
@@ -63,8 +56,7 @@ impl Template
         Ok(())
     }
 
-    pub fn included_paths(&self, root: &Path) -> Vec<PathBuf>
-    {
+    pub fn included_paths(&self, root: &Path) -> Vec<PathBuf> {
         self.config
             .included_paths
             .iter()
@@ -72,8 +64,7 @@ impl Template
             .collect()
     }
 
-    pub fn excluded_paths(&self) -> Vec<&str>
-    {
+    pub fn excluded_paths(&self) -> Vec<&str> {
         self.config()
             .excluded_paths
             .iter()
@@ -81,23 +72,19 @@ impl Template
             .collect()
     }
 
-    pub fn config(&self) -> &TemplateConfig
-    {
+    pub fn config(&self) -> &TemplateConfig {
         &self.config
     }
 
-    pub fn icon_path(&self) -> &PathBuf
-    {
+    pub fn icon_path(&self) -> &PathBuf {
         &self.icon_path
     }
 }
 
-impl FromStr for Template
-{
+impl FromStr for Template {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err>
-    {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::new(s)
     }
 }

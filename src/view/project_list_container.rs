@@ -6,8 +6,7 @@ use iced::{
     widget::{button, column, container, mouse_area, row, scrollable, space, svg, text},
 };
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
     let mut project_list_content = column![].width(Length::Fill).spacing(4);
 
     for (index, project) in state
@@ -38,8 +37,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .spacing(24)
         .align_y(Alignment::Center);
 
-        if !project.exists
-        {
+        if !project.exists {
             project_content = row![
                 column![
                     text("Missing!").style(text::danger).size(18),
@@ -52,36 +50,22 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             ]
             .spacing(24);
 
-            if is_selected
-            {
+            if is_selected {
                 project_content = project_content.push(
-                    button(
-                        if state.project_restoration_failed
-                        {
-                            text("Failed! (Retry?)")
-                        }
-                        else
-                        {
-                            text("Restore")
-                        },
-                    )
-                    .style(
-                        if state.project_restoration_failed
-                        {
-                            button::danger
-                        }
-                        else
-                        {
-                            button::primary
-                        },
-                    )
+                    button(if state.project_restoration_failed {
+                        text("Failed! (Retry?)")
+                    } else {
+                        text("Restore")
+                    })
+                    .style(if state.project_restoration_failed {
+                        button::danger
+                    } else {
+                        button::primary
+                    })
                     .on_press_maybe(
-                        if state.pending.is_none() && !state.restoring_project
-                        {
+                        if state.pending.is_none() && !state.restoring_project {
                             Some(Message::NonexistantRestored)
-                        }
-                        else
-                        {
+                        } else {
                             None
                         },
                     ),
@@ -89,16 +73,11 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
                 project_content = project_content.push(
                     button(text("Remove"))
                         .style(button::secondary)
-                        .on_press_maybe(
-                            if state.pending.is_none() && !state.restoring_project
-                            {
-                                Some(Message::NonexistantRemoved)
-                            }
-                            else
-                            {
-                                None
-                            },
-                        ),
+                        .on_press_maybe(if state.pending.is_none() && !state.restoring_project {
+                            Some(Message::NonexistantRemoved)
+                        } else {
+                            None
+                        }),
                 );
             }
         }
@@ -106,24 +85,19 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         let row_container = container(project_content)
             .width(Length::Fill)
             .padding(10)
-            .style(
-                if is_selected
-                {
-                    |theme: &Theme| container::Style {
-                        background: Some(Color(theme.extended_palette().background.weaker.color)),
-                        border: Border {
-                            color: theme.extended_palette().background.strongest.color,
-                            width: 1.0,
-                            radius: 4.0.into(),
-                        },
-                        ..Default::default()
-                    }
+            .style(if is_selected {
+                |theme: &Theme| container::Style {
+                    background: Some(Color(theme.extended_palette().background.weaker.color)),
+                    border: Border {
+                        color: theme.extended_palette().background.strongest.color,
+                        width: 1.0,
+                        radius: 4.0.into(),
+                    },
+                    ..Default::default()
                 }
-                else
-                {
-                    container::transparent
-                },
-            );
+            } else {
+                container::transparent
+            });
 
         let select_area = mouse_area(row_container)
             .on_press(Message::Selected(index))

@@ -11,10 +11,8 @@ use iced::{
 };
 use std::path::PathBuf;
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if !matches!(state.pending, Some(Popup::Import))
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if !matches!(state.pending, Some(Popup::Import)) {
         return content;
     }
 
@@ -42,12 +40,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
             .align_y(Alignment::Center),
             if !Project::is_project_path(
                 &PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path)
-            )
-            {
+            ) {
                 container(text(" This path is not a valid project!").style(text::danger))
-            }
-            else
-            {
+            } else {
                 container(text(""))
             }
         ]
@@ -59,8 +54,7 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .on_press(Message::ImportCanceled);
 
     let confirm_widget = button("Confirm")
-        .style(|theme: &Theme, status: button::Status| match status
-        {
+        .style(|theme: &Theme, status: button::Status| match status {
             button::Status::Disabled => button::Style {
                 background: Some(Color(theme.extended_palette().background.weak.color)),
                 ..button::primary(theme, status)
@@ -70,12 +64,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         .on_press_maybe(
             if Project::is_project_path(
                 &PathBuf::from(&state.config.general.projects_dir).join(&state.import_project_path),
-            )
-            {
+            ) {
                 Some(Message::ImportConfirmed)
-            }
-            else
-            {
+            } else {
                 None
             },
         );

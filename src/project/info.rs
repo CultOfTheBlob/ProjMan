@@ -12,8 +12,7 @@ use tokei::{Config as TokeiConfig, LanguageType, Languages};
 use crate::project::Project;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProjectInfo
-{
+pub struct ProjectInfo {
     pub line_count: usize,
     pub language_percentage: Vec<(LanguageType, f32)>,
     pub project_size: String,
@@ -25,10 +24,8 @@ pub struct ProjectInfo
     pub authors: Vec<(String, f32)>,
 }
 
-impl Project
-{
-    pub fn info(&self) -> Option<ProjectInfo>
-    {
+impl Project {
+    pub fn info(&self) -> Option<ProjectInfo> {
         let repo = Repository::open(&self.path).ok()?;
 
         let index = repo.index().ok()?;
@@ -48,14 +45,12 @@ impl Project
         }
 
         let mut line_count = 0;
-        for language in languages.values()
-        {
+        for language in languages.values() {
             line_count += language.code;
         }
 
         let mut language_percentage: Vec<(LanguageType, f32)> = vec![];
-        for (language_type, language) in languages
-        {
+        for (language_type, language) in languages {
             let percentage: f32 = (language.code as f32 / line_count as f32) * 100.0;
 
             language_percentage.push((language_type, percentage));
@@ -63,16 +58,14 @@ impl Project
         language_percentage.sort_by(|l, p| p.1.partial_cmp(&l.1).unwrap_or(Ordering::Equal));
 
         let mut project_size = ByteSize::default();
-        for entry in index.iter()
-        {
+        for entry in index.iter() {
             project_size += ByteSize::b(entry.file_size as u64);
         }
         let project_size = project_size.display().iec().to_string();
 
         let file_count = index.len();
 
-        let branches: Vec<String> = match repo.branches(Some(BranchType::Local))
-        {
+        let branches: Vec<String> = match repo.branches(Some(BranchType::Local)) {
             Ok(branches) => branches
                 .filter_map(|branch| {
                     let (branch, _) = branch.ok()?;
@@ -103,18 +96,14 @@ impl Project
             revwalk.push_head().ok()?;
 
             let mut authors: Vec<(String, usize)> = vec![];
-            for oid in revwalk
-            {
+            for oid in revwalk {
                 let oid = oid.ok()?;
                 let commit = repo.find_commit(oid).ok()?;
                 let author = commit.author().name()?.to_owned();
 
-                if let Some(author) = authors.iter_mut().find(|(name, _)| name == &author)
-                {
+                if let Some(author) = authors.iter_mut().find(|(name, _)| name == &author) {
                     author.1 += 1;
-                }
-                else
-                {
+                } else {
                     authors.push((author, 1));
                 }
             }
@@ -146,10 +135,8 @@ impl Project
     }
 }
 
-impl Display for ProjectInfo
-{
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult
-    {
+impl Display for ProjectInfo {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult {
         const TOP_LEFT: &str = "┌";
         const BOTTOM_LEFT: &str = "└";
         const LINE: &str = "│";
@@ -175,26 +162,18 @@ impl Display for ProjectInfo
                 "┐".dimmed(),
             )?;
 
-            for line in content.lines()
-            {
+            for line in content.lines() {
                 let visible = {
                     let mut len = 0;
                     let mut in_escape = false;
-                    for char in line.chars()
-                    {
-                        if char == '\x1b'
-                        {
+                    for char in line.chars() {
+                        if char == '\x1b' {
                             in_escape = true;
-                        }
-                        else if in_escape
-                        {
-                            if char == 'm'
-                            {
+                        } else if in_escape {
+                            if char == 'm' {
                                 in_escape = false;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             len += 1;
                         }
                     }
@@ -219,16 +198,12 @@ impl Display for ProjectInfo
         let branches = {
             let mut branches = String::new();
 
-            for (i, branch) in self.branches.iter().enumerate()
-            {
-                if i == self.current_branch
-                {
+            for (i, branch) in self.branches.iter().enumerate() {
+                if i == self.current_branch {
                     let branch = format!("{}{} {}\n", LINE.dimmed(), "●".green(), branch.bold());
 
                     branches.push_str(&branch);
-                }
-                else
-                {
+                } else {
                     let branch = format!("{} {}\n", "  ○".dimmed(), branch.dimmed());
 
                     branches.push_str(&branch);
@@ -249,8 +224,7 @@ impl Display for ProjectInfo
                 .max()
                 .unwrap_or(0);
 
-            for (language, percentage) in &self.language_percentage
-            {
+            for (language, percentage) in &self.language_percentage {
                 #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
                 let filled = ((percentage / 100.0) * 20.0) as usize;
 
@@ -277,8 +251,7 @@ impl Display for ProjectInfo
         let authors = {
             let mut authors = String::new();
 
-            for (author, percentage) in &self.authors
-            {
+            for (author, percentage) in &self.authors {
                 let author = format!(
                     "{}{} {} {}\n",
                     LINE.dimmed(),

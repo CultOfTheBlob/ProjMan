@@ -5,8 +5,7 @@ use std::{
 };
 
 #[expect(clippy::literal_string_with_formatting_args)]
-fn format_string(string: &str, name: &str, repo: &str, license: &str) -> String
-{
+fn format_string(string: &str, name: &str, repo: &str, license: &str) -> String {
     string
         .replace("#{name}", name)
         .replace("#{repo}", repo)
@@ -14,8 +13,7 @@ fn format_string(string: &str, name: &str, repo: &str, license: &str) -> String
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq)]
-pub struct TemplateConfig
-{
+pub struct TemplateConfig {
     pub dir_structure: Vec<Folder>,
     pub files: Vec<File>,
     pub build: Vec<Command>,
@@ -25,28 +23,24 @@ pub struct TemplateConfig
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct Folder
-{
+pub struct Folder {
     pub name: String,
     pub sub_dirs: Vec<Self>,
 }
 
-impl Folder
-{
+impl Folder {
     pub fn parse(
         &self,
         root: &Path,
         project_name: &str,
         project_repo: &str,
         project_license: &str,
-    ) -> Vec<PathBuf>
-    {
+    ) -> Vec<PathBuf> {
         let formatted_name = format_string(&self.name, project_name, project_repo, project_license);
 
         let mut dirs = vec![root.join(&formatted_name)];
 
-        for dir in &self.sub_dirs
-        {
+        for dir in &self.sub_dirs {
             let mut sub_dirs = dir.parse(
                 &root.join(&formatted_name),
                 project_name,
@@ -62,17 +56,14 @@ impl Folder
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct File
-{
+pub struct File {
     pub path: String,
     pub content: String,
     pub tracked: bool,
 }
 
-impl File
-{
-    pub fn formatted(&self, name: &str, repo: &str, license: &str) -> Self
-    {
+impl File {
+    pub fn formatted(&self, name: &str, repo: &str, license: &str) -> Self {
         let path = format_string(&self.path, name, repo, license);
         let content = format_string(&self.content, name, repo, license);
 
@@ -85,16 +76,13 @@ impl File
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct Command
-{
+pub struct Command {
     pub program: String,
     pub args: Vec<String>,
 }
 
-impl Display for Command
-{
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult
-    {
+impl Display for Command {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult {
         write!(formatter, "{} {}", self.program, &self.args.join(" "))
     }
 }

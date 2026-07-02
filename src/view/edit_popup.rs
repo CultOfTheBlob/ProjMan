@@ -8,10 +8,8 @@ use iced::{
     widget::{button, column, container, row, stack, text, text_input},
 };
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if !matches!(state.pending, Some(Popup::Edit))
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if !matches!(state.pending, Some(Popup::Edit)) {
         return content;
     }
 
@@ -32,12 +30,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         column![
             text("Project Name:"),
             text_input(&state.edit_project_name, &state.edit_project_name).on_input_maybe(
-                if !state.project_creation_status.creating
-                {
+                if !state.project_creation_status.creating {
                     Some(Message::EditProjectNameChanged)
-                }
-                else
-                {
+                } else {
                     None
                 }
             )
@@ -49,12 +44,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
         column![
             text("Project Repo:"),
             text_input(&state.edit_project_repo, &state.edit_project_repo).on_input_maybe(
-                if !state.project_creation_status.creating
-                {
+                if !state.project_creation_status.creating {
                     Some(Message::EditProjectRepoChanged)
-                }
-                else
-                {
+                } else {
                     None
                 }
             ),

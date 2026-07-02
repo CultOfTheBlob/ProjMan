@@ -8,10 +8,8 @@ use iced::{
     widget::{button, checkbox, column, container, row, stack, text},
 };
 
-pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message>
-{
-    if !matches!(state.pending, Some(Popup::Remove))
-    {
+pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<'a, Message> {
+    if !matches!(state.pending, Some(Popup::Remove)) {
         return content;
     }
 
@@ -30,12 +28,9 @@ pub fn build<'a>(state: &'a AppState, content: Element<'a, Message>) -> Element<
 
     let confirm_widget = button("Confirm")
         .style(|theme: &Theme, status| {
-            if state.delete_project_folder
-            {
+            if state.delete_project_folder {
                 button::danger(theme, status)
-            }
-            else
-            {
+            } else {
                 button::warning(theme, status)
             }
         })

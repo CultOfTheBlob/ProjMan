@@ -16,36 +16,28 @@ static ABOUT: &str = "ProjMan is a tool to manage different kinds of projects wi
     about,
     long_about = ABOUT
 )]
-pub struct Cli
-{
+pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 }
-impl Cli
-{
-    pub fn parse_args(&self)
-    {
-        let config = match Config::read_config_file()
-        {
+impl Cli {
+    pub fn parse_args(&self) {
+        let config = match Config::read_config_file() {
             Ok(config) => config,
-            Err(err) =>
-            {
+            Err(err) => {
                 eprintln!("{}", err.get_message().yellow());
                 return;
             }
         };
 
-        if let Err(err) = config.is_valid()
-        {
+        if let Err(err) = config.is_valid() {
             eprintln!("{:?}", err.red());
             return;
         }
 
-        let templates = match Templates::generate()
-        {
+        let templates = match Templates::generate() {
             Ok(templates) => templates,
-            Err(err) =>
-            {
+            Err(err) => {
                 eprintln!("{}", err.get_message().red());
                 return;
             }
@@ -53,45 +45,33 @@ impl Cli
 
         let mut state = AppState::default().config(config).templates(templates);
 
-        match state.load_projects()
-        {
+        match state.load_projects() {
             Ok(projects) => state.project_list = Arc::new(projects),
-            Err(err) =>
-            {
+            Err(err) => {
                 eprintln!("{}", err.get_message().red());
                 return;
             }
         }
 
-        let project = |name: &str| match state.get_project(name)
-        {
+        let project = |name: &str| match state.get_project(name) {
             Ok(p) => Some(p),
-            Err(err) =>
-            {
+            Err(err) => {
                 eprintln!("{}", err.get_message().red());
                 None
             }
         };
 
-        match &self.command
-        {
-            Some(Commands::List) =>
-            {
-                for p in state.project_list.iter()
-                {
+        match &self.command {
+            Some(Commands::List) => {
+                for p in state.project_list.iter() {
                     println!("{}", p.name);
                 }
             }
-            Some(Commands::Info { name, json }) =>
-            {
-                if let Some(p) = project(name)
-                {
-                    match p.info()
-                    {
-                        Some(info) if *json =>
-                        {
-                            if let Ok(info_json) = serde_json::to_string_pretty(&info)
-                            {
+            Some(Commands::Info { name, json }) => {
+                if let Some(p) = project(name) {
+                    match p.info() {
+                        Some(info) if *json => {
+                            if let Ok(info_json) = serde_json::to_string_pretty(&info) {
                                 println!("{info_json}");
                             }
                         }
@@ -101,36 +81,27 @@ impl Cli
                     }
                 }
             }
-            Some(Commands::Path { name }) =>
-            {
-                if let Some(p) = project(name)
-                {
+            Some(Commands::Path { name }) => {
+                if let Some(p) = project(name) {
                     println!("{}", p.path.display());
                 }
             }
-            Some(Commands::Template { name }) =>
-            {
-                if let Some(p) = project(name)
-                {
+            Some(Commands::Template { name }) => {
+                if let Some(p) = project(name) {
                     println!("{}", p.template_name);
                 }
             }
-            Some(Commands::Repo { name }) =>
-            {
-                if let Some(p) = project(name)
-                {
+            Some(Commands::Repo { name }) => {
+                if let Some(p) = project(name) {
                     println!("{}", p.repo);
                 }
             }
-            Some(Commands::License { name }) =>
-            {
-                if let Some(p) = project(name)
-                {
+            Some(Commands::License { name }) => {
+                if let Some(p) = project(name) {
                     println!("{}", p.license);
                 }
             }
-            Some(Commands::Open { name }) =>
-            {
+            Some(Commands::Open { name }) => {
                 if let Some(p) = project(name)
                     && let Err(err) = p.run()
                 {
@@ -143,34 +114,27 @@ impl Cli
 }
 
 #[derive(Debug, Clone, Subcommand)]
-pub enum Commands
-{
+pub enum Commands {
     List,
-    Info
-    {
+    Info {
         name: String,
 
         #[arg(long, short, default_value_t = false)]
         json: bool,
     },
-    Path
-    {
+    Path {
         name: String,
     },
-    Template
-    {
+    Template {
         name: String,
     },
-    Repo
-    {
+    Repo {
         name: String,
     },
-    License
-    {
+    License {
         name: String,
     },
-    Open
-    {
+    Open {
         name: String,
     },
 }

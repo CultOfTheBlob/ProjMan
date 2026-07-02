@@ -6,15 +6,12 @@ use git2::{
     build::RepoBuilder,
 };
 
-impl Project
-{
-    pub fn clone_repo(&self) -> Result<(), Git2Error>
-    {
+impl Project {
+    pub fn clone_repo(&self) -> Result<(), Git2Error> {
         let mut callbacks = RemoteCallbacks::new();
 
         callbacks.credentials(|url, username_from_url, allowed| {
-            if allowed.is_ssh_key()
-            {
+            if allowed.is_ssh_key() {
                 return Cred::ssh_key_from_agent(username_from_url.unwrap_or_default());
             }
 
@@ -33,8 +30,7 @@ impl Project
         Ok(())
     }
 
-    pub fn init_commit(&self) -> Result<(), Git2Error>
-    {
+    pub fn init_commit(&self) -> Result<(), Git2Error> {
         let project_repo = Repository::open(&self.path)?;
 
         let mut index = project_repo.index()?;
