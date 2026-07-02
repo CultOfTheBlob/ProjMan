@@ -3,6 +3,5 @@ target
 **/*.rs.bk
 *.pdb
 **/mutants.out*/
-/target
-/result
+result
 .direnv
