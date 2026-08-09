@@ -1,117 +1,14 @@
 use std::sync::Arc;
 
 use clap::{Parser, Subcommand};
-use color_eyre::owo_colors::OwoColorize as _;
+use colored::Colorize;
 
 use crate::{
-    state::{app_state::AppState, config::Config},
-    templates::Templates,
+    app_state::AppState,
+    project::{self, Existant, Project, valid_project::ValidProject},
 };
 
-static ABOUT: &str = "ProjMan is a tool to manage different kinds of projects with nix";
-
-#[derive(Debug, Parser)]
-#[command(
-    version,
-    about,
-    long_about = ABOUT
-)]
-pub struct Cli {
-    #[command(subcommand)]
-    pub command: Option<Commands>,
-}
-impl Cli {
-    pub fn parse_args(&self) {
-        let config = match Config::read_config_file() {
-            Ok(config) => config,
-            Err(err) => {
-                eprintln!("{}", err.get_message().yellow());
-                return;
-            }
-        };
-
-        if let Err(err) = config.is_valid() {
-            eprintln!("{:?}", err.red());
-            return;
-        }
-
-        let templates = match Templates::generate() {
-            Ok(templates) => templates,
-            Err(err) => {
-                eprintln!("{}", err.get_message().red());
-                return;
-            }
-        };
-
-        let mut state = AppState::default().config(config).templates(templates);
-
-        match state.load_projects() {
-            Ok(projects) => state.project_list = Arc::new(projects),
-            Err(err) => {
-                eprintln!("{}", err.get_message().red());
-                return;
-            }
-        }
-
-        let project = |name: &str| match state.get_project(name) {
-            Ok(p) => Some(p),
-            Err(err) => {
-                eprintln!("{}", err.get_message().red());
-                None
-            }
-        };
-
-        match &self.command {
-            Some(Commands::List) => {
-                for p in state.project_list.iter() {
-                    println!("{}", p.name);
-                }
-            }
-            Some(Commands::Info { name, json }) => {
-                if let Some(p) = project(name) {
-                    match p.info() {
-                        Some(info) if *json => {
-                            if let Ok(info_json) = serde_json::to_string_pretty(&info) {
-                                println!("{info_json}");
-                            }
-                        }
-
-                        Some(info) => println!("{info}"),
-                        None => println!(),
-                    }
-                }
-            }
-            Some(Commands::Path { name }) => {
-                if let Some(p) = project(name) {
-                    println!("{}", p.path.display());
-                }
-            }
-            Some(Commands::Template { name }) => {
-                if let Some(p) = project(name) {
-                    println!("{}", p.template_name);
-                }
-            }
-            Some(Commands::Repo { name }) => {
-                if let Some(p) = project(name) {
-                    println!("{}", p.repo);
-                }
-            }
-            Some(Commands::License { name }) => {
-                if let Some(p) = project(name) {
-                    println!("{}", p.license);
-                }
-            }
-            Some(Commands::Open { name }) => {
-                if let Some(p) = project(name)
-                    && let Err(err) = p.run()
-                {
-                    eprintln!("{}", err.get_message().red());
-                }
-            }
-            None => (),
-        }
-    }
-}
+static ABOUT: &str = "ProjMan";
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum Commands {
@@ -120,7 +17,7 @@ pub enum Commands {
         name: String,
 
         #[arg(long, short, default_value_t = false)]
-        json: bool,
+        yaml: bool,
     },
     Path {
         name: String,
@@ -137,4 +34,143 @@ pub enum Commands {
     Open {
         name: String,
     },
+}
+
+#[derive(Debug, Parser)]
+#[command(
+    version,
+    about,
+    long_about = ABOUT
+)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+impl Cli {
+    pub fn parse_args(&self) {
+        let app_state = match AppState::new() {
+            Ok(app_state) => app_state,
+            Err(err) => {
+                eprintln!("{} {}", "[ERROR]:".red().bold(), err.to_string().bold());
+
+                return;
+            }
+        };
+        let app_state = Arc::new(app_state);
+
+        let projects = project::load_projects()
+            .unwrap_or_else(|err| {
+                eprintln!("{} {}", "[ERROR]:".red().bold(), err.to_string().bold());
+
+                vec![]
+            })
+            .into_iter()
+            .filter_map(|project| {
+                if let ValidProject::Existant(project) = project {
+                    return Some(project);
+                }
+
+                None
+            })
+            .collect::<Vec<Arc<Project<Existant>>>>();
+
+        let get_project =
+            |name: &str| projects.iter().find(|&project| project.name == name);
+
+        match &self.command {
+            Some(Commands::List) => {
+                for project in &projects {
+                    println!("{}", project.name);
+                }
+            }
+            Some(Commands::Info { name, yaml }) => {
+                let Some(project) = get_project(name) else {
+                    return;
+                };
+
+                match project.info(&app_state) {
+                    Ok(info) if *yaml => {
+                        if let Ok(info_yaml) = serde_yaml::to_string(&info) {
+                            println!("{info_yaml}");
+                        }
+                    }
+
+                    Ok(info) => println!("{info}"),
+
+                    Err(err) => eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        err.to_string().bold()
+                    ),
+                }
+            }
+            Some(Commands::Path { name }) => {
+                let Some(project) = get_project(name) else {
+                    eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        format!("Could not find project {name}").bold()
+                    );
+
+                    return;
+                };
+
+                println!("{}", project.path.display());
+            }
+            Some(Commands::Template { name }) => {
+                let Some(project) = get_project(name) else {
+                    eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        format!("Could not find project {name}").bold()
+                    );
+
+                    return;
+                };
+
+                println!("{}", project.template_name);
+            }
+            Some(Commands::Repo { name }) => {
+                if let Some(project) = get_project(name) {
+                    eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        format!("Could not find project {name}").bold()
+                    );
+
+                    println!("{}", project.repo);
+                }
+            }
+            Some(Commands::License { name }) => {
+                let Some(project) = get_project(name) else {
+                    eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        format!("Could not find project {name}").bold()
+                    );
+
+                    return;
+                };
+
+                println!("{}", project.license);
+            }
+            Some(Commands::Open { name }) => {
+                let Some(project) = get_project(name) else {
+                    eprintln!(
+                        "{} {}",
+                        "[ERROR]:".red().bold(),
+                        format!("Could not find project {name}").bold()
+                    );
+
+                    return;
+                };
+
+                if let Err(err) = project.run(&app_state) {
+                    eprintln!("{}", err.to_string().red());
+                }
+            }
+            None => (),
+        }
+    }
 }
