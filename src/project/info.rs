@@ -1,17 +1,18 @@
-use std::{
-    cmp::{self, Ordering},
-    fmt::{Display, Formatter, Result as FmtResult},
+use crate::{
+    app_state::AppState,
+    prelude::*,
+    project::{Existant, Project},
+    template::Template,
 };
-
 use bytesize::ByteSize;
-use color_eyre::owo_colors::OwoColorize as _;
-use git2::{BranchType, Repository, Revwalk};
+use git2::{BranchType, Index, Reference, Repository};
 use serde::{Deserialize, Serialize};
-use tokei::{Config as TokeiConfig, LanguageType, Languages};
+use std::{cmp::Ordering, collections::HashMap, sync::Arc};
+use tokei::{Config as TokeiConfig, Language, LanguageType, Languages};
 
-use crate::project::Project;
+mod display;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ProjectInfo {
     pub line_count: usize,
     pub language_percentage: Vec<(LanguageType, f32)>,
@@ -24,104 +25,29 @@ pub struct ProjectInfo {
     pub authors: Vec<(String, f32)>,
 }
 
-impl Project {
-    pub fn info(&self) -> Option<ProjectInfo> {
-        let repo = Repository::open(&self.path).ok()?;
+impl Project<Existant> {
+    pub fn info(&self, app_state: &Arc<AppState>) -> Result<ProjectInfo> {
+        let repo = Repository::open(&self.path)
+            .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
 
-        let index = repo.index().ok()?;
+        let index = repo
+            .index()
+            .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
 
-        let head = repo.head().ok()?;
+        let head = repo
+            .head()
+            .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
 
-        let mut languages = Languages::new();
+        let template = self.get_template(app_state)?;
+        let (line_count, language_percentage) = get_language_stats(self, template);
 
-        if let paths = self.template.included_paths(&self.path)
-            && !paths.is_empty()
-        {
-            languages.get_statistics(
-                &paths,
-                &self.template.excluded_paths(),
-                &TokeiConfig::default(),
-            );
-        }
+        let (project_size, file_count) = get_size_and_file_count(&index);
+        let branches = get_branches(&repo)?;
+        let current_branch = get_current_branch_index(&head, &branches)?;
+        let last_commit = get_last_commit_summary(&head)?;
+        let (commit_count, authors) = get_commit_history_stats(&repo)?;
 
-        let mut line_count = 0;
-        for language in languages.values() {
-            line_count += language.code;
-        }
-
-        let mut language_percentage: Vec<(LanguageType, f32)> = vec![];
-        for (language_type, language) in languages {
-            let percentage: f32 = (language.code as f32 / line_count as f32) * 100.0;
-
-            language_percentage.push((language_type, percentage));
-        }
-        language_percentage.sort_by(|l, p| p.1.partial_cmp(&l.1).unwrap_or(Ordering::Equal));
-
-        let mut project_size = ByteSize::default();
-        for entry in index.iter() {
-            project_size += ByteSize::b(entry.file_size as u64);
-        }
-        let project_size = project_size.display().iec().to_string();
-
-        let file_count = index.len();
-
-        let branches: Vec<String> = match repo.branches(Some(BranchType::Local)) {
-            Ok(branches) => branches
-                .filter_map(|branch| {
-                    let (branch, _) = branch.ok()?;
-                    let name = branch.name().ok()??.to_owned();
-                    Some(name)
-                })
-                .collect(),
-            Err(_) => return None,
-        };
-
-        let current_branch = {
-            let branch_name = head.shorthand()?;
-
-            branches.iter().position(|b| b == branch_name)?
-        };
-
-        let last_commit = head.peel_to_commit().ok()?.summary()?.to_owned();
-
-        let commit_count = {
-            let mut revwalk: Revwalk = repo.revwalk().ok()?;
-            revwalk.push_head().ok()?;
-
-            revwalk.count()
-        };
-
-        let authors = {
-            let mut revwalk: Revwalk = repo.revwalk().ok()?;
-            revwalk.push_head().ok()?;
-
-            let mut authors: Vec<(String, usize)> = vec![];
-            for oid in revwalk {
-                let oid = oid.ok()?;
-                let commit = repo.find_commit(oid).ok()?;
-                let author = commit.author().name()?.to_owned();
-
-                if let Some(author) = authors.iter_mut().find(|(name, _)| name == &author) {
-                    author.1 += 1;
-                } else {
-                    authors.push((author, 1));
-                }
-            }
-
-            let mut authors: Vec<(String, f32)> = authors
-                .into_iter()
-                .map(|(name, commits)| {
-                    let percentage = (commits as f32 / commit_count as f32) * 100.0;
-                    (name, percentage)
-                })
-                .collect();
-
-            authors.sort_by(|a, p| p.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
-
-            authors[0..cmp::min(authors.len(), 4)].to_vec()
-        };
-
-        Some(ProjectInfo {
+        Ok(ProjectInfo {
             line_count,
             language_percentage,
             project_size,
@@ -135,189 +61,121 @@ impl Project {
     }
 }
 
-impl Display for ProjectInfo {
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> FmtResult {
-        const TOP_LEFT: &str = "┌";
-        const BOTTOM_LEFT: &str = "└";
-        const LINE: &str = "│";
+fn get_language_stats(
+    project: &Project<Existant>,
+    template: &Template,
+) -> (usize, Vec<(LanguageType, f32)>) {
+    let mut languages = Languages::new();
+    let included_paths = template.included_paths(&project.path);
 
-        let section = |f: &mut Formatter<'_>, title: &str, content: &str| -> FmtResult {
-            const LEFT_FIXED: usize = 9;
-            const LENGTH: usize = 80;
-
-            let title_visible = title.len() + 2;
-            let top_dashes = "─".repeat(8);
-            let title_section = format!("<{title}>");
-            let after_title = LENGTH.saturating_sub(LEFT_FIXED - 1 + title_visible);
-            let top_right = "─".repeat(after_title);
-            let bottom_line = "─".repeat(LENGTH);
-
-            writeln!(
-                f,
-                "{}{}{}{}{}",
-                TOP_LEFT.dimmed(),
-                top_dashes.dimmed(),
-                title_section.bold().cyan(),
-                top_right.dimmed(),
-                "┐".dimmed(),
-            )?;
-
-            for line in content.lines() {
-                let visible = {
-                    let mut len = 0;
-                    let mut in_escape = false;
-                    for char in line.chars() {
-                        if char == '\x1b' {
-                            in_escape = true;
-                        } else if in_escape {
-                            if char == 'm' {
-                                in_escape = false;
-                            }
-                        } else {
-                            len += 1;
-                        }
-                    }
-                    len - 1
-                };
-
-                let pad = LENGTH.saturating_sub(visible);
-                writeln!(f, "{}{}{}", line, " ".repeat(pad), LINE.dimmed())?;
-            }
-
-            writeln!(
-                f,
-                "{}{}{}",
-                BOTTOM_LEFT.dimmed(),
-                bottom_line.dimmed(),
-                "┘".dimmed(),
-            )?;
-
-            writeln!(f)
-        };
-
-        let branches = {
-            let mut branches = String::new();
-
-            for (i, branch) in self.branches.iter().enumerate() {
-                if i == self.current_branch {
-                    let branch = format!("{}{} {}\n", LINE.dimmed(), "●".green(), branch.bold());
-
-                    branches.push_str(&branch);
-                } else {
-                    let branch = format!("{} {}\n", "  ○".dimmed(), branch.dimmed());
-
-                    branches.push_str(&branch);
-                }
-            }
-
-            branches
-        };
-        section(formatter, "Branches", &branches)?;
-
-        let languages = {
-            let mut languages = String::new();
-
-            let max_label_len = self
-                .language_percentage
-                .iter()
-                .map(|(l, p)| l.name().len() + format!("({p:.1}%)").len())
-                .max()
-                .unwrap_or(0);
-
-            for (language, percentage) in &self.language_percentage {
-                #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-                let filled = ((percentage / 100.0) * 20.0) as usize;
-
-                let label_len = language.name().len() + format!("{percentage:.1}%").len();
-
-                let language = format!(
-                    "{}{} {} {}{}  {}{}\n",
-                    LINE.dimmed(),
-                    "●".green(),
-                    format!("{language:?}").bold(),
-                    format!("({percentage:.1}%)").dimmed(),
-                    " ".repeat(max_label_len - label_len),
-                    "█".repeat(filled).green(),
-                    "░".repeat(20 - filled).dimmed()
-                );
-
-                languages.push_str(&language);
-            }
-
-            languages
-        };
-        section(formatter, "Languages", &languages)?;
-
-        let authors = {
-            let mut authors = String::new();
-
-            for (author, percentage) in &self.authors {
-                let author = format!(
-                    "{}{} {} {}\n",
-                    LINE.dimmed(),
-                    "●".green(),
-                    author.bold(),
-                    format!("({percentage:.1}%)").dimmed()
-                );
-
-                authors.push_str(&author);
-            }
-
-            authors
-        };
-        section(formatter, "Authors", &authors)?;
-
-        let commits = {
-            let last_commit = format!(
-                "{} {:.60}",
-                "Last Commit:      ".dimmed(),
-                self.last_commit.bold()
-            );
-            let commit_count = format!(
-                "{} {}",
-                "Number of Commits:".dimmed(),
-                self.commit_count.to_string().bold().yellow()
-            );
-
-            format!(
-                "{}{}\n{}{}\n",
-                LINE.dimmed(),
-                &last_commit,
-                LINE.dimmed(),
-                &commit_count
-            )
-        };
-        section(formatter, "Commits", &commits)?;
-
-        let metadata = {
-            let line_count = format!(
-                "{} {}",
-                "Lines of Code:".dimmed(),
-                self.line_count.to_string().bold().yellow()
-            );
-            let file_count = format!(
-                "{} {}",
-                "Files:        ".dimmed(),
-                self.file_count.to_string().bold().yellow()
-            );
-            let project_size = format!(
-                "{} {}",
-                "Size:         ".dimmed(),
-                self.project_size.clone().bold().yellow()
-            );
-
-            format!(
-                "{}{}\n{}{}\n{}{}\n",
-                LINE.dimmed(),
-                &line_count,
-                LINE.dimmed(),
-                &file_count,
-                LINE.dimmed(),
-                &project_size
-            )
-        };
-        section(formatter, "Metadata", &metadata)?;
-
-        Ok(())
+    if !included_paths.is_empty() {
+        languages.get_statistics(
+            &included_paths,
+            &template.excluded_paths(),
+            &TokeiConfig::default(),
+        );
     }
+
+    let line_count = languages.values().map(|language| language.code).sum();
+
+    let mut percentages = languages
+        .into_iter()
+        .map(|(language_type, language): (LanguageType, Language)| {
+            let percentage = (language.code as f32 / line_count as f32) * 100.0;
+            (language_type, percentage)
+        })
+        .collect::<Vec<(LanguageType, f32)>>();
+
+    percentages.sort_by(|a: &(LanguageType, f32), b: &(LanguageType, f32)| {
+        b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal)
+    });
+
+    (line_count, percentages)
+}
+
+fn get_size_and_file_count(index: &Index) -> (String, usize) {
+    let total_bytes = index.iter().map(|entry| u64::from(entry.file_size)).sum();
+    let project_size = ByteSize::b(total_bytes).display().iec().to_string();
+
+    let file_count = index.len();
+
+    (project_size, file_count)
+}
+
+fn get_branches(repo: &Repository) -> Result<Vec<String>> {
+    let branches = repo
+        .branches(Some(BranchType::Local))
+        .map_err(|err| Error::GetProjectInfo(err.to_string()))?
+        .filter_map(|branch| {
+            let (branch, _) = branch.ok()?;
+            let name = branch.name().ok()??.to_owned();
+            Some(name)
+        })
+        .collect();
+
+    Ok(branches)
+}
+
+fn get_current_branch_index(head: &Reference, branches: &[String]) -> Result<usize> {
+    let current_branch_name = head
+        .shorthand()
+        .ok_or(Error::GetProjectInfo(String::new()))?;
+
+    branches
+        .iter()
+        .position(|branch: &String| branch == current_branch_name)
+        .ok_or(Error::GetProjectInfo(String::new()))
+}
+
+fn get_last_commit_summary(head: &Reference) -> Result<String> {
+    let summary = head
+        .peel_to_commit()
+        .map_err(|err| Error::GetProjectInfo(err.to_string()))?
+        .summary()
+        .ok_or(Error::GetProjectInfo(String::new()))?
+        .to_owned();
+
+    Ok(summary)
+}
+
+fn get_commit_history_stats(repo: &Repository) -> Result<(usize, Vec<(String, f32)>)> {
+    let mut revwalk = repo
+        .revwalk()
+        .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
+
+    revwalk
+        .push_head()
+        .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
+
+    let mut commit_count = 0;
+    let mut author_counts = HashMap::new();
+
+    for oid in revwalk {
+        let oid = oid.map_err(|err| Error::GetProjectInfo(err.to_string()))?;
+        let commit = repo
+            .find_commit(oid)
+            .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
+
+        let author = commit
+            .author()
+            .name()
+            .ok_or(Error::GetProjectInfo(String::new()))?
+            .to_owned();
+
+        *author_counts.entry(author).or_insert(0) += 1;
+        commit_count += 1;
+    }
+
+    let mut authors = author_counts
+        .into_iter()
+        .map(|(name, count)| {
+            let percentage = (count as f32 / commit_count as f32) * 100.0;
+            (name, percentage)
+        })
+        .collect::<Vec<(String, f32)>>();
+
+    authors.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal));
+    authors.truncate(4);
+
+    Ok((commit_count, authors))
 }

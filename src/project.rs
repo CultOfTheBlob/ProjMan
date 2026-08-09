@@ -1,106 +1,69 @@
-use crate::{error::Error, state::config::Config, templates::template::Template};
-use askalono::{Store, TextData};
+use crate::{app_state::AppState, prelude::*, template::Template};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{marker::PhantomData, path::PathBuf};
 
-pub mod project_creator;
+pub use load_projects::load_projects;
 
-mod info;
-mod path;
-mod repo;
+mod create;
+mod existant;
+pub mod info;
+mod load_projects;
+mod nonexistant;
+mod unvalidated;
+pub mod valid_project;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Project {
-    pub exists: bool,
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Project<State = Unvalidated> {
     pub name: String,
     pub path: PathBuf,
+    pub repo: String,
+    pub license: String,
     pub template_name: String,
+
     #[serde(skip)]
-    pub template: Arc<Template>,
-    pub repo: String,
-    pub license: String,
+    pub state: PhantomData<State>,
 }
 
-impl Project {
-    pub fn run(&self) -> Result<(), Error> {
-        self.template.run(self)
+#[derive(Debug, Default, Clone)]
+pub struct Existant;
+
+#[derive(Debug, Default, Clone)]
+pub struct Nonexistant;
+
+#[derive(Debug, Default, Clone)]
+pub struct Unvalidated;
+
+impl<State: Default> Project<State> {
+    pub const PROJECT_FILE_NAME: &str = "projman.toml";
+
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub fn icon(&self) -> PathBuf {
-        self.template.icon_path().clone()
+    pub fn name(self, name: String) -> Self {
+        Self { name, ..self }
     }
 
-    pub fn default(config: &Config) -> Self {
-        let name = "NewProject";
+    pub fn path(self, path: PathBuf) -> Self {
+        Self { path, ..self }
+    }
 
+    pub fn repo(self, repo: String) -> Self {
+        Self { repo, ..self }
+    }
+
+    pub fn template_name(self, template_name: String) -> Self {
         Self {
-            exists: true,
-            name: String::from(name),
-            path: PathBuf::from(&config.general.projects_dir).join(name),
-            template_name: String::default(),
-            template: Arc::new(Template::default()),
-            repo: String::new(),
-            license: String::new(),
+            template_name,
+            ..self
         }
     }
 
-    pub fn license(self) -> Self {
-        let license = {
-            #[expect(clippy::large_include_file)]
-            let cache = &include_bytes!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/cache/license.cache.zstd"
-            ))[..];
-
-            let Ok(store) = Store::from_cache(cache) else {
-                return self;
-            };
-
-            let license_path = self.path.join("LICENSE");
-            let Ok(license_contents) = fs::read_to_string(&license_path) else {
-                return self;
-            };
-            store
-                .analyze(&TextData::from(license_contents.as_str()))
-                .name
-                .to_owned()
-        };
-
-        Self { license, ..self }
+    pub fn get_project_file_path(&self) -> PathBuf {
+        PathBuf::from(&self.path).join(Project::<()>::PROJECT_FILE_NAME)
     }
 
-    pub fn is_outdated(&self) -> bool {
-        let project_files = &self.template.config().files;
-
-        for file in project_files {
-            if !file.tracked {
-                continue;
-            }
-
-            let file = file.formatted(&self.name, &self.repo, &self.license);
-            let path = PathBuf::from(&self.path).join(&file.path);
-
-            let Ok(file_contents) = fs::read(&path) else {
-                return true;
-            };
-
-            if file.content.as_bytes() != file_contents {
-                return true;
-            }
-        }
-
-        false
+    pub fn get_template<'a>(&self, app_state: &'a AppState) -> Result<&'a Template> {
+        app_state.get_template(&self.template_name)
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct ProjmanFile {
-    pub name: String,
-    pub template_name: String,
-    pub repo: String,
-    pub license: String,
-}
-
-impl ProjmanFile {
-    pub const FILE_NAME: &str = ".projman.toml";
 }

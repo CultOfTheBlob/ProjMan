@@ -1,0 +1,5 @@
+name = "projman"
+path = "/home/blob/Projects/projman"
+template_name = "Rust"
+repo = "git@github.com:CultOfTheBlob/projman.git"
+license = "MIT"

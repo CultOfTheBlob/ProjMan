@@ -29,9 +29,22 @@
     in {
       packages.default = naerskLib.buildPackage {
         src = self;
-        buildInputs = with pkgs; [glib openssl];
-        nativeBuildInputs = with pkgs; [pkg-config makeWrapper];
-        OPENSSL_NO_VENDOR = 1;
+
+        buildInputs = with pkgs; [
+          glib
+          libxcb
+          libxkbcommon
+          fontconfig
+          vulkan-loader
+          pango
+          atk
+          openssl
+        ];
+
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+          makeWrapper
+        ];
 
         postInstall = let
           desktopEntry = pkgs.lib.generators.toINI {} {
@@ -44,8 +57,9 @@
             };
           };
         in ''
-            wrapProgram $out/bin/projman \
+          wrapProgram $out/bin/projman \
             --prefix LD_LIBRARY_PATH : ${pkgs.lib.makeLibraryPath (with pkgs; [
+            libxcb
             wayland
             libxkbcommon
             libGL
@@ -62,20 +76,30 @@
 
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs; [
-          (rust-bin.nightly."2026-02-01".default.override {
+          (rust-bin.nightly.latest.default.override {
             extensions = ["rust-src" "rust-analyzer" "clippy" "rustfmt"];
           })
           glib
           just
-          openssl.dev
+
+          libxcb
+          libxkbcommon
+          fontconfig
+          pango
+          atk
+          openssl
         ];
-        LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-          pkgs.wayland
-          pkgs.libxkbcommon
-          pkgs.libGL
-          pkgs.mesa
-          pkgs.vulkan-loader
-        ];
+
+        LD_LIBRARY_PATH = with pkgs;
+          pkgs.lib.makeLibraryPath [
+            libxcb
+            wayland
+            libxkbcommon
+            libGL
+            mesa
+            vulkan-loader
+          ];
+
         nativeBuildInputs = [pkgs.pkg-config];
       };
     })
@@ -89,6 +113,9 @@
         cfg = config.programs.projman;
         package = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         tomlFormat = pkgs.formats.toml {};
+        yamlFormat = pkgs.formats.yaml {};
+
+        rgbaType = lib.types.strMatching "^#[0-9a-fA-F]{8}$";
       in {
         options.programs.projman = {
           enable = lib.mkEnableOption "projman";
@@ -108,9 +135,51 @@
             };
             theme = {
               theme = lib.mkOption {
-                type = lib.types.str;
+                type = lib.types.enum [
+                  "Dark"
+                  "Light"
+                  "Nord"
+                  "NordLight"
+                  "GruvboxDark"
+                  "GruvboxLight"
+                  "TokyoNightDark"
+                  "TokyoNightLight"
+                  "CatppuccinFrappe"
+                  "CatppuccinLatte"
+                  "CatppuccinMacchiato"
+                  "CatppuccinMocha"
+                  "Custom"
+                ];
                 default = "Dark";
                 description = "Theme to use.";
+              };
+
+              custom = lib.mkOption {
+                type = lib.types.nullOr (
+                  lib.types.submodule {
+                    options = {
+                      background = lib.mkOption {type = rgbaType;};
+                      background_weak = lib.mkOption {type = rgbaType;};
+                      surface = lib.mkOption {type = rgbaType;};
+                      surface_strong = lib.mkOption {type = rgbaType;};
+                      border = lib.mkOption {type = rgbaType;};
+                      text_disabled = lib.mkOption {type = rgbaType;};
+                      text_muted = lib.mkOption {type = rgbaType;};
+                      text = lib.mkOption {type = rgbaType;};
+                      text_strong = lib.mkOption {type = rgbaType;};
+                      error = lib.mkOption {type = rgbaType;};
+                      warning = lib.mkOption {type = rgbaType;};
+                      info = lib.mkOption {type = rgbaType;};
+                      success = lib.mkOption {type = rgbaType;};
+                      accent = lib.mkOption {type = rgbaType;};
+                      accent_alt = lib.mkOption {type = rgbaType;};
+                      accent_muted = lib.mkOption {type = rgbaType;};
+                      special = lib.mkOption {type = rgbaType;};
+                    };
+                  }
+                );
+                default = null;
+                description = "Custom theme configuration when settings.theme.theme is set to 'Custom'.";
               };
             };
           };
@@ -118,6 +187,11 @@
           templates = lib.mkOption {
             type = lib.types.attrsOf (lib.types.submodule {
               options = {
+                icon = lib.mkOption {
+                  type = lib.types.path;
+                  description = "Path to the icon file for this template.";
+                };
+
                 dir_structure = lib.mkOption {
                   type = lib.types.listOf (lib.types.submodule {
                     options = {
@@ -135,13 +209,9 @@
                   type = lib.types.listOf (lib.types.submodule {
                     options = {
                       path = lib.mkOption {type = lib.types.str;};
-                      content = lib.mkOption {
+                      contents = lib.mkOption {
                         type = lib.types.str;
                         default = "";
-                      };
-                      tracked = lib.mkOption {
-                        type = lib.types.bool;
-                        default = true;
                       };
                     };
                   });
@@ -186,13 +256,7 @@
               };
             });
             default = {};
-            description = "Definitons for templates. Each attribute maps to a json file of the same name.";
-          };
-
-          icons = lib.mkOption {
-            type = lib.types.attrsOf lib.types.path;
-            default = {};
-            description = "Icons for templates. Attribute name should match the template name.";
+            description = "Definitions for templates.";
           };
 
           projects = lib.mkOption {
@@ -215,7 +279,7 @@
               };
             });
             default = [];
-            description = "List of projects in the projects.json file.";
+            description = "List of projects in the projects.yaml file.";
           };
         };
 
@@ -230,7 +294,12 @@
                     inherit (cfg.settings.general) projects_dir delete_project_folder;
                   };
                   theme = {
-                    inherit (cfg.settings.theme) theme;
+                    theme =
+                      if cfg.settings.theme.theme == "Custom"
+                      then {
+                        Custom = cfg.settings.theme.custom;
+                      }
+                      else cfg.settings.theme.theme;
                   };
                 };
               };
@@ -238,28 +307,28 @@
             // (lib.mapAttrs' (
                 name: template:
                   lib.nameValuePair "projman-template-${name}" {
-                    target = "projman/templates/${name}.json";
-                    text = builtins.toJSON template;
+                    target = "projman/templates/${name}/template.yaml";
+                    source = yamlFormat.generate "template.yaml" (removeAttrs template ["icon"]);
                   }
               )
               cfg.templates)
             // (lib.mapAttrs' (
-                name: icon: let
-                  filename = baseNameOf (toString icon);
-                  ext = builtins.head (builtins.match ".*(\\..*)" filename);
-                in
+                name: template:
                   lib.nameValuePair "projman-icon-${name}" {
-                    target = "projman/icons/${name}${ext}";
-                    source = icon;
+                    target = "projman/templates/${name}/icon.svg";
+                    source = template.icon;
                   }
               )
-              cfg.icons);
+              cfg.templates);
 
-          home.activation.projmanProjects = lib.hm.dag.entryAfter ["writeBoundary"] ''
-            if [ ! -f "$HOME/.config/projman/projects.json" ]; then
-              echo '${builtins.toJSON (map (p: p // {exists = true;}) cfg.projects)}' > "$HOME/.config/projman/projects.json"
-            fi
-          '';
+          home.activation.projmanProjects = let
+            projectsYaml = yamlFormat.generate "projects.yaml" (map (p: p // {exists = true;}) cfg.projects);
+          in
+            lib.hm.dag.entryAfter ["writeBoundary"] ''
+              if [ ! -f "$HOME/.config/projman/projects.yaml" ]; then
+                cp "${projectsYaml}" "$HOME/.config/projman/projects.yaml"
+              fi
+            '';
         };
       };
     };
