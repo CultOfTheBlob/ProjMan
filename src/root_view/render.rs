@@ -60,13 +60,13 @@ impl Render for RootView {
             .with_transition("modal_overlay")
             .transition_when(
                 !app_state.modal_active,
-                Duration::from_millis(10),
+                Duration::from_millis(100),
                 EaseInOutCubic,
                 |style| style.opacity(0.0),
             )
             .transition_when(
                 app_state.modal_active,
-                Duration::from_millis(10),
+                Duration::from_millis(100),
                 EaseInOutCubic,
                 |style| style.opacity(1.0),
             )
