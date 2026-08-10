@@ -322,7 +322,7 @@
               cfg.templates);
 
           home.activation.projmanProjects = let
-            projectsYaml = yamlFormat.generate "projects.yaml" (map (p: p // {exists = true;}) cfg.projects);
+            projectsYaml = yamlFormat.generate "projects.yaml" cfg.projects;
           in
             lib.hm.dag.entryAfter ["writeBoundary"] ''
               if [ ! -f "$HOME/.config/projman/projects.yaml" ]; then
