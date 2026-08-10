@@ -150,9 +150,9 @@ impl Display for ProjectInfo {
             format!(
                 "{}{}\n{}{}\n",
                 LINE.dimmed(),
-                &last_commit,
+                last_commit,
                 LINE.dimmed(),
-                &commit_count
+                commit_count
             )
         };
         section(formatter, "Commits", &commits)?;
@@ -177,11 +177,11 @@ impl Display for ProjectInfo {
             format!(
                 "{}{}\n{}{}\n{}{}\n",
                 LINE.dimmed(),
-                &line_count,
+                line_count,
                 LINE.dimmed(),
-                &file_count,
+                file_count,
                 LINE.dimmed(),
-                &project_size
+                project_size
             )
         };
         section(formatter, "Metadata", &metadata)?;
