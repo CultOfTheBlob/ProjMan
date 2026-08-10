@@ -1,5 +1,0 @@
-name = "projman-iced"
-path = "/home/blob/Projects/projman-iced"
-template_name = "RustWithIced"
-repo = "git@github.com:CultOfTheBlob/ProjMan.git"
-license = "MIT"

@@ -1,5 +1,5 @@
-name = "projman"
-path = "/home/blob/Projects/projman"
+name = "ProjMan"
+path = "/home/blob/Projects/ProjMan"
 template_name = "Rust"
-repo = "git@github.com:CultOfTheBlob/projman.git"
+repo = "git@github.com:CultOfTheBlob/ProjMan.git"
 license = "MIT"
