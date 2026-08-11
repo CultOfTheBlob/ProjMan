@@ -15,12 +15,11 @@ pub fn render(cx: &Context<RootView>, sidebar_open: bool) -> Stateful<Div> {
         theme.background_weak
     };
 
-    let listener =
-        cx.listener(|view: &mut RootView, _, _, cx: &mut Context<RootView>| {
-            view.sidebar_open = !view.sidebar_open;
+    let listener = cx.listener(|view: &mut RootView, _, _, cx: &mut Context<RootView>| {
+        view.sidebar_open = !view.sidebar_open;
 
-            cx.notify();
-        });
+        cx.notify();
+    });
 
     div()
         .id("top_bar_toggle_sidebar_button")

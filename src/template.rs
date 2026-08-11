@@ -1,6 +1,4 @@
-use crate::{
-    config_dir::ConfigDir, prelude::*, template::template_config::TemplateConfig,
-};
+use crate::{config_dir::ConfigDir, prelude::*, template::template_config::TemplateConfig};
 use std::{
     collections::BTreeMap,
     ffi::OsStr,

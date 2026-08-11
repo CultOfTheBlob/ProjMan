@@ -20,38 +20,43 @@ pub fn render(cx: &Context<RootView>, search_bar_state: &InputState) -> Div {
 
     let selected_project_index = app_state.selected_project_index;
 
-    let project_list = div().flex().flex_col().gap_y_2p5().children(
-        projects
-            .iter()
-            .enumerate()
-            .filter_map(|(index, project)| match project {
-                ValidProject::Existant(project) => {
-                    let template = project
-                        .get_template(&app_state)
-                        .map_err(|err| {
-                            Log::Error.log(&err.to_string());
-                        })
-                        .ok()?;
+    let project_list =
+        div()
+            .flex()
+            .flex_col()
+            .gap_y_2p5()
+            .children(
+                projects
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(index, project)| match project {
+                        ValidProject::Existant(project) => {
+                            let template = project
+                                .get_template(&app_state)
+                                .map_err(|err| {
+                                    Log::Error.log(&err.to_string());
+                                })
+                                .ok()?;
 
-                    let icon = &template.icon_path;
+                            let icon = &template.icon_path;
 
-                    let is_selected = selected_project_index.is_some_and(|i| i == index);
+                            let is_selected = selected_project_index.is_some_and(|i| i == index);
 
-                    Some(existant_project::render(
-                        cx,
-                        project,
-                        icon,
-                        is_selected,
-                        index,
-                    ))
-                }
-                ValidProject::Nonexistant(project) => {
-                    let is_selected = selected_project_index.is_some_and(|i| i == index);
+                            Some(existant_project::render(
+                                cx,
+                                project,
+                                icon,
+                                is_selected,
+                                index,
+                            ))
+                        }
+                        ValidProject::Nonexistant(project) => {
+                            let is_selected = selected_project_index.is_some_and(|i| i == index);
 
-                    Some(nonexistant_project::render(cx, project, is_selected, index))
-                }
-            }),
-    );
+                            Some(nonexistant_project::render(cx, project, is_selected, index))
+                        }
+                    }),
+            );
 
     let listener = move |_: &ClickEvent, _: &mut Window, cx: &mut App| {
         root_view.update(cx, |_, cx: &mut Context<RootView>| {

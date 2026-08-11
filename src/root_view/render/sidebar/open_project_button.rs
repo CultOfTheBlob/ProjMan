@@ -11,11 +11,10 @@ pub fn render(cx: &Context<RootView>) -> Stateful<Div> {
     let theme = cx.global::<Config>().theme.theme.get_theme();
     let app_state = cx.global::<GlobalAppState>().0.clone();
 
-    let button =
-        render::text_button("sidebar_open_button", "Open", Some(""), &theme, Some(true))
-            .bg(theme.background)
-            .border_color(theme.background)
-            .text_color(theme.text_disabled);
+    let button = render::text_button("sidebar_open_button", "Open", Some(""), &theme, Some(true))
+        .bg(theme.background)
+        .border_color(theme.background)
+        .text_color(theme.text_disabled);
 
     let Some(project) = app_state.get_selected_project() else {
         return button;

@@ -9,11 +9,7 @@ use gpui::{prelude::FluentBuilder, *};
 use gpui_component::input::Input;
 
 impl Render for ImportProjectPopup {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Config>().theme.theme.get_theme();
 
         let projects_directory = &cx.global::<Config>().general.projects_dir;
@@ -47,10 +43,9 @@ impl Render for ImportProjectPopup {
                 .text_color(theme.text_muted)
                 .on_click(cx.listener(Self::select_directory_button_pressed));
 
-        let cancle_button =
-            render::text_button("cancle_button", "Cancle", None, &theme, None)
-                .bg(theme.background_weak)
-                .on_click(Self::close_button_pressed);
+        let cancle_button = render::text_button("cancle_button", "Cancle", None, &theme, None)
+            .bg(theme.background_weak)
+            .on_click(Self::close_button_pressed);
 
         let confirm_button = render::text_button(
             "confirm_button",
@@ -67,9 +62,7 @@ impl Render for ImportProjectPopup {
                     .text_color(theme.text_disabled)
                     .border_color(theme.error)
             },
-            |this: Stateful<Div>| {
-                this.on_click(cx.listener(Self::confirm_button_pressed))
-            },
+            |this: Stateful<Div>| this.on_click(cx.listener(Self::confirm_button_pressed)),
         );
 
         let div = div()

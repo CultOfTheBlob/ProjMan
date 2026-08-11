@@ -1,10 +1,6 @@
-use crate::{
-    app_state::GlobalAppState, config::Config, root_view::RootView, theme::Theme,
-};
+use crate::{app_state::GlobalAppState, config::Config, root_view::RootView, theme::Theme};
 use gpui::{prelude::FluentBuilder, *};
-use gpui_animation::{
-    animation::TransitionExt as _, transition::general::EaseInOutCubic,
-};
+use gpui_animation::{animation::TransitionExt as _, transition::general::EaseInOutCubic};
 use std::time::Duration;
 
 mod project_list;
@@ -37,11 +33,7 @@ macro_rules! steal_focus {
 pub(crate) use steal_focus;
 
 impl Render for RootView {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Config>().theme.theme.get_theme();
         let app_state = cx.global::<GlobalAppState>().0.clone();
 

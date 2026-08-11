@@ -75,8 +75,7 @@ impl Cli {
             })
             .collect::<Vec<Arc<Project<Existant>>>>();
 
-        let get_project =
-            |name: &str| projects.iter().find(|&project| project.name == name);
+        let get_project = |name: &str| projects.iter().find(|&project| project.name == name);
 
         match &self.command {
             Some(Commands::List) => {
@@ -98,11 +97,7 @@ impl Cli {
 
                     Ok(info) => println!("{info}"),
 
-                    Err(err) => eprintln!(
-                        "{} {}",
-                        "[ERROR]:".red().bold(),
-                        err.to_string().bold()
-                    ),
+                    Err(err) => eprintln!("{} {}", "[ERROR]:".red().bold(), err.to_string().bold()),
                 }
             }
             Some(Commands::Path { name }) => {

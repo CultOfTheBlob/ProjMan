@@ -51,11 +51,7 @@ impl CreateProjectPopup {
         }
     }
 
-    fn close_button_pressed(
-        _click_event: &ClickEvent,
-        window: &mut Window,
-        cx: &mut App,
-    ) {
+    fn close_button_pressed(_click_event: &ClickEvent, window: &mut Window, cx: &mut App) {
         AppState::set_modal_active(cx, false);
         window.remove_window();
     }
@@ -71,8 +67,7 @@ impl CreateProjectPopup {
         let name = view.project_name_input_state.read(cx).value().to_string();
         let repo = view.project_repo_input_state.read(cx).value().to_string();
 
-        let path =
-            PathBuf::from(view.project_path_input_state.read(cx).value().to_string());
+        let path = PathBuf::from(view.project_path_input_state.read(cx).value().to_string());
 
         let template_name = view
             .project_template_select_state
@@ -157,13 +152,10 @@ impl CreateProjectPopup {
                 app_state.creating_project = false;
             });
 
-            let _ = cx.update_window(
-                window_handle,
-                |_, window: &mut Window, cx: &mut App| {
-                    AppState::set_modal_active(cx, false);
-                    window.remove_window();
-                },
-            );
+            let _ = cx.update_window(window_handle, |_, window: &mut Window, cx: &mut App| {
+                AppState::set_modal_active(cx, false);
+                window.remove_window();
+            });
         };
 
         cx.spawn(|_, cx: &mut AsyncApp| {

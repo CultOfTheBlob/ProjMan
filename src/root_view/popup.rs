@@ -56,8 +56,7 @@ pub fn create<T: Render + Popup>(root_view: &Entity<RootView>, cx: &mut App) {
 
         cx.new(|cx| Root::new(view, window, cx))
     }) {
-        Log::Error
-            .log(&Error::OpenPopup(T::TITLE.to_string(), err.to_string()).to_string());
+        Log::Error.log(&Error::OpenPopup(T::TITLE.to_string(), err.to_string()).to_string());
     }
 
     AppState::set_modal_active(cx, true);

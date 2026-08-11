@@ -14,11 +14,7 @@ mod popup;
 mod render;
 
 impl RemoveProjectPopup {
-    fn close_button_pressed(
-        _click_event: &ClickEvent,
-        window: &mut Window,
-        cx: &mut App,
-    ) {
+    fn close_button_pressed(_click_event: &ClickEvent, window: &mut Window, cx: &mut App) {
         AppState::set_modal_active(cx, false);
         window.remove_window();
     }
@@ -36,9 +32,7 @@ impl RemoveProjectPopup {
                 return;
             };
 
-            if let Err(err) =
-                app_state.remove_project(project_index, view.remove_folder_checked)
-            {
+            if let Err(err) = app_state.remove_project(project_index, view.remove_folder_checked) {
                 Log::Error.log(&err.to_string());
             }
         });

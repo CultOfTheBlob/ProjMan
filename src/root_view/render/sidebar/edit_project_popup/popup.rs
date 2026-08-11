@@ -1,9 +1,7 @@
 use crate::{
     app_state::GlobalAppState,
     project::valid_project::ValidProject,
-    root_view::{
-        RootView, popup::Popup, render::sidebar::edit_project_popup::EditProjectPopup,
-    },
+    root_view::{RootView, popup::Popup, render::sidebar::edit_project_popup::EditProjectPopup},
 };
 use gpui::*;
 use gpui_component::input::InputState;
@@ -23,9 +21,7 @@ impl Popup for EditProjectPopup {
         let selected_project = app_state.get_selected_project();
 
         let (name, repo) = match &selected_project {
-            Some(ValidProject::Existant(project)) => {
-                (project.name.as_str(), project.repo.as_str())
-            }
+            Some(ValidProject::Existant(project)) => (project.name.as_str(), project.repo.as_str()),
             _ => ("", ""),
         };
 

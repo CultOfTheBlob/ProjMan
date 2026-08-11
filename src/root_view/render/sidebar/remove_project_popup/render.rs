@@ -8,11 +8,7 @@ use gpui::{prelude::FluentBuilder, *};
 use gpui_component::checkbox::Checkbox;
 
 impl Render for RemoveProjectPopup {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Config>().theme.theme.get_theme();
         let app_state = cx.global::<GlobalAppState>().0.clone();
 
@@ -22,15 +18,13 @@ impl Render for RemoveProjectPopup {
 
         let remove_message = "Are you sure you want to remove this project?";
 
-        let cancle_button =
-            render::text_button("cancle_button", "Cancle", None, &theme, None)
-                .bg(theme.background_weak)
-                .on_click(Self::close_button_pressed);
+        let cancle_button = render::text_button("cancle_button", "Cancle", None, &theme, None)
+            .bg(theme.background_weak)
+            .on_click(Self::close_button_pressed);
 
-        let confirm_button =
-            render::text_button("confirm_button", "Confirm", None, &theme, None)
-                .bg(theme.error)
-                .on_click(cx.listener(Self::confirm_button_pressed));
+        let confirm_button = render::text_button("confirm_button", "Confirm", None, &theme, None)
+            .bg(theme.error)
+            .on_click(cx.listener(Self::confirm_button_pressed));
 
         let remove_folder_checkbox = {
             let checkbox = Checkbox::new("remove_folder_checkbox_toggle")

@@ -14,6 +14,3 @@ test: lint
 
 build: test
   @nix build
-
-push: build
-  @git push

@@ -31,8 +31,7 @@ impl Popup for CreateProjectPopup {
         });
 
         let project_repo_input_state = cx.new(|cx: &mut Context<InputState>| {
-            InputState::new(window, cx)
-                .placeholder("git@github.com:Author/NewProject.git")
+            InputState::new(window, cx).placeholder("git@github.com:Author/NewProject.git")
         });
 
         let project_template_select_state =

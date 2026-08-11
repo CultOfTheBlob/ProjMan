@@ -27,8 +27,8 @@ pub struct ProjectInfo {
 
 impl Project<Existant> {
     pub fn info(&self, app_state: &Arc<AppState>) -> Result<ProjectInfo> {
-        let repo = Repository::open(&self.path)
-            .map_err(|err| Error::GetProjectInfo(err.to_string()))?;
+        let repo =
+            Repository::open(&self.path).map_err(|err| Error::GetProjectInfo(err.to_string()))?;
 
         let index = repo
             .index()

@@ -50,10 +50,7 @@ impl AppState {
         });
     }
 
-    pub fn set_selected_project_index(
-        cx: &mut App,
-        selected_project_index: Option<usize>,
-    ) {
+    pub fn set_selected_project_index(cx: &mut App, selected_project_index: Option<usize>) {
         cx.update_global::<GlobalAppState, ()>(|app_state: &mut GlobalAppState, _| {
             let app_state = Arc::make_mut(&mut app_state.0);
             app_state.selected_project_index = selected_project_index;
@@ -158,12 +155,7 @@ impl AppState {
         Ok(())
     }
 
-    pub fn edit_project(
-        &mut self,
-        project_index: usize,
-        name: String,
-        repo: String,
-    ) -> Result<()> {
+    pub fn edit_project(&mut self, project_index: usize, name: String, repo: String) -> Result<()> {
         let mut project = self.projects[project_index].clone();
 
         if let ValidProject::Existant(ref mut project_arc) = project {
@@ -207,8 +199,8 @@ impl AppState {
             return Ok(());
         }
 
-        let project_file_contents = fs::read_to_string(path)
-            .map_err(|err| Error::ImportProjects(err.to_string()))?;
+        let project_file_contents =
+            fs::read_to_string(path).map_err(|err| Error::ImportProjects(err.to_string()))?;
 
         let project = toml::from_str::<Project<Existant>>(&project_file_contents)
             .map_err(|err| Error::ImportProjects(err.to_string()))?;

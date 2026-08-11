@@ -14,9 +14,8 @@ impl Popup for ImportProjectPopup {
     const HEIGHT_FRACTION: f32 = 0.125;
 
     fn create(_root_view: &Entity<RootView>, window: &mut Window, cx: &mut App) -> Self {
-        let project_path_input_state = cx.new(|cx: &mut Context<InputState>| {
-            InputState::new(window, cx).placeholder("...")
-        });
+        let project_path_input_state =
+            cx.new(|cx: &mut Context<InputState>| InputState::new(window, cx).placeholder("..."));
 
         Self {
             focus_handle: cx.focus_handle(),

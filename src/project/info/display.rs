@@ -67,8 +67,7 @@ impl Display for ProjectInfo {
 
             for (i, branch) in self.branches.iter().enumerate() {
                 if i == self.current_branch {
-                    let branch =
-                        format!("{}{} {}\n", LINE.dimmed(), "●".green(), branch.bold());
+                    let branch = format!("{}{} {}\n", LINE.dimmed(), "●".green(), branch.bold());
 
                     branches.push_str(&branch);
                 } else {

@@ -1,33 +1,25 @@
 use crate::{
     config::Config,
-    root_view::render::{
-        self, input, sidebar::edit_project_popup::EditProjectPopup, steal_focus,
-    },
+    root_view::render::{self, input, sidebar::edit_project_popup::EditProjectPopup, steal_focus},
 };
 use gpui::*;
 use gpui_component::input::Input;
 
 impl Render for EditProjectPopup {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Config>().theme.theme.get_theme();
 
         let project_name_input = Input::new(&self.project_name_input_state);
 
         let project_repo_input = Input::new(&self.project_repo_input_state);
 
-        let cancle_button =
-            render::text_button("cancle_button", "Cancle", None, &theme, None)
-                .bg(theme.background_weak)
-                .on_click(Self::close_button_pressed);
+        let cancle_button = render::text_button("cancle_button", "Cancle", None, &theme, None)
+            .bg(theme.background_weak)
+            .on_click(Self::close_button_pressed);
 
-        let confirm_button =
-            render::text_button("confirm_button", "Confirm", None, &theme, None)
-                .bg(theme.special)
-                .on_click(cx.listener(Self::confirm_button_pressed));
+        let confirm_button = render::text_button("confirm_button", "Confirm", None, &theme, None)
+            .bg(theme.special)
+            .on_click(cx.listener(Self::confirm_button_pressed));
 
         let div = div()
             .flex()

@@ -13,11 +13,7 @@ use gpui_animation::{animation::TransitionExt as _, transition::general::EaseInO
 use gpui_component::{input::Input, scroll::ScrollableElement, select::Select};
 
 impl Render for CreateProjectPopup {
-    fn render(
-        &mut self,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Config>().theme.theme.get_theme();
         let app_state = cx.global::<GlobalAppState>().0.clone();
 
@@ -72,12 +68,8 @@ impl Render for CreateProjectPopup {
         .text_color(theme.text_muted)
         .when_else(
             !project_path_is_valid,
-            |this: Stateful<Div>| {
-                this.bg(theme.background).text_color(theme.text_disabled)
-            },
-            |this: Stateful<Div>| {
-                this.on_click(cx.listener(Self::select_directory_button_pressed))
-            },
+            |this: Stateful<Div>| this.bg(theme.background).text_color(theme.text_disabled),
+            |this: Stateful<Div>| this.on_click(cx.listener(Self::select_directory_button_pressed)),
         );
 
         let progress_bar = div()
@@ -140,9 +132,7 @@ impl Render for CreateProjectPopup {
         .bg(theme.background_weak)
         .when_else(
             creating_project,
-            |this: Stateful<Div>| {
-                this.bg(theme.background).text_color(theme.text_disabled)
-            },
+            |this: Stateful<Div>| this.bg(theme.background).text_color(theme.text_disabled),
             |this: Stateful<Div>| this.on_click(Self::close_button_pressed),
         );
 
@@ -163,9 +153,7 @@ impl Render for CreateProjectPopup {
                         this.border_color(theme.error)
                     })
             },
-            |this: Stateful<Div>| {
-                this.on_click(cx.listener(Self::confirm_button_pressed))
-            },
+            |this: Stateful<Div>| this.on_click(cx.listener(Self::confirm_button_pressed)),
         );
 
         let div = div()

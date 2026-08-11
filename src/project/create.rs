@@ -22,11 +22,7 @@ const COMMAND_COLOR: &str = "\x1b[1;36m";
 const RESET_COLOR: &str = "\x1b[0m";
 
 impl Project<Nonexistant> {
-    pub async fn create<F>(
-        mut self,
-        app_state: &AppState,
-        on_log: F,
-    ) -> Result<Project<Existant>>
+    pub async fn create<F>(mut self, app_state: &AppState, on_log: F) -> Result<Project<Existant>>
     where
         F: Fn(String, u8) + Send + Sync + 'static,
     {
@@ -84,8 +80,7 @@ where
         CREATE_PROJECT_DIR,
     );
 
-    fs::create_dir_all(&project.path)
-        .map_err(|err| Error::CreateProjectDir(err.to_string()))
+    fs::create_dir_all(&project.path).map_err(|err| Error::CreateProjectDir(err.to_string()))
 }
 
 fn clone_project_repo<F>(project: &Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
@@ -104,10 +99,7 @@ where
     project.clone_repo()
 }
 
-fn load_project_license<F>(
-    project: &mut Project<Nonexistant>,
-    on_log: &Arc<F>,
-) -> Result<()>
+fn load_project_license<F>(project: &mut Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
 where
     F: Fn(String, Step) + Send + Sync + 'static,
 {
@@ -118,8 +110,8 @@ where
         "/cache/license.cache.zstd"
     ))[..];
 
-    let store = Store::from_cache(cache)
-        .map_err(|err| Error::LoadProjectLicense(err.to_string()))?;
+    let store =
+        Store::from_cache(cache).map_err(|err| Error::LoadProjectLicense(err.to_string()))?;
 
     let license_path = project.path.join("LICENSE");
 
@@ -302,8 +294,8 @@ where
         COMMIT_PROJECT_INIT,
     );
 
-    let project_repo = Repository::open(&project.path)
-        .map_err(|err| Error::CommitProjectInit(err.to_string()))?;
+    let project_repo =
+        Repository::open(&project.path).map_err(|err| Error::CommitProjectInit(err.to_string()))?;
 
     let mut index = project_repo
         .index()

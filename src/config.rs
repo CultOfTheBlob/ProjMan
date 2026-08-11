@@ -35,14 +35,12 @@ impl Config {
         let default_config_contents = toml::to_string_pretty(&Self::default())
             .map_err(|err| Error::ParseConfig(err.to_string()))?;
 
-        let config_path =
-            ConfigDir::ConfigFile.get_file(Some(&default_config_contents))?;
+        let config_path = ConfigDir::ConfigFile.get_file(Some(&default_config_contents))?;
 
-        let config_string = fs::read_to_string(&config_path)
-            .map_err(|err| Error::ParseConfig(err.to_string()))?;
+        let config_string =
+            fs::read_to_string(&config_path).map_err(|err| Error::ParseConfig(err.to_string()))?;
 
-        toml::from_str::<Self>(&config_string)
-            .map_err(|err| Error::ParseConfig(err.to_string()))
+        toml::from_str::<Self>(&config_string).map_err(|err| Error::ParseConfig(err.to_string()))
     }
 
     fn validate(&self) -> Result<()> {

@@ -70,11 +70,7 @@ impl ImportProjectPopup {
         window.remove_window();
     }
 
-    fn close_button_pressed(
-        _click_event: &ClickEvent,
-        window: &mut Window,
-        cx: &mut App,
-    ) {
+    fn close_button_pressed(_click_event: &ClickEvent, window: &mut Window, cx: &mut App) {
         AppState::set_modal_active(cx, false);
         window.remove_window();
     }

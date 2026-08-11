@@ -13,8 +13,7 @@ pub fn render(cx: &Context<RootView>) -> Stateful<Div> {
     let theme = cx.global::<Config>().theme.theme.get_theme();
     let app_state = cx.global::<GlobalAppState>().0.clone();
 
-    let disabled =
-        app_state.get_selected_project().is_none() || app_state.restoring_project;
+    let disabled = app_state.get_selected_project().is_none() || app_state.restoring_project;
 
     let listener = move |_: &ClickEvent, _: &mut Window, cx: &mut App| {
         if disabled {
