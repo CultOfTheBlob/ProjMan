@@ -139,7 +139,7 @@ impl Render for CreateProjectPopup {
         )
         .bg(theme.background_weak)
         .when_else(
-            !project_path_is_valid,
+            creating_project,
             |this: Stateful<Div>| {
                 this.bg(theme.background).text_color(theme.text_disabled)
             },
@@ -151,7 +151,7 @@ impl Render for CreateProjectPopup {
             "Confirm",
             None,
             &theme,
-            Some(!project_path_is_valid && creating_project),
+            Some(!project_path_is_valid || creating_project),
         )
         .bg(theme.special)
         .when_else(
