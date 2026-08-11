@@ -73,6 +73,7 @@ impl Popup for CreateProjectPopup {
             project_template_select_state,
             project_path_input_state,
 
+            creation_step: 0,
             console_logs: vec![],
         }
     }

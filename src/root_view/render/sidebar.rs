@@ -49,7 +49,7 @@ pub fn render(cx: &Context<RootView>, sidebar_open: bool) -> impl IntoElement {
             !sidebar_open,
             Duration::from_millis(500),
             EaseInOutQuad,
-            |style| style.w(px(0.0)),
+            Styled::w_0,
         )
         .transition_when(
             sidebar_open,

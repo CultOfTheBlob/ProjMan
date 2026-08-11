@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, time::Duration};
 
 use crate::{
     app_state::GlobalAppState,
@@ -9,6 +9,7 @@ use crate::{
     utils,
 };
 use gpui::{prelude::FluentBuilder as _, *};
+use gpui_animation::{animation::TransitionExt as _, transition::general::EaseInOutQuad};
 use gpui_component::{input::Input, scroll::ScrollableElement, select::Select};
 
 impl Render for CreateProjectPopup {
@@ -78,6 +79,33 @@ impl Render for CreateProjectPopup {
                 this.on_click(cx.listener(Self::select_directory_button_pressed))
             },
         );
+
+        let progress_bar = div()
+            .relative()
+            .w_full()
+            .border_2()
+            .border_color(theme.border)
+            .rounded_lg()
+            .h_12()
+            .mt_5()
+            .child(div().size_full().bg(theme.background_weak).rounded_lg())
+            .child(div().absolute().inset_0().child({
+                let progress = f32::from(self.creation_step.min(8)) / 8.0;
+
+                div()
+                    .id(SharedString::from("progress_bar"))
+                    .h_full()
+                    .w(relative(progress))
+                    .bg(theme.accent_alt)
+                    .rounded_lg()
+                    .with_transition(SharedString::from("progress_bar"))
+                    .transition_when(
+                        true,
+                        Duration::from_millis(250),
+                        EaseInOutQuad,
+                        move |style| style.w(relative(progress)),
+                    )
+            }));
 
         let console = div()
             .id("console")
@@ -191,6 +219,7 @@ impl Render for CreateProjectPopup {
                         this.child(project_path_invalid_text)
                     }),
             )
+            .child(progress_bar)
             .child(console)
             .child(div().flex_1())
             .child(

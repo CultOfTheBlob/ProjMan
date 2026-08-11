@@ -26,6 +26,7 @@ pub struct CreateProjectPopup {
     project_path_input_state: Entity<InputState>,
 
     console_logs: Vec<String>,
+    creation_step: u8,
 }
 
 impl CreateProjectPopup {
@@ -82,12 +83,16 @@ impl CreateProjectPopup {
 
         let view_entity = cx.entity();
 
-        let (sender, reciever) = channel::unbounded::<String>();
+        let (sender, reciever) = channel::unbounded::<(String, u8)>();
 
         let log_to_console = move |mut cx: AsyncApp| async move {
-            while let Ok(line) = reciever.recv().await {
+            while let Ok((line, step)) = reciever.recv().await {
                 let update = |view: &mut Self, cx: &mut Context<Self>| {
-                    view.console_logs.push(line);
+                    view.creation_step = step;
+
+                    if !line.is_empty() {
+                        view.console_logs.push(line);
+                    }
 
                     let last_index = view.console_logs.len().saturating_sub(1);
                     view.scroll_handle.scroll_to_item(last_index);
@@ -114,8 +119,8 @@ impl CreateProjectPopup {
             let project = cx
                 .background_executor()
                 .spawn(async move {
-                    let on_log = move |line: String| {
-                        let _ = sender.send_blocking(line);
+                    let on_log = move |line: String, step: u8| {
+                        let _ = sender.send_blocking((line, step));
                     };
 
                     match Project::<Nonexistant>::new()

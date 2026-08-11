@@ -28,7 +28,7 @@ impl Project<Nonexistant> {
         on_log: F,
     ) -> Result<Project<Existant>>
     where
-        F: Fn(String) + Send + Sync + 'static,
+        F: Fn(String, u8) + Send + Sync + 'static,
     {
         let on_log = Arc::new(on_log);
 
@@ -38,7 +38,7 @@ impl Project<Nonexistant> {
 
         clone_project_repo(&self, &on_log)?;
 
-        load_project_license(&mut self)?;
+        load_project_license(&mut self, &on_log)?;
 
         create_project_file(&self, &on_log)?;
 
@@ -61,14 +61,28 @@ impl Project<Nonexistant> {
     }
 }
 
+pub type Step = u8;
+
+const CREATE_PROJECT_DIR: Step = 1;
+const CLONE_PROJECT_REPO: Step = 2;
+const LOAD_PROJECT_LICENSE: Step = 3;
+const CREATE_PROJECT_FILE: Step = 4;
+const CREATE_PROJECT_DIR_STRUCTURE: Step = 5;
+const CREATE_PROJECT_FILES: Step = 6;
+const EXECUTE_BUILD_COMMANDS: Step = 7;
+const COMMIT_PROJECT_INIT: Step = 8;
+
 fn create_project_dir<F>(project: &Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
-    on_log(format!(
-        "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}mkdir -p {}{RESET_COLOR}",
-        project.path.display()
-    ));
+    on_log(
+        format!(
+            "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}mkdir -p {}{RESET_COLOR}",
+            project.path.display()
+        ),
+        CREATE_PROJECT_DIR,
+    );
 
     fs::create_dir_all(&project.path)
         .map_err(|err| Error::CreateProjectDir(err.to_string()))
@@ -76,18 +90,29 @@ where
 
 fn clone_project_repo<F>(project: &Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
-    on_log(format!(
-        "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}git clone {} {}{RESET_COLOR}",
-        project.repo,
-        project.path.display()
-    ));
+    on_log(
+        format!(
+            "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}git clone {} {}{RESET_COLOR}",
+            project.repo,
+            project.path.display()
+        ),
+        CLONE_PROJECT_REPO,
+    );
 
     project.clone_repo()
 }
 
-fn load_project_license(project: &mut Project<Nonexistant>) -> Result<()> {
+fn load_project_license<F>(
+    project: &mut Project<Nonexistant>,
+    on_log: &Arc<F>,
+) -> Result<()>
+where
+    F: Fn(String, Step) + Send + Sync + 'static,
+{
+    on_log(String::new(), LOAD_PROJECT_LICENSE);
+
     let cache = &include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/cache/license.cache.zstd"
@@ -113,14 +138,17 @@ fn load_project_license(project: &mut Project<Nonexistant>) -> Result<()> {
 
 fn create_project_file<F>(project: &Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
     let project_file_path = project.get_project_file_path();
 
-    on_log(format!(
-        "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
-        project_file_path.display()
-    ));
+    on_log(
+        format!(
+            "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
+            project_file_path.display()
+        ),
+        CREATE_PROJECT_FILE,
+    );
 
     let project_file_contents = toml::to_string_pretty(&project)
         .map_err(|err| Error::CreateProjectFile(err.to_string()))?;
@@ -137,16 +165,19 @@ fn create_project_dir_structure<F>(
     on_log: &Arc<F>,
 ) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
     for folder in dir_structure {
         let dirs = folder.resolve(&project.path, &project.into());
 
         for dir in dirs {
-            on_log(format!(
-                "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
-                dir.display()
-            ));
+            on_log(
+                format!(
+                    "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
+                    dir.display()
+                ),
+                CREATE_PROJECT_DIR_STRUCTURE,
+            );
 
             fs::create_dir_all(&dir)
                 .map_err(|err| Error::CreateProjectDirStructure(err.to_string()))?;
@@ -162,15 +193,18 @@ fn create_project_files<F>(
     on_log: &Arc<F>,
 ) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
     for file in files {
         let file = file.resolve(&project.path, &project.into());
 
-        on_log(format!(
-            "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
-            file.path
-        ));
+        on_log(
+            format!(
+                "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}touch {}{RESET_COLOR}",
+                file.path
+            ),
+            CREATE_PROJECT_FILES,
+        );
 
         fs::write(file.path, file.contents)
             .map_err(|err| Error::CreateProjectFiles(err.to_string()))?;
@@ -185,14 +219,17 @@ async fn execute_build_commands<F>(
     on_log: &Arc<F>,
 ) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
     for command in commands {
-        on_log(format!(
-            "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}{} {}{RESET_COLOR}",
-            command.program,
-            command.args.join(" ")
-        ));
+        on_log(
+            format!(
+                "{CARET_COLOR}>{RESET_COLOR} {COMMAND_COLOR}{} {}{RESET_COLOR}",
+                command.program,
+                command.args.join(" ")
+            ),
+            EXECUTE_BUILD_COMMANDS,
+        );
 
         let mut child = AsyncCommand::new(&command.program)
             .args(&command.args)
@@ -215,7 +252,7 @@ where
                 let mut lines = BufReader::new(stdout).lines();
 
                 while let Some(Ok(line)) = lines.next().await {
-                    on_log(line);
+                    on_log(line, EXECUTE_BUILD_COMMANDS);
                 }
             }
         })
@@ -234,7 +271,7 @@ where
                 let mut lines = BufReader::new(stderr).lines();
 
                 while let Some(Ok(line)) = lines.next().await {
-                    on_log(line);
+                    on_log(line, EXECUTE_BUILD_COMMANDS);
                 }
             }
         })
@@ -258,11 +295,12 @@ where
 
 fn commit_project_init<F>(project: &Project<Nonexistant>, on_log: &Arc<F>) -> Result<()>
 where
-    F: Fn(String) + Send + Sync + 'static,
+    F: Fn(String, Step) + Send + Sync + 'static,
 {
-    on_log(String::from(
-        "{CARET}>{RESET} {COMMAND}git add . && git commit -m{RESET}",
-    ));
+    on_log(
+        String::from("{CARET}>{RESET} {COMMAND}git add . && git commit -m{RESET}"),
+        COMMIT_PROJECT_INIT,
+    );
 
     let project_repo = Repository::open(&project.path)
         .map_err(|err| Error::CommitProjectInit(err.to_string()))?;
